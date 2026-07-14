@@ -20,6 +20,10 @@ function toCanonicalType(kind: Field["kind"], type: string): CanonicalType {
   return PRISMA_SCALAR_TO_CANONICAL[type] ?? "unknown";
 }
 
+function stripDatasourceUrls(content: string): string {
+  return content.replace(/^\s*(url|directUrl|shadowDatabaseUrl)\s*=.*$/gm, "");
+}
+
 function resolveDefaultValue(defaultValue?: Field["default"]) {
   if (defaultValue === undefined) {
     return undefined;
@@ -58,7 +62,12 @@ export const prismaAdapter: ORMAdapter = {
       );
     }
 
-    const dmmf = await prismaInternals.getDMMF({ datamodel: schemas });
+    const sanitizedSchemas = schemas.map(
+      ([path, content]) =>
+        [path, stripDatasourceUrls(content)] as [string, string],
+    );
+
+    const dmmf = await prismaInternals.getDMMF({ datamodel: sanitizedSchemas });
 
     const enumValuesByName = new Map(
       dmmf.datamodel.enums.map((e) => [e.name, e.values.map((v) => v.name)]),
