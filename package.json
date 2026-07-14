@@ -40,6 +40,14 @@
   ],
   "author": "Muhammad Naufal Kateni <naufalkateni2001@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NaufalK25/orm2erd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NaufalK25/orm2erd/issues"
+  },
+  "homepage": "https://github.com/NaufalK25/orm2erd#readme",
   "type": "module",
   "dependencies": {
     "@clack/prompts": "^1.7.0",
