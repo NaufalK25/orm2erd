@@ -19,7 +19,8 @@
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "CHANGELOG.md"
   ],
   "keywords": [
     "erd",
