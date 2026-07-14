@@ -217,31 +217,42 @@ async function main() {
   const s = interactive ? spinner() : undefined;
   s?.start("Generating...");
 
-  const entry = await adapter.resolveEntry(entryPath, cwd);
-  const model = await adapter.extract(entry);
+  try {
+    const entry = await adapter.resolveEntry(entryPath, cwd);
+    const model = await adapter.extract(entry);
 
-  const outDir = dirname(outBase);
-  if (outDir !== ".") {
-    await mkdir(outDir, { recursive: true });
-  }
+    const outDir = dirname(outBase);
+    if (outDir !== ".") {
+      await mkdir(outDir, { recursive: true });
+    }
 
-  const written: string[] = [];
-  for (const emitter of selectedEmitters) {
-    const outPath = resolveOutPath(
-      outBase,
-      emitter.fileExtension,
-      selectedEmitters.length,
-    );
-    await writeFile(outPath, emitter.emit(model), "utf-8");
-    written.push(outPath);
-  }
+    const written: string[] = [];
+    for (const emitter of selectedEmitters) {
+      const outPath = resolveOutPath(
+        outBase,
+        emitter.fileExtension,
+        selectedEmitters.length,
+      );
+      await writeFile(outPath, emitter.emit(model), "utf-8");
+      written.push(outPath);
+    }
 
-  const summary = `Written to ${written.join(", ")}`;
-  if (interactive) {
-    s?.stop(summary);
-    outro("Done");
-  } else {
-    console.log(`✔ ${summary}`);
+    const summary = `Written to ${written.join(", ")}`;
+    if (interactive) {
+      s?.stop(summary);
+      outro("Done");
+    } else {
+      console.log(`✔ ${summary}`);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (interactive) {
+      s?.error(message);
+      outro("Failed");
+    } else {
+      console.error(message);
+    }
+    process.exit(1);
   }
 }
 
