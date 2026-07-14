@@ -1,13 +1,13 @@
 {
   "name": "orm2erd",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Generate ERD diagrams (Mermaid, DBML, PlantUML, D2) straight from your ORM's models/schema — no manual diagramming.",
   "bin": {
     "orm2erd": "./bin/orm2erd.js"
   },
   "scripts": {
-    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "build": "tsup",
     "dev": "tsx src/cli.ts",
     "start": "node dist/cli.js",
     "lint": "eslint src",
