@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-07-14
+
+### Fixed
+
+- An active spinner in interactive mode intercepted uncaught errors before
+  they could be handled, showing a generic `"Something went wrong"` instead
+  of the real cause. `main()` now catches errors around schema loading and
+  file writing itself and reports the actual message.
+- Schemas using Prisma's pre-7 inline datasource properties (`url`,
+  `directUrl`, `shadowDatabaseUrl` — moved to `prisma.config.ts` as of
+  Prisma 7) failed to parse at all. Since orm2erd never connects to a
+  database, these are now stripped before parsing instead of blocking
+  extraction — most existing Prisma projects still use this syntax.
+
 ## [1.0.0] - 2026-07-14
 
 ### Added
