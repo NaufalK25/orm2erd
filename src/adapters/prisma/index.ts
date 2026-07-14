@@ -21,7 +21,7 @@ function toCanonicalType(kind: Field["kind"], type: string): CanonicalType {
 }
 
 function resolveDefaultValue(defaultValue?: Field["default"]) {
-  if (!defaultValue) {
+  if (defaultValue === undefined) {
     return undefined;
   }
 
@@ -68,6 +68,7 @@ export const prismaAdapter: ORMAdapter = {
       const foreignKeyFields = new Set(
         model.fields.flatMap((f) => f.relationFromFields ?? []),
       );
+      const compositeKeyFields = new Set(model.primaryKey?.fields ?? []);
 
       return {
         name: model.name,
@@ -78,7 +79,7 @@ export const prismaAdapter: ORMAdapter = {
             type: toCanonicalType(f.kind, f.type),
             nativeType: f.nativeType?.[0] ?? f.type,
             isList: f.isList,
-            isPrimaryKey: f.isId,
+            isPrimaryKey: f.isId || compositeKeyFields.has(f.name),
             isForeignKey: foreignKeyFields.has(f.name),
             isNullable: !f.isRequired,
             isUnique: f.isUnique,
@@ -91,16 +92,67 @@ export const prismaAdapter: ORMAdapter = {
       };
     });
 
-    const relations = dmmf.datamodel.models.flatMap((model) =>
-      model.fields
-        .filter((f) => f.kind === "object" && f.relationName)
-        .map((f) => ({
-          from: model.name,
-          to: f.type,
-          type: (f.isList ? "1-n" : "1-1") as "1-1" | "1-n",
+    interface RelationSide {
+      modelName: string;
+      fieldName: string;
+      relatedModel: string;
+      isList: boolean;
+      hasFK: boolean;
+    }
+
+    const sidesByRelationName = new Map<string, RelationSide[]>();
+    for (const model of dmmf.datamodel.models) {
+      for (const f of model.fields) {
+        if (f.kind !== "object" || !f.relationName) continue;
+        const sides = sidesByRelationName.get(f.relationName) ?? [];
+        sides.push({
+          modelName: model.name,
           fieldName: f.name,
-        })),
-    );
+          relatedModel: f.type,
+          isList: f.isList,
+          hasFK: Boolean(f.relationFromFields?.length),
+        });
+        sidesByRelationName.set(f.relationName, sides);
+      }
+    }
+
+    const relations = Array.from(sidesByRelationName.values()).map((sides) => {
+      if (sides.length < 2) {
+        const [only] = sides;
+        return {
+          from: only.modelName,
+          to: only.relatedModel,
+          type: (only.isList ? "1-n" : "1-1") as "1-1" | "1-n" | "n-n",
+          fieldName: only.fieldName,
+        };
+      }
+
+      const [a, b] = sides;
+      if (a.isList && b.isList) {
+        return {
+          from: a.modelName,
+          to: a.relatedModel,
+          type: "n-n" as const,
+          fieldName: a.fieldName,
+        };
+      }
+      if (a.isList !== b.isList) {
+        const oneSide = a.isList ? a : b;
+        return {
+          from: oneSide.modelName,
+          to: oneSide.relatedModel,
+          type: "1-n" as const,
+          fieldName: oneSide.fieldName,
+        };
+      }
+      const owner = a.hasFK ? a : b;
+      return {
+        from: owner.modelName,
+        to: owner.relatedModel,
+        type: "1-1" as const,
+        fieldName: owner.fieldName,
+      };
+    });
 
     return { entities, relations };
   },

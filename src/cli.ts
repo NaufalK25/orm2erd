@@ -1,6 +1,6 @@
 import { Command } from "commander";
-import { writeFile } from "node:fs/promises";
-import { extname } from "node:path";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, extname } from "node:path";
 import {
   intro,
   outro,
@@ -219,6 +219,11 @@ async function main() {
 
   const entry = await adapter.resolveEntry(entryPath, cwd);
   const model = await adapter.extract(entry);
+
+  const outDir = dirname(outBase);
+  if (outDir !== ".") {
+    await mkdir(outDir, { recursive: true });
+  }
 
   const written: string[] = [];
   for (const emitter of selectedEmitters) {

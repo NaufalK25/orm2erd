@@ -20,14 +20,15 @@ export const mermaidEmitter: Emitter = {
           field.defaultValue && "default: " + field.defaultValue,
         ].filter((c): c is string => Boolean(c));
         lines.push(
-          `    ${typeLabel} ${field.name}${constraints.length > 0 ? " " + constraints.join(", ") : ""}${comments.length > 0 ? ' "' + comments.join(", ") + '"' : ""}`,
+          `    ${typeLabel} ${field.name}${constraints.length > 0 ? " " + constraints.join(", ") : ""}${comments.length > 0 ? ' "' + comments.join(" | ") + '"' : ""}`,
         );
       }
       lines.push("  }");
     }
 
     for (const rel of model.relations) {
-      const symbol = rel.type === "1-n" ? "||--o{" : "||--||";
+      const symbol =
+        rel.type === "1-n" ? "||--o{" : rel.type === "n-n" ? "}o--o{" : "||--||";
       lines.push(
         `  ${rel.from} ${symbol} ${rel.to} : "${rel.fieldName ?? ""}"`,
       );
