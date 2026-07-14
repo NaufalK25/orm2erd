@@ -3,7 +3,8 @@
 You already built the app — your ORM models are the schema. `orm2erd` reads them and generates an
 ERD (Entity-Relationship Diagram) for you, instead of you drawing and maintaining one by hand.
 
-> **Status:** early development, pre-release. Not yet published to npm.
+> **Status:** early development, pre-release. Not yet published to npm. Prisma → Mermaid is
+> functional end to end; everything else below is on the roadmap.
 
 ## What it does
 
@@ -12,22 +13,22 @@ models/schema into diagram code — Mermaid, DBML, PlantUML, D2, and more. No ma
 no drift between your code and your docs.
 
 ```
-detect ORM → resolve entry point → parse/introspect models → generate diagram code → write file(s)
+detect ORM → resolve entry point(s) → parse/introspect → normalize to IR → emit diagram code(s) → write file(s)
 ```
 
-## Supported ORMs (target)
+## Supported ORMs
 
-- Prisma
-- TypeORM
-- Sequelize
-- Drizzle
+- ✅ Prisma
+- 🚧 TypeORM
+- 🚧 Sequelize
+- 🚧 Drizzle
 
-## Output formats (target)
+## Output formats
 
-- Mermaid
-- DBML (dbdiagram.io)
-- PlantUML
-- D2
+- ✅ Mermaid
+- 🚧 DBML (dbdiagram.io)
+- 🚧 PlantUML
+- 🚧 D2
 
 ## Usage
 
@@ -38,21 +39,31 @@ npx orm2erd
 ```
 
 ```
-→ Scanning project... Detected: Prisma (schema.prisma found)
-? Entry point for Prisma: ./prisma/schema.prisma (confirm/edit)
-? Output format(s): [x] Mermaid [x] DBML [ ] PlantUML [ ] D2
-? Output path: ./erd
-Generating... ✔ Written to ./erd.mermaid.md, ./erd.dbml
+┌  orm2erd
+│
+◇  Detected: prisma
+◆  Entry point for prisma:
+│  prisma/schema.prisma
+◆  Output format(s):
+│  mermaid
+◆  Output path:
+│  erd.mermaid
+│
+◇  Written to erd.mermaid
+│
+└  Done
 ```
 
 Non-interactive (CI-friendly):
 
 ```bash
-npx orm2erd --orm prisma --entry ./schema.prisma --format mermaid,dbml --out ./erd
+npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --out ./erd
 ```
 
 You can select multiple output formats in a single run — the schema is parsed once and reused
-across every format you pick.
+across every format you pick. `--out` accepts either a bare name (`erd`, gets each format's
+extension appended) or a full filename (`erd.md`, used exactly as given when there's only one
+output format).
 
 ## Why
 
