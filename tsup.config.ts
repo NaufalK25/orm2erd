@@ -7,7 +7,8 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   splitting: false,
-  sourcemap: true,
+  sourcemap: false,
+  minify: true,
   dts: false,
   // Keep as a real dependency instead of bundling: it resolves its own
   // engine binaries/wasm assets relative to its installed location, which

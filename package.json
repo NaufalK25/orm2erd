@@ -21,8 +21,7 @@
   },
   "files": [
     "dist",
-    "bin",
-    "CHANGELOG.md"
+    "bin"
   ],
   "keywords": [
     "erd",
