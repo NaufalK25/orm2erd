@@ -187,9 +187,13 @@ export const sequelizeAdapter: ORMAdapter = {
     // Sequelize v7 stores `.models` as an iterable Set instead of a plain
     // object, silently yielding zero entities via Object.entries() below.
     // Fail loudly instead — only v6.x's plain-object shape is supported.
-    if (typeof (sequelize.models as unknown as Record<typeof Symbol.iterator, unknown>)[Symbol.iterator] === "function") {
+    if (
+      typeof (
+        sequelize.models as unknown as Record<typeof Symbol.iterator, unknown>
+      )[Symbol.iterator] === "function"
+    ) {
       throw new Error(
-        "Unsupported Sequelize version: \".models\" is not a plain object (looks like Sequelize v7+). Only Sequelize v6.x is currently supported.",
+        'Unsupported Sequelize version: ".models" is not a plain object (looks like Sequelize v7+). Only Sequelize v6.x is currently supported.',
       );
     }
 

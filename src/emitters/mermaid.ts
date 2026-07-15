@@ -28,7 +28,11 @@ export const mermaidEmitter: Emitter = {
 
     for (const rel of model.relations) {
       const symbol =
-        rel.type === "1-n" ? "||--o{" : rel.type === "n-n" ? "}o--o{" : "||--||";
+        rel.type === "1-n"
+          ? "||--o{"
+          : rel.type === "n-n"
+            ? "}o--o{"
+            : "||--||";
       lines.push(
         `  ${rel.from} ${symbol} ${rel.to} : "${rel.fieldName ?? ""}"`,
       );
