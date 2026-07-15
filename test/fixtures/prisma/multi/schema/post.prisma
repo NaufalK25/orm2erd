@@ -1,0 +1,17 @@
+model Post {
+  id     Int    @id @default(autoincrement())
+  title  String
+  status Status @default(draft)
+
+  userId Int
+  user   User   @relation(fields: [userId], references: [id])
+
+  tags Tag[]
+}
+
+model Tag {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  posts Post[]
+}

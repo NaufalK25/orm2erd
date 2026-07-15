@@ -1,0 +1,35 @@
+datasource db {
+  provider = "postgresql"
+}
+
+enum Status {
+  draft
+  published
+}
+
+model User {
+  id       Int     @id @default(autoincrement())
+  name     String
+  email    String  @unique
+  isActive Boolean @default(true)
+
+  posts Post[]
+}
+
+model Post {
+  id     Int    @id @default(autoincrement())
+  title  String
+  status Status @default(draft)
+
+  userId Int
+  user   User   @relation(fields: [userId], references: [id])
+
+  tags Tag[]
+}
+
+model Tag {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  posts Post[]
+}
