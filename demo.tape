@@ -1,4 +1,4 @@
-Output demo.gif
+Output .github/assets/demo.gif
 
 Require orm2erd
 

@@ -6,7 +6,7 @@ ERD (Entity-Relationship Diagram) for you, instead of you drawing and maintainin
 > **Status:** early development. Prisma → Mermaid is functional end to end; everything else below
 > is on the roadmap.
 
-![orm2erd demo](./demo.gif)
+![orm2erd demo](./.github/assets/demo.gif)
 
 ## What it does
 
