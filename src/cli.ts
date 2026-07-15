@@ -20,7 +20,7 @@ import { emitters, getEmitter } from "./emitters";
 import type { OutputFormat } from "./core/format";
 import type { ORMName } from "./core/orm";
 
-const ALL_ORM_NAMES: ORMName[] = ["prisma", "typeorm", "sequelize", "drizzle"];
+const ALL_ORM_NAMES: ORMName[] = ["prisma", "sequelize"];
 
 const program = new Command();
 
@@ -29,12 +29,9 @@ program
   .description(
     "Generate an ERD from your ORM's models/schema — no manual diagramming.",
   )
-  .option("--orm <name>", "ORM to use (prisma, typeorm, sequelize, drizzle)")
+  .option("--orm <name>", "ORM to use (prisma, sequelize)")
   .option("--entry <path>", "path to the ORM's schema/model entry")
-  .option(
-    "--format <formats>",
-    "output format(s), comma-separated (mermaid, dbml, plantuml, d2)",
-  )
+  .option("--format <formats>", "output format(s), comma-separated (mermaid)")
   .option(
     "--out <path>",
     "output path — a full filename (e.g. erd.md) is used as-is; a bare name (e.g. erd) gets the format's extension appended",

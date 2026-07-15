@@ -19,16 +19,11 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 ## Supported ORMs
 
 - ✅ Prisma
-- 🚧 TypeORM
-- 🚧 Sequelize
-- 🚧 Drizzle
+- ✅ Sequelize
 
 ## Output formats
 
 - ✅ Mermaid
-- 🚧 DBML (dbdiagram.io)
-- 🚧 PlantUML
-- 🚧 D2
 
 ## Installation
 

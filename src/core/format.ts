@@ -1,1 +1,1 @@
-export type OutputFormat = "mermaid" | "dbml" | "plantuml" | "d2";
+export type OutputFormat = "mermaid";
