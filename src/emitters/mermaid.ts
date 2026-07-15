@@ -27,6 +27,8 @@ export const mermaidEmitter: Emitter = {
     }
 
     for (const rel of model.relations) {
+      // Mermaid's crow's-foot notation: ||--o{ = one-to-many, }o--o{ =
+      // many-to-many, ||--|| = one-to-one.
       const symbol =
         rel.type === "1-n"
           ? "||--o{"

@@ -66,6 +66,9 @@ function resolveOutPath(
   outputCount: number,
 ): string {
   const ext = extname(base);
+  // A single format with an explicit extension is used exactly as given
+  // (e.g. --out erd.md). With multiple formats, each needs its own
+  // extension, so any existing one is stripped and replaced per emitter.
   if (ext && outputCount === 1) {
     return base;
   }
@@ -75,10 +78,13 @@ function resolveOutPath(
 
 async function main() {
   const cwd = process.cwd();
+  // isCI() is also checked because some CI runners still report a TTY.
   const interactive = isTTY(process.stdout) && !isCI();
 
   if (interactive) intro("orm2erd");
 
+  // Both flags are required to skip detection, not just --orm: without
+  // --entry, detection still needs to run to populate entryCandidates.
   const skipDetection = Boolean(opts.orm) && Boolean(opts.entry);
   const detected = skipDetection ? [] : await detectORMs(cwd);
 

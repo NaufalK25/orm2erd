@@ -25,6 +25,8 @@ export const sequelizeDetector: Detector = {
     try {
       packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
     } catch {
+      // Can't confirm the sequelize dependency without valid JSON, so bail
+      // rather than continue probing the filesystem.
       return { found: false, candidates, confidence: 0 };
     }
 
@@ -45,10 +47,17 @@ export const sequelizeDetector: Detector = {
       try {
         const rc = require(rcPath);
         const modelsPath = rc?.["models-path"];
+        // resolve() is a no-op on an already-absolute path, which is the
+        // common case — .sequelizerc usually builds this with its own
+        // path.resolve() call.
         if (typeof modelsPath === "string") {
           candidates.push(resolve(cwd, modelsPath));
         }
-      } catch {}
+      } catch {
+        // A broken .sequelizerc shouldn't fail detection outright — the
+        // dependency check already confirmed this is a Sequelize project,
+        // so just fall through to the directory conventions below.
+      }
     }
 
     if (candidates.length === 0) {

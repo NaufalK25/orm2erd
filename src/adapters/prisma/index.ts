@@ -20,6 +20,8 @@ function toCanonicalType(kind: Field["kind"], type: string): CanonicalType {
   return PRISMA_SCALAR_TO_CANONICAL[type] ?? "unknown";
 }
 
+// getDMMF() only needs schema shape, not a real connection, but Prisma
+// errors on missing datasource env vars unless these fields are stripped.
 function stripDatasourceUrls(content: string): string {
   return content.replace(/^\s*(url|directUrl|shadowDatabaseUrl)\s*=.*$/gm, "");
 }
@@ -33,6 +35,8 @@ function resolveDefaultValue(defaultValue?: Field["default"]) {
     return defaultValue.join(", ");
   }
 
+  // Function-call defaults like @default(now()) come through DMMF as
+  // { name: "now", args: [] } instead of a literal value.
   if (typeof defaultValue === "object" && "name" in defaultValue) {
     return `${defaultValue.name}(${defaultValue.args.join(", ")})`;
   }
@@ -109,6 +113,8 @@ export const prismaAdapter: ORMAdapter = {
       hasFK: boolean;
     }
 
+    // Prisma emits a relation field on both related models, so group by
+    // relationName and collapse each pair into a single Relation below.
     const sidesByRelationName = new Map<string, RelationSide[]>();
     for (const model of dmmf.datamodel.models) {
       for (const f of model.fields) {
@@ -154,6 +160,7 @@ export const prismaAdapter: ORMAdapter = {
           fieldName: oneSide.fieldName,
         };
       }
+      // 1-1: use the side that actually holds the FK column as "from".
       const owner = a.hasFK ? a : b;
       return {
         from: owner.modelName,

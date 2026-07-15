@@ -277,6 +277,8 @@ export const sequelizeAdapter: ORMAdapter = {
           };
         }
 
+        // 1-1: prefer the BelongsTo side, since it's the one carrying the
+        // FK column — matches the Prisma adapter's "owner = side with FK".
         const belongsTo = sides.find((s) => s.associationType === "BelongsTo");
         const owner = belongsTo ?? sides[0];
         return {
