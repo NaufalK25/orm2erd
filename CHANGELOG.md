@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-15
+
+### Added
+
+- Sequelize adapter: introspects `sequelize.models` at runtime (no database
+  connection required) to extract fields (types, primary/foreign keys,
+  uniqueness, nullability, defaults, enum values) and `1-1`/`1-n`/`n-n`
+  relations, deduplicated across both sides of each association.
+- Sequelize detector: gates on a `sequelize`/`sequelize-typescript`
+  dependency in `package.json`, resolves a custom `.sequelizerc`
+  `models-path` when present, and otherwise falls back to conventional
+  model directory locations (`models/`, `src/models/`, `db/models/`,
+  `app/models/`).
+- Recognizes a range of real-world entry-point export shapes — a plain
+  named export, the sequelize-cli `db.sequelize` convention, a
+  CommonJS-compiled default export, and a Model class's static
+  `.sequelize` back-reference — instead of assuming one fixed style.
+- Best-effort `.env` loading and a `require()` compatibility shim for entry
+  files that mix CommonJS into an otherwise-ESM project, since loading a
+  Sequelize model file means executing real project code, not just parsing
+  a schema file.
+- Test suite (Vitest) covering the Prisma adapter, Sequelize adapter, and
+  Mermaid emitter, plus a `coverage` script.
+
+### Changed
+
+- Removed the `typeorm`/`drizzle` placeholders from `--orm` and the ORM
+  picker — they were never implemented and only added noise to the CLI's
+  option list.
+
+### Fixed
+
+- Primary keys were shown as nullable in Sequelize output — Sequelize
+  doesn't set `allowNull` on primary-key columns even though they're
+  always `NOT NULL`.
+- Many-to-many (`BelongsToMany`) relations were emitted twice, once per
+  side, instead of being deduplicated — each side's `foreignKey`/`otherKey`
+  pair is swapped relative to the other, which broke the dedup key.
+
 ## [1.0.1] - 2026-07-14
 
 ### Fixed
