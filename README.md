@@ -3,8 +3,8 @@
 You already built the app — your ORM models are the schema. `orm2erd` reads them and generates an
 ERD (Entity-Relationship Diagram) for you, instead of you drawing and maintaining one by hand.
 
-> **Status:** early development, pre-release. Not yet published to npm. Prisma → Mermaid is
-> functional end to end; everything else below is on the roadmap.
+> **Status:** early development. Prisma → Mermaid is functional end to end; everything else below
+> is on the roadmap.
 
 ## What it does
 
@@ -29,6 +29,21 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 - 🚧 DBML (dbdiagram.io)
 - 🚧 PlantUML
 - 🚧 D2
+
+## Installation
+
+Run without installing (recommended — always gets the latest version):
+
+```bash
+npx orm2erd
+```
+
+Or install globally:
+
+```bash
+npm i -g orm2erd
+orm2erd
+```
 
 ## Usage
 
