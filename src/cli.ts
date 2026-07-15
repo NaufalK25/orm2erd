@@ -17,6 +17,7 @@ import {
 import { detectORMs } from "./detect";
 import { getAdapter } from "./adapters";
 import { emitters, getEmitter } from "./emitters";
+import { withSuppressedOutput } from "./core/suppress-output";
 import type { OutputFormat } from "./core/format";
 import type { ORMName } from "./core/orm";
 
@@ -35,6 +36,10 @@ program
   .option(
     "--out <path>",
     "output path — a full filename (e.g. erd.md) is used as-is; a bare name (e.g. erd) gets the format's extension appended",
+  )
+  .option(
+    "--verbose",
+    "show log output from the target codebase during extraction (suppressed by default)",
   )
   .addHelpText(
     "after",
@@ -222,7 +227,9 @@ async function main() {
 
   try {
     const entry = await adapter.resolveEntry(entryPath, cwd);
-    const model = await adapter.extract(entry);
+    const model = opts.verbose
+      ? await adapter.extract(entry)
+      : await withSuppressedOutput(() => adapter.extract(entry));
 
     const outDir = dirname(outBase);
     if (outDir !== ".") {
