@@ -1,9 +1,10 @@
 import type { Detector, DetectResult } from "./types";
 import { prismaDetector } from "./prisma";
+import { sequelizeDetector } from "./sequelize";
 
 export type { Detector, DetectResult } from "./types";
 
-export const detectors: Detector[] = [prismaDetector];
+export const detectors: Detector[] = [prismaDetector, sequelizeDetector];
 
 export interface DetectedORM extends DetectResult {
   name: Detector["name"];
