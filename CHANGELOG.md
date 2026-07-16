@@ -5,9 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.1] - 2026-07-16
+## 🏷️ [1.1.1] - 2026-07-16
 
-### Added
+### 🚀 Added
 
 - `--type-mode <canonical|native>` flag (and matching interactive prompt) to
   choose whether emitted field types use orm2erd's portable vocabulary
@@ -21,15 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   output from the target codebase by default (since introspecting Sequelize
   models means executing real project code), and `--verbose` opts back in.
 
-### Fixed
+### 💊 Fixed
 
 - Prisma detection no longer autodiscovers a `prisma/schema` directory (never
   a real Prisma convention) and now recognizes a root-level `schema.prisma`,
   matching Prisma's actual config resolution order.
 
-## [1.1.0] - 2026-07-15
+## 🏷️ [1.1.0] - 2026-07-15
 
-### Added
+### 🚀 Added
 
 - Sequelize adapter: introspects `sequelize.models` at runtime (no database
   connection required) to extract fields (types, primary/foreign keys,
@@ -57,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   picker — they were never implemented and only added noise to the CLI's
   option list.
 
-### Fixed
+### 💊 Fixed
 
 - Primary keys were shown as nullable in Sequelize output — Sequelize
   doesn't set `allowNull` on primary-key columns even though they're
@@ -66,9 +66,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   side, instead of being deduplicated — each side's `foreignKey`/`otherKey`
   pair is swapped relative to the other, which broke the dedup key.
 
-## [1.0.1] - 2026-07-14
+## 🏷️ [1.0.1] - 2026-07-14
 
-### Fixed
+### 💊 Fixed
 
 - An active spinner in interactive mode intercepted uncaught errors before
   they could be handled, showing a generic `"Something went wrong"` instead
@@ -80,9 +80,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   database, these are now stripped before parsing instead of blocking
   extraction — most existing Prisma projects still use this syntax.
 
-## [1.0.0] - 2026-07-14
+## 🏷️ [1.0.0] - 2026-07-14
 
-### Added
+### 🚀 Added
 
 - CLI (`orm2erd`) with both an interactive mode (via `@clack/prompts`) and a
   non-interactive mode for CI, driven by `--orm`, `--entry`, `--format`, and
@@ -113,7 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--out` accepts either a bare base name (format extension auto-appended)
   or a full filename (honored exactly as given for single-format output).
 
-### Fixed
+### 💊 Fixed
 
 - Composite primary keys (`@@id([...])`) weren't marked as `PK` — only
   single-field `@id` was checked.
