@@ -1,4 +1,4 @@
-import { existsSync, statSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { Detector } from "./types";
 
@@ -6,17 +6,16 @@ export const prismaDetector: Detector = {
   name: "prisma",
 
   async detect(cwd) {
-    const singleSchemaCandidate = join("prisma", "schema.prisma");
-    const singleSchemaFound = existsSync(join(cwd, singleSchemaCandidate));
+    // See https://www.prisma.io/docs/orm/reference/prisma-config-reference#options-reference
+    const nestedSchemaCandidate = join("prisma", "schema.prisma");
+    const nestedSchemaFound = existsSync(join(cwd, nestedSchemaCandidate));
 
-    const multipleSchemasCandidate = join("prisma", "schema");
-    const multipleSchemasFound =
-      existsSync(join(cwd, multipleSchemasCandidate)) &&
-      statSync(join(cwd, multipleSchemasCandidate)).isDirectory();
+    const rootSchemaCandidate = "schema.prisma";
+    const rootSchemaFound = existsSync(join(cwd, rootSchemaCandidate));
 
     const candidates = [
-      ...(singleSchemaFound ? [singleSchemaCandidate] : []),
-      ...(multipleSchemasFound ? [multipleSchemasCandidate] : []),
+      ...(nestedSchemaFound ? [nestedSchemaCandidate] : []),
+      ...(rootSchemaFound ? [rootSchemaCandidate] : []),
     ];
 
     return {
