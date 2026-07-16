@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-07-16
+
+### Added
+
+- `--type-mode <canonical|native>` flag (and matching interactive prompt) to
+  choose whether emitted field types use orm2erd's portable vocabulary
+  (`string`, `int`, `datetime`, …) or the ORM's own native type names.
+- `-v`/`--version` flag.
+- Prisma detection now resolves `prisma.config.ts`'s `schema` field (the
+  source of truth as of Prisma 7), while still surfacing a default
+  `schema.prisma`/`prisma/schema.prisma` left on disk alongside it as a
+  pickable candidate instead of hiding it.
+- `--verbose` flag: extraction now suppresses `console.log`/`info`/`debug`/`warn`
+  output from the target codebase by default (since introspecting Sequelize
+  models means executing real project code), and `--verbose` opts back in.
+
+### Fixed
+
+- Prisma detection no longer autodiscovers a `prisma/schema` directory (never
+  a real Prisma convention) and now recognizes a root-level `schema.prisma`,
+  matching Prisma's actual config resolution order.
+
 ## [1.1.0] - 2026-07-15
 
 ### Added
