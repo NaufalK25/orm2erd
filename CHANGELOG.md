@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🏷️ [1.2.0] - 2026-07-16
+
+### 🚀 Added
+
+- DBML emitter (`--format dbml`): tables with field constraints (`pk`,
+  `unique`, `not null`, `default: ...`), `Ref:` relation lines derived from
+  each relation's actual FK column on both sides, and `Enum` blocks for
+  enum-typed fields.
+- GitHub Actions CI (tests + lint on push/PR) and an automated release-tag
+  workflow that tags a version whenever it changes on `package.json`.
+
+### 💊 Fixed
+
+- `--out` with multiple formats stripped *any* extension already on the base
+  path and replaced it per emitter, even when that extension wasn't meant as
+  a format suffix (e.g. `--out erd/file.erd` produced `file.mermaid`/
+  `file.dbml` instead of `file.erd.mermaid`/`file.erd.dbml`). An extension is
+  now only swapped out when it matches one of the formats actually being
+  emitted.
+- The interactive "Output path" prompt defaulted to `erd.<first format>` even
+  when multiple formats were selected, misleadingly suggesting only one file
+  would be written. It now defaults to the bare stem and previews every
+  resulting filename (e.g. `writes erd.mermaid, erd.dbml`).
+- Sequelize model loading failed on Windows — `tsImport` was passed a raw
+  filesystem path instead of a `file://` URL, which Windows paths (with
+  drive letters) aren't valid as.
+
 ## 🏷️ [1.1.1] - 2026-07-16
 
 ### 🚀 Added
