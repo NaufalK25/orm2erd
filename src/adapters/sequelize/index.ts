@@ -1,6 +1,7 @@
 import { existsSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { tsImport } from "tsx/esm/api";
 import type { ORMAdapter, ResolvedEntry } from "../types";
 import type { CanonicalType, ERDModel, Relation } from "../../core/model";
@@ -120,7 +121,7 @@ async function loadSequelizeInstance(path: string): Promise<SequelizeInstance> {
   // resolving against the target project's own node_modules.
   globalThis.require = createRequire(path);
 
-  const mod = await tsImport(path, import.meta.url);
+  const mod = await tsImport(pathToFileURL(path).href, import.meta.url);
   const candidate = findSequelizeInstance(mod);
   if (!candidate) {
     throw new Error(

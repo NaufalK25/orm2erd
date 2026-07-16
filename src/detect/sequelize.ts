@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
 import type { Detector } from "./types";
 import { PackageJson } from "../core/package";
 
@@ -47,7 +47,7 @@ export const sequelizeDetector: Detector = {
         // common case — .sequelizerc usually builds this with its own
         // path.resolve() call.
         if (typeof modelsPath === "string") {
-          candidates.push(resolve(cwd, modelsPath));
+          candidates.push(relative(cwd, resolve(cwd, modelsPath)));
         }
       } catch {
         // A broken .sequelizerc shouldn't fail detection outright — the
@@ -61,7 +61,7 @@ export const sequelizeDetector: Detector = {
       for (const dir of fallbackDirs) {
         const candidate = resolve(cwd, dir);
         if (existsSync(candidate) && statSync(candidate).isDirectory()) {
-          candidates.push(candidate);
+          candidates.push(relative(cwd, candidate));
         }
       }
     }
