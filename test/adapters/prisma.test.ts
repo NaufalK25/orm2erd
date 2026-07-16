@@ -25,7 +25,7 @@ describe.each([
   it("extracts all entities", async () => {
     const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
     const model = await prismaAdapter.extract(entry);
-    expect(model.entities.map((e) => e.name).sort()).toEqual([
+    expect(model.entities.map((e) => e.name).toSorted()).toEqual([
       "Post",
       "Tag",
       "User",
@@ -71,7 +71,8 @@ describe.each([
     const postTag = model.relations.find(
       (r) =>
         r.type === "n-n" &&
-        [r.from, r.to].sort().join(",") === ["Post", "Tag"].sort().join(","),
+        [r.from, r.to].toSorted().join(",") ===
+          ["Post", "Tag"].toSorted().join(","),
     );
     expect(postTag).toBeDefined();
   });

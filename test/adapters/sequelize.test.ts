@@ -49,7 +49,7 @@ describe("sequelizeAdapter.extract — directory without an aggregator", () => {
 describe("sequelizeAdapter.extract — export shapes", () => {
   it("finds a named export directly (mod.sequelize)", async () => {
     const model = await extractFixture("named-export.js");
-    expect(model.entities.map((e) => e.name).sort()).toEqual([
+    expect(model.entities.map((e) => e.name).toSorted()).toEqual([
       "Post",
       "Tag",
       "User",
@@ -120,7 +120,8 @@ describe("sequelizeAdapter.extract — relation dedup", () => {
     const postTagRelations = model.relations.filter(
       (r) =>
         r.type === "n-n" &&
-        [r.from, r.to].sort().join(",") === ["Post", "Tag"].sort().join(","),
+        [r.from, r.to].toSorted().join(",") ===
+          ["Post", "Tag"].toSorted().join(","),
     );
     expect(postTagRelations).toHaveLength(1);
   });

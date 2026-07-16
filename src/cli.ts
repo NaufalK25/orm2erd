@@ -1,4 +1,4 @@
-import { Command, OptionValues } from "commander";
+import { Command } from "commander";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, extname } from "node:path";
 import {
@@ -24,7 +24,7 @@ import type { ORMName } from "./core/orm";
 const ALL_ORM_NAMES = Object.keys(adapters) as ORMName[];
 
 interface ProgramOptions {
-  orm: string;
+  orm: ORMName;
   entry: string;
   format: string;
   out: string;
@@ -72,7 +72,6 @@ function orExit<T>(value: T | symbol): T {
 
 async function resolveORM(
   cwd: string,
-  opts: OptionValues,
   detected: DetectedORM[],
   interactive: boolean,
 ): Promise<{ ormName: ORMName; entryCandidates: string[] }> {
@@ -189,10 +188,7 @@ function resolveOutPath(
   return `${stem}.${extension}`;
 }
 
-async function resolveFormats(
-  opts: OptionValues,
-  interactive: boolean,
-): Promise<OutputFormat[]> {
+async function resolveFormats(interactive: boolean): Promise<OutputFormat[]> {
   let formats: OutputFormat[];
   if (opts.format) {
     formats = (opts.format as string)
@@ -299,7 +295,6 @@ async function main() {
 
   const { ormName, entryCandidates } = await resolveORM(
     cwd,
-    opts,
     detected,
     interactive,
   );
@@ -308,7 +303,7 @@ async function main() {
     opts.entry ??
     (await resolveEntryPath(ormName, entryCandidates, interactive));
 
-  const formats = await resolveFormats(opts, interactive);
+  const formats = await resolveFormats(interactive);
   const selectedEmitters = formats.map(getEmitter);
   const outExample = `erd.${selectedEmitters[0].fileExtension}`;
   const outBase = opts.out ?? (await resolveOutBase(interactive, outExample));

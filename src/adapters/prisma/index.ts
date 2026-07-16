@@ -63,6 +63,7 @@ export const prismaAdapter: ORMAdapter = {
     } catch (err) {
       throw new Error(
         `Failed to load Prisma schema from "${entry.path}": ${(err as Error).message}. Check the --entry path or run without --entry to pick interactively.`,
+        { cause: err },
       );
     }
 

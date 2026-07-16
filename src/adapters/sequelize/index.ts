@@ -170,6 +170,7 @@ export const sequelizeAdapter: ORMAdapter = {
     } catch (err) {
       throw new Error(
         `Failed to load Sequelize entry from "${input}": ${(err as Error).message}. Check the --entry path or run without --entry to pick interactively.`,
+        { cause: err },
       );
     }
   },
@@ -239,9 +240,9 @@ export const sequelizeAdapter: ORMAdapter = {
         // share the same foreignKey on both sides.
         const fkKey =
           assoc.associationType === "BelongsToMany" && assoc.otherKey
-            ? [assoc.foreignKey, assoc.otherKey].sort().join(",")
+            ? [assoc.foreignKey, assoc.otherKey].toSorted().join(",")
             : assoc.foreignKey;
-        const key = `${[model.name, assoc.target.name].sort().join("::")}::${fkKey}`;
+        const key = `${[model.name, assoc.target.name].toSorted().join("::")}::${fkKey}`;
         const sides = sidesByKey.get(key) ?? [];
         sides.push({
           modelName: model.name,
