@@ -36,7 +36,7 @@ describe("sequelizeDetector.detect", () => {
     const result = await sequelizeDetector.detect(cwd);
     expect(result).toEqual({
       found: true,
-      candidates: [join(cwd, "src/models")],
+      candidates: ["src/models"],
       confidence: 1,
     });
   });
@@ -46,7 +46,7 @@ describe("sequelizeDetector.detect", () => {
     const result = await sequelizeDetector.detect(cwd);
     expect(result).toEqual({
       found: true,
-      candidates: [join(cwd, "models")],
+      candidates: ["models"],
       confidence: 1,
     });
   });
@@ -56,7 +56,7 @@ describe("sequelizeDetector.detect", () => {
     const result = await sequelizeDetector.detect(cwd);
     expect(result).toEqual({
       found: true,
-      candidates: [join(cwd, "models")],
+      candidates: ["models"],
       confidence: 1,
     });
   });
@@ -66,7 +66,7 @@ describe("sequelizeDetector.detect", () => {
     const result = await sequelizeDetector.detect(cwd);
     expect(result).toEqual({
       found: true,
-      candidates: [join(cwd, "models"), join(cwd, "src/models")],
+      candidates: ["models", "src/models"],
       confidence: 0.5,
     });
   });
