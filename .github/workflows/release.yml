@@ -28,7 +28,7 @@ jobs:
         id: release
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          TAG="v.$VERSION"
+          TAG="v$VERSION"
           if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
             TAG_SHA=$(git rev-parse -q --verify "refs/tags/$TAG" || true)
             HEAD_SHA=$(git rev-parse HEAD)
