@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:
@@ -47,6 +48,10 @@ jobs:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
 
+      # Trusted-publisher OIDC exchange needs npm >= 11.5.1, newer than
+      # what some node-version:24 images currently bundle.
+      - run: npm install -g npm@latest
+        if: steps.release.outputs.should_release == 'true'
       - run: npm ci
         if: steps.release.outputs.should_release == 'true'
       - run: npm run build
@@ -55,8 +60,6 @@ jobs:
       - name: Publish to npm
         if: steps.release.outputs.should_release == 'true'
         run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Extract changelog section
         if: steps.release.outputs.should_release == 'true'
