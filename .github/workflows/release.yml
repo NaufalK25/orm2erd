@@ -20,6 +20,7 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0 # need tag history to confirm this commit is the tagged one
+          fetch-tags: true # actions/checkout doesn't fetch tags by default, even with fetch-depth: 0
 
       # workflow_run fires on every Auto Tag completion, not just ones that
       # tag a new commit — only release when this commit is the tagged one.
