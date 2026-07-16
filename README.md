@@ -32,7 +32,7 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 | | Format | Status |
 | --- | --- | --- |
 | <img src="./.github/assets/mermaid.svg" width="16" height="16" alt="Mermaid Icon"> | Mermaid | ✅ Supported |
-| | DBML | 🚧 Planned |
+| <img src="./.github/assets/dbml.svg" width="16" height="16" alt="DBML Icon"> | DBML | ✅ Supported |
 | | PlantUML | 🚧 Planned |
 | | D2 | 🚧 Planned |
 

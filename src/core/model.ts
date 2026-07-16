@@ -35,6 +35,15 @@ export interface Relation {
   to: string;
   type: "1-1" | "1-n" | "n-n";
   fieldName?: string;
+  // Whether `fromColumn`/`toColumn` land on the FK-holding side or the
+  // referenced side isn't fixed by `type` — each adapter works this out
+  // per relation (e.g. for 1-n the FK physically lives on `to`, not
+  // `from`). See the relation-building logic in each adapter
+  // (src/adapters/prisma/index.ts, src/adapters/sequelize/index.ts) for
+  // how each one resolves this. Both are omitted when unresolvable, e.g.
+  // implicit many-to-many join tables.
+  fromColumn?: string;
+  toColumn?: string;
 }
 
 export interface ERDModel {

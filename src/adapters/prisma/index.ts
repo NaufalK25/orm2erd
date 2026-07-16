@@ -121,6 +121,8 @@ export const prismaAdapter: ORMAdapter = {
       relatedModel: string;
       isList: boolean;
       hasFK: boolean;
+      fkColumn?: string;
+      refColumn?: string;
     }
 
     // Prisma emits a relation field on both related models, so group by
@@ -136,6 +138,8 @@ export const prismaAdapter: ORMAdapter = {
           relatedModel: f.type,
           isList: f.isList,
           hasFK: Boolean(f.relationFromFields?.length),
+          fkColumn: f.relationFromFields?.[0],
+          refColumn: f.relationToFields?.[0],
         });
         sidesByRelationName.set(f.relationName, sides);
       }
@@ -149,11 +153,15 @@ export const prismaAdapter: ORMAdapter = {
           to: only.relatedModel,
           type: (only.isList ? "1-n" : "1-1") as "1-1" | "1-n" | "n-n",
           fieldName: only.fieldName,
+          fromColumn: only.hasFK ? only.fkColumn : undefined,
+          toColumn: only.hasFK ? only.refColumn : undefined,
         };
       }
 
       const [a, b] = sides;
       if (a.isList && b.isList) {
+        // Implicit m2m join table — Prisma doesn't expose its FK columns
+        // as model fields, so there's no column to attach here.
         return {
           from: a.modelName,
           to: a.relatedModel,
@@ -163,11 +171,15 @@ export const prismaAdapter: ORMAdapter = {
       }
       if (a.isList !== b.isList) {
         const oneSide = a.isList ? a : b;
+        // The FK column lives on the non-list ("many") side, not `oneSide`.
+        const manySide = a.isList ? b : a;
         return {
           from: oneSide.modelName,
           to: oneSide.relatedModel,
           type: "1-n" as const,
           fieldName: oneSide.fieldName,
+          fromColumn: manySide.refColumn,
+          toColumn: manySide.fkColumn,
         };
       }
       // 1-1: use the side that actually holds the FK column as "from".
@@ -177,6 +189,8 @@ export const prismaAdapter: ORMAdapter = {
         to: owner.relatedModel,
         type: "1-1" as const,
         fieldName: owner.fieldName,
+        fromColumn: owner.fkColumn,
+        toColumn: owner.refColumn,
       };
     });
 

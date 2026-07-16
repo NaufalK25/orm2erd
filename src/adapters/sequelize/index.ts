@@ -8,13 +8,19 @@ import type { CanonicalType, ERDModel, Relation } from "../../core/model";
 
 // Local shapes for the Sequelize runtime metadata we read. Not imported from
 // `sequelize` itself, to avoid a dual-package hazard if the target project
-// has its own separate install. See https://sequelize.org/api/v7/classes/_sequelize_core.index.model
-// and .../index.association for the source of truth.
+// has its own separate install. Only v6.x is supported (see the version
+// check in `extract` below), so each shape below is trimmed from that
+// version's own `.d.ts` files — check those on a real mismatch, not v7's docs.
+
+// Mirrors the instance shape of `sequelize/types/data-types.d.ts`'s
+// `ABSTRACT`/`ENUM` classes (e.g. `DataTypes.STRING()`, `DataTypes.ENUM(...)`);
+// `.constructor.name` is the DataType's class name, e.g. "STRING", "ENUM".
 interface SequelizeDataType {
   constructor: { name: string };
   values?: string[]; // present on DataTypes.ENUM(...) instances
 }
 
+// Mirrors `ModelAttributeColumnOptions` in `sequelize/types/model.d.ts`.
 interface SequelizeAttribute {
   type: SequelizeDataType;
   primaryKey?: boolean;
@@ -23,6 +29,10 @@ interface SequelizeAttribute {
   defaultValue?: unknown;
 }
 
+// Mirrors the `Association` base class in
+// `sequelize/types/associations/base.d.ts`, narrowed to the fields read
+// here; `otherKey` only exists on `BelongsToMany`
+// (`sequelize/types/associations/belongs-to-many.d.ts`).
 interface SequelizeAssociation {
   associationType: "HasOne" | "BelongsTo" | "HasMany" | "BelongsToMany";
   foreignKey: string;
@@ -31,6 +41,8 @@ interface SequelizeAssociation {
   as?: string;
 }
 
+// Mirrors the static `Model.rawAttributes`/`Model.associations` members in
+// `sequelize/types/model.d.ts`.
 interface SequelizeModel {
   name: string;
   rawAttributes: Record<string, SequelizeAttribute>;
@@ -38,6 +50,7 @@ interface SequelizeModel {
   associate?: (models: Record<string, SequelizeModel>) => void;
 }
 
+// Mirrors the `Sequelize.models` member in `sequelize/types/sequelize.d.ts`.
 interface SequelizeInstance {
   models: Record<string, SequelizeModel>;
   define: (...args: unknown[]) => unknown;
@@ -139,6 +152,12 @@ async function loadSequelizeInstanceFromDirectory(
   );
 }
 
+function findPrimaryKeyField(model: SequelizeModel): string | undefined {
+  return Object.entries(model.rawAttributes).find(
+    ([, attr]) => attr.primaryKey,
+  )?.[0];
+}
+
 export const sequelizeAdapter: ORMAdapter = {
   name: "sequelize",
 
@@ -209,7 +228,10 @@ export const sequelizeAdapter: ORMAdapter = {
           ([fieldName, attr]) => ({
             name: fieldName,
             type: toCanonicalType(attr.type.constructor.name),
-            nativeType: attr.type.constructor.name,
+            nativeType:
+              attr.type.constructor.name === "ENUM"
+                ? `enum_${name}_${fieldName}`
+                : attr.type.constructor.name,
             isPrimaryKey: !!attr.primaryKey,
             isForeignKey: foreignKeyFields.has(fieldName),
             // rawAttributes doesn't set allowNull on primary keys, even
@@ -231,6 +253,7 @@ export const sequelizeAdapter: ORMAdapter = {
       relatedModel: string;
       fieldName?: string;
       associationType: SequelizeAssociation["associationType"];
+      foreignKey: string;
     }
 
     const sidesByKey = new Map<string, RelationSide[]>();
@@ -250,6 +273,7 @@ export const sequelizeAdapter: ORMAdapter = {
           relatedModel: assoc.target.name,
           fieldName: assoc.as,
           associationType: assoc.associationType,
+          foreignKey: assoc.foreignKey,
         });
         sidesByKey.set(key, sides);
       }
@@ -261,6 +285,8 @@ export const sequelizeAdapter: ORMAdapter = {
           (s) => s.associationType === "BelongsToMany",
         );
         if (belongsToMany) {
+          // Implicit join table — Sequelize doesn't model its two FK
+          // columns as attributes on either side, so nothing to attach.
           return {
             from: belongsToMany.modelName,
             to: belongsToMany.relatedModel,
@@ -271,11 +297,17 @@ export const sequelizeAdapter: ORMAdapter = {
 
         const hasMany = sides.find((s) => s.associationType === "HasMany");
         if (hasMany) {
+          // HasMany's foreignKey column lives on the target (`to`), not the
+          // declaring (`from`) model — it references `from`'s primary key.
           return {
             from: hasMany.modelName,
             to: hasMany.relatedModel,
             type: "1-n",
             fieldName: hasMany.fieldName,
+            fromColumn: findPrimaryKeyField(
+              sequelize.models[hasMany.modelName],
+            ),
+            toColumn: hasMany.foreignKey,
           };
         }
 
@@ -283,11 +315,24 @@ export const sequelizeAdapter: ORMAdapter = {
         // FK column — matches the Prisma adapter's "owner = side with FK".
         const belongsTo = sides.find((s) => s.associationType === "BelongsTo");
         const owner = belongsTo ?? sides[0];
+        // BelongsTo's foreignKey lives on the declaring model (`from`); a
+        // lone HasOne side (no inverse BelongsTo found) has it on `to`
+        // instead, same as HasMany above.
+        const fromColumn =
+          owner.associationType === "BelongsTo"
+            ? owner.foreignKey
+            : findPrimaryKeyField(sequelize.models[owner.modelName]);
+        const toColumn =
+          owner.associationType === "BelongsTo"
+            ? findPrimaryKeyField(sequelize.models[owner.relatedModel])
+            : owner.foreignKey;
         return {
           from: owner.modelName,
           to: owner.relatedModel,
           type: "1-1",
           fieldName: owner.fieldName,
+          fromColumn,
+          toColumn,
         };
       },
     );
