@@ -69,6 +69,8 @@ npx orm2erd
 │  mermaid
 ◆  Output path:
 │  erd.mermaid
+◆  Type labels:
+│  Canonical
 │
 ◇  Written to erd.mermaid
 │
@@ -78,13 +80,20 @@ npx orm2erd
 Non-interactive (CI-friendly):
 
 ```bash
-npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --out ./erd
+npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid,dbml --out ./erd
 ```
 
 You can select multiple output formats in a single run — the schema is parsed once and reused
 across every format you pick. `--out` accepts either a bare name (`erd`, gets each format's
 extension appended) or a full filename (`erd.md`, used exactly as given when there's only one
 output format).
+
+By default, field types are emitted in a canonical, portable form (e.g. `string`, `int`). Pass
+`--type-mode native` to emit the ORM's own type names instead (e.g. Prisma's `String`, `Int`):
+
+```bash
+npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --type-mode native
+```
 
 ## Why
 
