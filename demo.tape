@@ -26,11 +26,15 @@ Enter
 Sleep 1.5s
 Enter
 
-# ? Output format(s): (mermaid pre-checked)
+# ? Output format(s): (mermaid pre-checked, also toggle on dbml)
 Sleep 1.5s
+Down
+Sleep 500ms
+Space
+Sleep 500ms
 Enter
 
-# ? Output path: (prefilled with erd.mermaid)
+# ? Output path: (prefilled with erd, writes erd.mermaid + erd.dbml)
 Sleep 1.5s
 Enter
 
