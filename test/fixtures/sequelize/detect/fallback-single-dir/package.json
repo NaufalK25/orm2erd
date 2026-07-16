@@ -1,0 +1,7 @@
+{
+  "name": "fallback-single-dir-fixture",
+  "version": "1.0.0",
+  "dependencies": {
+    "sequelize": "^6.0.0"
+  }
+}

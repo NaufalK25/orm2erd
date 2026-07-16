@@ -1,0 +1,7 @@
+{
+  "name": "broken-rc-fixture",
+  "version": "1.0.0",
+  "dependencies": {
+    "sequelize": "^6.0.0"
+  }
+}
