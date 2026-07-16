@@ -188,17 +188,24 @@ async function resolveEntryPath(
 function resolveOutPath(
   base: string,
   extension: string,
-  outputCount: number,
+  allExtensions: string[],
 ): string {
-  const ext = extname(base);
+  const ext = extname(base).slice(1);
+
   // A single format with an explicit extension is used exactly as given
-  // (e.g. --out erd.md). With multiple formats, each needs its own
-  // extension, so any existing one is stripped and replaced per emitter.
-  if (ext && outputCount === 1) {
-    return base;
+  // (e.g. --out erd.md).
+  if (allExtensions.length === 1) {
+    return ext ? base : `${base}.${extension}`;
   }
-  const stem = ext ? base.slice(0, -ext.length) : base;
-  return `${stem}.${extension}`;
+
+  // With multiple formats, only strip an existing extension if it matches
+  // one this run will actually produce (e.g. base "erd.mermaid" while also
+  // emitting dbml) — otherwise it's part of the intended name (e.g.
+  // "file.erd") and each emitter's extension is appended after it.
+  if (ext && allExtensions.includes(ext)) {
+    return `${base.slice(0, -(ext.length + 1))}.${extension}`;
+  }
+  return `${base}.${extension}`;
 }
 
 async function resolveFormats(interactive: boolean): Promise<OutputFormat[]> {
@@ -250,11 +257,18 @@ async function resolveTypeMode(interactive: boolean): Promise<TypeMode> {
 async function resolveOutBase(
   interactive: boolean,
   outExample: string,
+  selectedEmitters: Emitter[],
 ): Promise<string> {
   if (interactive) {
+    const preview =
+      selectedEmitters.length > 1
+        ? ` (writes ${selectedEmitters
+            .map((e) => `${outExample}.${e.fileExtension}`)
+            .join(", ")})`
+        : "";
     return orExit(
       await text({
-        message: "Output path:",
+        message: `Output path:${preview}`,
         initialValue: outExample,
         defaultValue: outExample,
       }),
@@ -288,12 +302,13 @@ async function generateAndWrite(
       await mkdir(outDir, { recursive: true });
     }
 
+    const allExtensions = selectedEmitters.map((e) => e.fileExtension);
     const written: string[] = [];
     for (const emitter of selectedEmitters) {
       const outPath = resolveOutPath(
         outBase,
         emitter.fileExtension,
-        selectedEmitters.length,
+        allExtensions,
       );
       await writeFile(outPath, emitter.emit(model, { typeMode }), "utf-8");
       written.push(outPath);
@@ -338,8 +353,12 @@ async function main() {
 
   const formats = await resolveFormats(interactive);
   const selectedEmitters = formats.map(getEmitter);
-  const outExample = `erd.${selectedEmitters[0].fileExtension}`;
-  const outBase = opts.out ?? (await resolveOutBase(interactive, outExample));
+  const outExample =
+    selectedEmitters.length > 1
+      ? "erd"
+      : `erd.${selectedEmitters[0].fileExtension}`;
+  const outBase =
+    opts.out ?? (await resolveOutBase(interactive, outExample, selectedEmitters));
   const typeMode = await resolveTypeMode(interactive);
 
   await generateAndWrite(
