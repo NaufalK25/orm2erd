@@ -1,7 +1,10 @@
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import prismaInternals from "@prisma/internals";
 import type { Field } from "@prisma/dmmf";
 import type { ORMAdapter, ResolvedEntry } from "../types";
 import type { CanonicalType, ERDModel } from "../../core/model";
+import { resolvePrismaConfigSchema } from "./config";
 
 const PRISMA_SCALAR_TO_CANONICAL: Record<string, CanonicalType> = {
   String: "string",
@@ -47,8 +50,14 @@ function resolveDefaultValue(defaultValue?: Field["default"]) {
 export const prismaAdapter: ORMAdapter = {
   name: "prisma",
 
-  async resolveEntry(input) {
-    return { path: input };
+  async resolveEntry(input, cwd) {
+    const resolvedInput = resolve(cwd, input);
+    if (existsSync(resolvedInput)) {
+      return { path: resolvedInput };
+    }
+
+    const configSchema = await resolvePrismaConfigSchema(cwd);
+    return { path: configSchema ?? resolvedInput };
   },
 
   async extract(entry: ResolvedEntry): Promise<ERDModel> {

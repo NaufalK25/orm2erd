@@ -18,6 +18,22 @@ describe("prismaAdapter.resolveEntry", () => {
   });
 });
 
+describe("prismaAdapter.resolveEntry — prisma.config.*", () => {
+  const detectFixturesDir = join(fixturesDir, "detect");
+
+  it("resolves the schema path from prisma.config.* when the given input doesn't exist", async () => {
+    const cwd = join(detectFixturesDir, "config-only");
+    const entry = await prismaAdapter.resolveEntry("prisma/schema.prisma", cwd);
+    expect(entry.path).toBe(join(cwd, "custom/schema.prisma"));
+  });
+
+  it("prefers an existing input path over prisma.config.*", async () => {
+    const cwd = join(detectFixturesDir, "config-with-decoy");
+    const entry = await prismaAdapter.resolveEntry("prisma/schema.prisma", cwd);
+    expect(entry.path).toBe(join(cwd, "prisma/schema.prisma"));
+  });
+});
+
 describe.each([
   ["single-file schema", join(fixturesDir, "single/schema.prisma")],
   ["multi-file schema directory", join(fixturesDir, "multi/schema")],
