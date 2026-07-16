@@ -77,7 +77,6 @@ function orExit<T>(value: T | symbol): T {
 }
 
 async function resolveORM(
-  cwd: string,
   detected: DetectedORM[],
   interactive: boolean,
 ): Promise<{ ormName: ORMName; entryCandidates: string[] }> {
@@ -299,11 +298,7 @@ async function main() {
   const skipDetection = Boolean(opts.orm) && Boolean(opts.entry);
   const detected = skipDetection ? [] : await detectORMs(cwd);
 
-  const { ormName, entryCandidates } = await resolveORM(
-    cwd,
-    detected,
-    interactive,
-  );
+  const { ormName, entryCandidates } = await resolveORM(detected, interactive);
   const adapter = getAdapter(ormName);
   const entryPath =
     opts.entry ??

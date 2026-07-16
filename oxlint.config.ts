@@ -11,7 +11,10 @@ export default defineConfig({
     suspicious: "warn",
   },
   rules: {
-    "eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+    "eslint/no-unused-vars": [
+      "error",
+      { args: "all", argsIgnorePattern: "^_" },
+    ],
     "typescript/no-explicit-any": "error",
     "eslint/no-console": "off",
   },
