@@ -2,6 +2,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import type { Detector } from "./types";
+import { PackageJson } from "../core/package";
 
 const require = createRequire(import.meta.url);
 
@@ -14,11 +15,6 @@ export const sequelizeDetector: Detector = {
     const packageJsonPath = resolve(cwd, "package.json");
     if (!existsSync(packageJsonPath)) {
       return { found: false, candidates, confidence: 0 };
-    }
-
-    interface PackageJson {
-      dependencies?: Record<string, string>;
-      devDependencies?: Record<string, string>;
     }
 
     let packageJson: PackageJson;

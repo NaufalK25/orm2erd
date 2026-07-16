@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { mkdir, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { dirname, extname } from "node:path";
 import {
   intro,
@@ -20,8 +21,12 @@ import { Emitter, emitters, getEmitter } from "./emitters";
 import { withSuppressedOutput } from "./core/suppress-output";
 import type { OutputFormat } from "./core/format";
 import type { ORMName } from "./core/orm";
+import type { PackageJson } from "./core/package";
 
 const ALL_ORM_NAMES = Object.keys(adapters) as ORMName[];
+
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json") as PackageJson;
 
 interface ProgramOptions {
   orm: ORMName;
@@ -38,6 +43,7 @@ program
   .description(
     "Generate an ERD from your ORM's models/schema — no manual diagramming.",
   )
+  .version(version, "-v, --version", "output the current version")
   .option("--orm <name>", "ORM to use (prisma, sequelize)")
   .option("--entry <path>", "path to the ORM's schema/model entry")
   .option("--format <formats>", "output format(s), comma-separated (mermaid)")
