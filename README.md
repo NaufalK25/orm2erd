@@ -3,8 +3,7 @@
 You already built the app — your ORM models are the schema. `orm2erd` reads them and generates an
 ERD (Entity-Relationship Diagram) for you, instead of you drawing and maintaining one by hand.
 
-> **Status:** early development. Prisma → Mermaid is functional end to end; everything else below
-> is on the roadmap.
+> **Status:** early development — see the tables below for what's supported today vs. planned.
 
 ![orm2erd demo](./.github/assets/demo.gif)
 
@@ -20,12 +19,22 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 
 ## Supported ORMs
 
-- ✅ Prisma
-- ✅ Sequelize
+| | ORM | Status |
+| --- | --- | --- |
+| <img src="./.github/assets/prisma.svg" width="16" height="16" alt="Prisma Icon"> | Prisma | ✅ Supported |
+| <img src="./.github/assets/sequelize.svg" width="16" height="16" alt="Sequelize Icon"> | Sequelize | ✅ Supported |
+| | TypeORM | 🚧 Planned |
+| | Drizzle | 🚧 Planned |
+
 
 ## Output formats
 
-- ✅ Mermaid
+| | Format | Status |
+| --- | --- | --- |
+| <img src="./.github/assets/mermaid.svg" width="16" height="16" alt="Mermaid Icon"> | Mermaid | ✅ Supported |
+| | DBML | 🚧 Planned |
+| | PlantUML | 🚧 Planned |
+| | D2 | 🚧 Planned |
 
 ## Installation
 
