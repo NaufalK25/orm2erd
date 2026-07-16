@@ -358,7 +358,8 @@ async function main() {
       ? "erd"
       : `erd.${selectedEmitters[0].fileExtension}`;
   const outBase =
-    opts.out ?? (await resolveOutBase(interactive, outExample, selectedEmitters));
+    opts.out ??
+    (await resolveOutBase(interactive, outExample, selectedEmitters));
   const typeMode = await resolveTypeMode(interactive);
 
   await generateAndWrite(
