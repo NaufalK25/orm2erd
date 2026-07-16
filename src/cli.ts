@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import { Command, OptionValues } from "commander";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, extname } from "node:path";
 import {
@@ -14,14 +14,22 @@ import {
   isTTY,
   isCI,
 } from "@clack/prompts";
-import { detectORMs } from "./detect";
-import { getAdapter } from "./adapters";
-import { emitters, getEmitter } from "./emitters";
+import { DetectedORM, detectORMs } from "./detect";
+import { adapters, getAdapter, ORMAdapter } from "./adapters";
+import { Emitter, emitters, getEmitter } from "./emitters";
 import { withSuppressedOutput } from "./core/suppress-output";
 import type { OutputFormat } from "./core/format";
 import type { ORMName } from "./core/orm";
 
-const ALL_ORM_NAMES: ORMName[] = ["prisma", "sequelize"];
+const ALL_ORM_NAMES = Object.keys(adapters) as ORMName[];
+
+interface ProgramOptions {
+  orm: string;
+  entry: string;
+  format: string;
+  out: string;
+  verbose: boolean;
+}
 
 const program = new Command();
 
@@ -50,7 +58,7 @@ Examples:
   )
   .parse();
 
-const opts = program.opts();
+const opts = program.opts<ProgramOptions>();
 
 // Unwraps a clack prompt result, exiting cleanly on Ctrl+C instead of
 // letting the cancel symbol leak into the rest of the pipeline.
@@ -62,34 +70,12 @@ function orExit<T>(value: T | symbol): T {
   return value;
 }
 
-function resolveOutPath(
-  base: string,
-  extension: string,
-  outputCount: number,
-): string {
-  const ext = extname(base);
-  // A single format with an explicit extension is used exactly as given
-  // (e.g. --out erd.md). With multiple formats, each needs its own
-  // extension, so any existing one is stripped and replaced per emitter.
-  if (ext && outputCount === 1) {
-    return base;
-  }
-  const stem = ext ? base.slice(0, -ext.length) : base;
-  return `${stem}.${extension}`;
-}
-
-async function main() {
-  const cwd = process.cwd();
-  // isCI() is also checked because some CI runners still report a TTY.
-  const interactive = isTTY(process.stdout) && !isCI();
-
-  if (interactive) intro("orm2erd");
-
-  // Both flags are required to skip detection, not just --orm: without
-  // --entry, detection still needs to run to populate entryCandidates.
-  const skipDetection = Boolean(opts.orm) && Boolean(opts.entry);
-  const detected = skipDetection ? [] : await detectORMs(cwd);
-
+async function resolveORM(
+  cwd: string,
+  opts: OptionValues,
+  detected: DetectedORM[],
+  interactive: boolean,
+): Promise<{ ormName: ORMName; entryCandidates: string[] }> {
   let ormName: ORMName | undefined = opts.orm;
   let entryCandidates: string[] = [];
 
@@ -138,52 +124,75 @@ async function main() {
       detected.find((d) => d.name === ormName)?.candidates ?? [];
   }
 
-  const adapter = getAdapter(ormName);
+  return { ormName, entryCandidates };
+}
 
-  let entryPath: string | undefined = opts.entry;
-  if (!entryPath) {
-    if (entryCandidates.length > 1) {
-      // Ambiguous: e.g. Prisma with both a single schema.prisma and a
-      // multi-file prisma/schema/ directory present at once.
-      if (interactive) {
-        entryPath = orExit(
-          await select({
-            message: `Multiple schema locations found for ${ormName} — which one?`,
-            options: entryCandidates.map((c) => ({ value: c, label: c })),
-          }),
-        );
-      } else {
-        console.error(
-          `Multiple possible entry points found for ${ormName}:\n` +
-            entryCandidates.map((c) => `  - ${c}`).join("\n") +
-            `\nPass one explicitly via --entry.`,
-        );
-        process.exit(1);
-      }
-    } else if (interactive) {
-      const suggestedEntry = entryCandidates[0];
-      entryPath = orExit(
-        await text({
-          message: `Entry point for ${ormName}:`,
-          initialValue: suggestedEntry,
-          placeholder: suggestedEntry ?? "./path/to/schema",
-          validate: (value) => (value ? undefined : "Entry path is required."),
+async function resolveEntryPath(
+  ormName: ORMName,
+  entryCandidates: string[],
+  interactive: boolean,
+): Promise<string> {
+  if (entryCandidates.length > 1) {
+    // Ambiguous: e.g. Prisma with both a single schema.prisma and a
+    // multi-file prisma/schema/ directory present at once.
+    if (interactive) {
+      return orExit(
+        await select({
+          message: `Multiple schema locations found for ${ormName} — which one?`,
+          options: entryCandidates.map((c) => ({ value: c, label: c })),
         }),
       );
-    } else if (entryCandidates.length === 1) {
-      entryPath = entryCandidates[0];
-    } else {
-      console.error(
-        `No entry point found for ${ormName}. Provide one via --entry.`,
-      );
-      process.exit(1);
     }
-  }
-
-  if (!entryPath) {
+    console.error(
+      `Multiple possible entry points found for ${ormName}:\n` +
+        entryCandidates.map((c) => `  - ${c}`).join("\n") +
+        `\nPass one explicitly via --entry.`,
+    );
     process.exit(1);
   }
 
+  if (interactive) {
+    const suggestedEntry = entryCandidates[0];
+    return orExit(
+      await text({
+        message: `Entry point for ${ormName}:`,
+        initialValue: suggestedEntry,
+        placeholder: suggestedEntry ?? "./path/to/schema",
+        validate: (value) => (value ? undefined : "Entry path is required."),
+      }),
+    );
+  }
+
+  if (entryCandidates.length === 1) {
+    return entryCandidates[0];
+  }
+
+  console.error(
+    `No entry point found for ${ormName}. Provide one via --entry.`,
+  );
+  process.exit(1);
+}
+
+function resolveOutPath(
+  base: string,
+  extension: string,
+  outputCount: number,
+): string {
+  const ext = extname(base);
+  // A single format with an explicit extension is used exactly as given
+  // (e.g. --out erd.md). With multiple formats, each needs its own
+  // extension, so any existing one is stripped and replaced per emitter.
+  if (ext && outputCount === 1) {
+    return base;
+  }
+  const stem = ext ? base.slice(0, -ext.length) : base;
+  return `${stem}.${extension}`;
+}
+
+async function resolveFormats(
+  opts: OptionValues,
+  interactive: boolean,
+): Promise<OutputFormat[]> {
   let formats: OutputFormat[];
   if (opts.format) {
     formats = (opts.format as string)
@@ -203,31 +212,41 @@ async function main() {
   } else {
     formats = ["mermaid"];
   }
-  const selectedEmitters = formats.map(getEmitter);
+  return formats;
+}
 
-  const outExample = `erd.${selectedEmitters[0].fileExtension}`;
-
-  let outBase: string;
-  if (opts.out) {
-    outBase = opts.out;
-  } else if (interactive) {
-    outBase = orExit(
+async function resolveOutBase(
+  interactive: boolean,
+  outExample: string,
+): Promise<string> {
+  if (interactive) {
+    return orExit(
       await text({
         message: "Output path:",
         initialValue: outExample,
         defaultValue: outExample,
       }),
     );
-  } else {
-    outBase = "erd";
   }
 
+  return "erd";
+}
+
+async function generateAndWrite(
+  cwd: string,
+  adapter: ORMAdapter,
+  entryPath: string,
+  selectedEmitters: Emitter[],
+  outBase: string,
+  verbose: boolean,
+  interactive: boolean,
+): Promise<void> {
   const s = interactive ? spinner() : undefined;
   s?.start("Generating...");
 
   try {
     const entry = await adapter.resolveEntry(entryPath, cwd);
-    const model = opts.verbose
+    const model = verbose
       ? await adapter.extract(entry)
       : await withSuppressedOutput(() => adapter.extract(entry));
 
@@ -264,6 +283,45 @@ async function main() {
     }
     process.exit(1);
   }
+}
+
+async function main() {
+  const cwd = process.cwd();
+  // isCI() is also checked because some CI runners still report a TTY.
+  const interactive = isTTY(process.stdout) && !isCI();
+
+  if (interactive) intro("orm2erd");
+
+  // Both flags are required to skip detection, not just --orm: without
+  // --entry, detection still needs to run to populate entryCandidates.
+  const skipDetection = Boolean(opts.orm) && Boolean(opts.entry);
+  const detected = skipDetection ? [] : await detectORMs(cwd);
+
+  const { ormName, entryCandidates } = await resolveORM(
+    cwd,
+    opts,
+    detected,
+    interactive,
+  );
+  const adapter = getAdapter(ormName);
+  const entryPath =
+    opts.entry ??
+    (await resolveEntryPath(ormName, entryCandidates, interactive));
+
+  const formats = await resolveFormats(opts, interactive);
+  const selectedEmitters = formats.map(getEmitter);
+  const outExample = `erd.${selectedEmitters[0].fileExtension}`;
+  const outBase = opts.out ?? (await resolveOutBase(interactive, outExample));
+
+  await generateAndWrite(
+    cwd,
+    adapter,
+    entryPath,
+    selectedEmitters,
+    outBase,
+    opts.verbose,
+    interactive,
+  );
 }
 
 main();
