@@ -21,8 +21,8 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 
 | | ORM | Status |
 | --- | --- | --- |
-| <img src="./.github/assets/prisma.svg" width="16" height="16" alt="Prisma Icon"> | Prisma | ✅ Supported |
-| <img src="./.github/assets/sequelize.svg" width="16" height="16" alt="Sequelize Icon"> | Sequelize | ✅ Supported |
+| <img src="./.github/assets/prisma.svg" width="16" height="16" alt="Prisma Icon" style="vertical-align:middle;"> | Prisma | ✅ Supported |
+| <img src="./.github/assets/sequelize.svg" width="16" height="16" alt="Sequelize Icon" style="vertical-align:middle;"> | Sequelize | ✅ Supported |
 | | TypeORM | 🚧 Planned |
 | | Drizzle | 🚧 Planned |
 
@@ -31,8 +31,8 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 
 | | Format | Status |
 | --- | --- | --- |
-| <img src="./.github/assets/mermaid.svg" width="16" height="16" alt="Mermaid Icon"> | Mermaid | ✅ Supported |
-| <img src="./.github/assets/dbml.svg" width="16" height="16" alt="DBML Icon"> | DBML | ✅ Supported |
+| <img src="./.github/assets/mermaid.svg" width="16" height="16" alt="Mermaid Icon" style="vertical-align:middle;"> | Mermaid | ✅ Supported |
+| <img src="./.github/assets/dbml.svg" width="16" height="16" alt="DBML Icon" style="vertical-align:middle;"> | DBML | ✅ Supported |
 | | PlantUML | 🚧 Planned |
 | | D2 | 🚧 Planned |
 
