@@ -34,7 +34,7 @@ describe("mermaidEmitter", () => {
       relations: [],
     };
 
-    const output = mermaidEmitter.emit(model);
+    const output = mermaidEmitter.emit(model, { typeMode: "canonical" });
 
     expect(output).toContain("erDiagram");
     expect(output).toContain("User {");
@@ -55,7 +55,7 @@ describe("mermaidEmitter", () => {
       ],
     };
 
-    const output = mermaidEmitter.emit(model);
+    const output = mermaidEmitter.emit(model, { typeMode: "canonical" });
 
     expect(output).toContain('User ||--|| Profile : "profile"');
     expect(output).toContain('User ||--o{ Post : "posts"');
@@ -86,7 +86,7 @@ describe("mermaidEmitter", () => {
       relations: [],
     };
 
-    const output = mermaidEmitter.emit(model);
+    const output = mermaidEmitter.emit(model, { typeMode: "canonical" });
 
     expect(output).toContain("string? title");
     expect(output).toContain("string[] tags");

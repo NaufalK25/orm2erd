@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, extname } from "node:path";
@@ -19,7 +19,7 @@ import { DetectedORM, detectORMs } from "./detect";
 import { adapters, getAdapter, ORMAdapter } from "./adapters";
 import { Emitter, emitters, getEmitter } from "./emitters";
 import { withSuppressedOutput } from "./core/suppress-output";
-import type { OutputFormat } from "./core/format";
+import type { OutputFormat, TypeMode } from "./core/format";
 import type { ORMName } from "./core/orm";
 import type { PackageJson } from "./core/package";
 
@@ -33,6 +33,7 @@ interface ProgramOptions {
   entry: string;
   format: string;
   out: string;
+  typeMode: TypeMode;
   verbose: boolean;
 }
 
@@ -51,6 +52,12 @@ program
     "--out <path>",
     "output path — a full filename (e.g. erd.md) is used as-is; a bare name (e.g. erd) gets the format's extension appended",
   )
+  .addOption(
+    new Option(
+      "--type-mode <mode>",
+      "type labels to emit: canonical (portable) or native (ORM-specific)",
+    ).choices(["canonical", "native"]),
+  )
   .option(
     "--verbose",
     "show log output from the target codebase during extraction (suppressed by default)",
@@ -60,7 +67,8 @@ program
     `
 Examples:
   $ orm2erd
-  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid,dbml --out ./erd`,
+  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid,dbml --out ./erd
+  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --type-mode native`,
   )
   .parse();
 
@@ -216,6 +224,29 @@ async function resolveFormats(interactive: boolean): Promise<OutputFormat[]> {
   return formats;
 }
 
+async function resolveTypeMode(interactive: boolean): Promise<TypeMode> {
+  if (opts.typeMode) {
+    return opts.typeMode;
+  }
+  if (interactive) {
+    return orExit(
+      await select({
+        message: "Type labels:",
+        options: [
+          {
+            value: "canonical",
+            label: "Canonical",
+            hint: "portable across ORMs",
+          },
+          { value: "native", label: "Native", hint: "ORM-specific type names" },
+        ],
+        initialValue: "canonical",
+      }),
+    );
+  }
+  return "canonical";
+}
+
 async function resolveOutBase(
   interactive: boolean,
   outExample: string,
@@ -239,6 +270,7 @@ async function generateAndWrite(
   entryPath: string,
   selectedEmitters: Emitter[],
   outBase: string,
+  typeMode: TypeMode,
   verbose: boolean,
   interactive: boolean,
 ): Promise<void> {
@@ -263,7 +295,7 @@ async function generateAndWrite(
         emitter.fileExtension,
         selectedEmitters.length,
       );
-      await writeFile(outPath, emitter.emit(model), "utf-8");
+      await writeFile(outPath, emitter.emit(model, { typeMode }), "utf-8");
       written.push(outPath);
     }
 
@@ -308,6 +340,7 @@ async function main() {
   const selectedEmitters = formats.map(getEmitter);
   const outExample = `erd.${selectedEmitters[0].fileExtension}`;
   const outBase = opts.out ?? (await resolveOutBase(interactive, outExample));
+  const typeMode = await resolveTypeMode(interactive);
 
   await generateAndWrite(
     cwd,
@@ -315,6 +348,7 @@ async function main() {
     entryPath,
     selectedEmitters,
     outBase,
+    typeMode,
     opts.verbose,
     interactive,
   );

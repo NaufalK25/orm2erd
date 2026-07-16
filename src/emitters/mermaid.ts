@@ -3,13 +3,17 @@ import type { Emitter } from "./types";
 export const mermaidEmitter: Emitter = {
   format: "mermaid",
   fileExtension: "mermaid",
-  emit(model) {
+  emit(model, options) {
+    const { typeMode } = options;
+
     const lines = ["erDiagram"];
 
     for (const entity of model.entities) {
       lines.push(`  ${entity.name} {`);
       for (const field of entity.fields) {
-        const typeLabel = `${field.type}${field.isList ? "[]" : ""}${field.isNullable ? "?" : ""}`;
+        const displayType =
+          typeMode === "native" ? field.nativeType : field.type;
+        const typeLabel = `${displayType}${field.isList ? "[]" : ""}${field.isNullable ? "?" : ""}`;
         const constraints = [
           field.isPrimaryKey && "PK",
           field.isForeignKey && "FK",
