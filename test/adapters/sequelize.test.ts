@@ -110,6 +110,13 @@ describe("sequelizeAdapter.extract — field mapping", () => {
     expect(status.enumValues).toEqual(["draft", "published"]);
     expect(status.defaultValue).toBe("draft");
   });
+
+  it("resolves a sentinel DataType default (e.g. DataTypes.UUIDV4) to its constructor name, not '{}'", async () => {
+    const model = await extractFixture("named-export.js");
+    const user = model.entities.find((e) => e.name === "User")!;
+    const externalId = user.fields.find((f) => f.name === "externalId")!;
+    expect(externalId.defaultValue).toBe("UUIDV4()");
+  });
 });
 
 describe("sequelizeAdapter.extract — relation dedup", () => {

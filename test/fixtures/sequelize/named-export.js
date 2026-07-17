@@ -2,6 +2,10 @@ function dataType(name, values) {
   return { constructor: { name }, values };
 }
 
+// Mirrors Sequelize's sentinel DataTypes (e.g. DataTypes.UUIDV4/NOW): class
+// instances with no own properties, used as-is as a defaultValue.
+class UUIDV4 {}
+
 export const sequelize = {
   models: {
     User: {
@@ -15,6 +19,7 @@ export const sequelize = {
         name: { type: dataType("STRING"), allowNull: false },
         email: { type: dataType("STRING"), unique: true },
         isActive: { type: dataType("BOOLEAN"), defaultValue: true },
+        externalId: { type: dataType("UUID"), defaultValue: new UUIDV4() },
       },
       associations: {
         posts: {

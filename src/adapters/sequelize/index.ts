@@ -85,6 +85,16 @@ function toCanonicalType(nativeType: string): CanonicalType {
 function resolveDefaultValue(value: unknown): string | undefined {
   if (value === undefined) return undefined;
   if (typeof value === "function") return value.name || "(function)";
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    // Sentinel DataTypes like DataTypes.UUIDV4/DataTypes.NOW are class
+    // instances with no own properties — JSON.stringify would just give
+    // "{}". Use the constructor name instead, same as column types, with
+    // "()" to signal it's generated rather than a literal value.
+    const ctorName = value.constructor?.name;
+    if (ctorName && ctorName !== "Object" && Object.keys(value).length === 0) {
+      return `${ctorName}()`;
+    }
+  }
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
