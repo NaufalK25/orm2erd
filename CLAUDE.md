@@ -19,7 +19,7 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 src/
   cli.ts
   detect/          # index.ts + one file per ORM
-  adapters/        # types.ts + one folder per ORM (prisma/, typeorm/, sequelize/, drizzle/)
+  adapters/        # types.ts + one folder per ORM (prisma/, sequelize/, mongoose/)
   core/model.ts    # the ERDModel IR types
   emitters/        # types.ts + one file per format (mermaid.ts, dbml.ts, plantuml.ts, d2.ts)
 bin/
@@ -84,24 +84,26 @@ interface Emitter {
 ## Detection behavior
 
 - Scan `package.json` deps + filesystem signals (e.g. `schema.prisma` presence) for known ORMs:
-  Prisma, TypeORM, Sequelize, Drizzle (more later).
+  Prisma, Sequelize, Mongoose (more later).
 - If 0 ORMs detected → prompt user to manually pick (or report "not supported yet").
 - If 2+ ORMs detected → show a picker for the user to choose.
 - After detection, the user still manually confirms/provides the entry file or model directory:
   - Prisma: `schema.prisma` path
-  - TypeORM: DataSource config
   - Sequelize: model dir + associations file
-  - Drizzle: schema file(s)
+  - Mongoose: model dir (or a single entry file) — no config file convention to anchor on, so
+    detection falls back to scanning file contents for actual `Schema`/`model` calls (see
+    `src/detect/mongoose.ts` and the shared matcher in `src/adapters/mongoose/schema-source.ts`)
 
 ## Parsing strategy — no regex for extraction
 
 - **Prisma**: static parse via `@prisma/internals` `getDMMF()`. `schema.prisma` is a DSL with an
   official parser already — use it, don't hand-roll one.
-- **TypeORM / Sequelize / Drizzle**: runtime introspection. Actually import the user's
-  compiled/ts-node'd model files and read the ORM's own already-computed metadata:
-  - TypeORM: `getMetadataArgsStorage()`
+- **Sequelize / Mongoose**: runtime introspection. Actually import the user's compiled/ts-node'd
+  model files and read the ORM's own already-computed metadata:
   - Sequelize: `sequelize.models` / `.associations`
-  - Drizzle: `getTableConfig()`
+  - Mongoose: `mongoose.models`, each model's `schema.paths` for fields, and `ref` options for
+    relations (no explicit association API like Sequelize's, so cardinality is inferred from
+    array-vs-singular paths and `unique`)
   This avoids hand-rolling AST parsers per ORM. Requires `tsx`/`ts-node` to execute user TS files
   at runtime. No DB connection needed — just schema-level metadata.
 - Regex is only ever used for cheap pre-checks during detection (e.g. "does this file mention

@@ -1,1 +1,1 @@
-export type ORMName = "prisma" | "sequelize";
+export type ORMName = "prisma" | "sequelize" | "mongoose";
