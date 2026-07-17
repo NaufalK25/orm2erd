@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🏷️ [1.2.3] - 2026-07-17
+
+### 🚀 Added
+
+- Sequelize extraction now also auto-loads a `.env.local` file (in addition
+  to `.env`) from the project root before running, matching the common
+  Next.js-style local-env convention. This is best-effort: it just makes
+  those variables available to the entry file while it loads, in case the
+  target codebase validates env vars (e.g. for DB config) at import time.
+
+### 💊 Fixed
+
+- A target entry file calling `process.exit()` while orm2erd was loading it
+  (e.g. on a failed DB connection attempt) killed the whole CLI before our
+  own error handling ever saw it, showing a misleading "Canceled" instead of
+  a real error. It's now caught and surfaced as a normal, readable error.
+- The release workflow's "is this commit newly tagged" check compared an
+  annotated tag's own object SHA (what `git rev-parse refs/tags/vX.Y.Z`
+  returns) against the commit SHA, which never match — so it always
+  concluded the tag wasn't new and silently skipped the release. The tag is
+  now peeled to the commit it points at before comparing.
+
 ## 🏷️ [1.2.2] - 2026-07-17
 
 ### 💊 Fixed
