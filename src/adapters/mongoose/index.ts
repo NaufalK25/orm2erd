@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { tsImport } from "tsx/esm/api";
 import type { ORMAdapter, ResolvedEntry } from "../types";
+import { loadDotEnvFiles } from "../../core/dotenv";
 import { looksLikeMongooseSchemaSource } from "./schema-source";
 import type {
   MongooseModel,
@@ -381,11 +382,7 @@ export const mongooseAdapter: ORMAdapter = {
   },
 
   async extract(entry: ResolvedEntry): Promise<ERDModel> {
-    for (const file of [".env.local", ".env"]) {
-      try {
-        process.loadEnvFile(file);
-      } catch {}
-    }
+    loadDotEnvFiles();
 
     const stat = statSync(entry.path);
     const filesToImport = stat.isDirectory()

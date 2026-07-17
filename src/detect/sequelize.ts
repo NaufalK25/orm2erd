@@ -1,7 +1,8 @@
-import { existsSync, statSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { relative, resolve } from "node:path";
 import type { Detector } from "./types";
+import { confidenceFromCandidates, findFallbackModelDirs } from "./shared";
 import { readPackageJson } from "../core/package";
 
 const require = createRequire(import.meta.url);
@@ -48,19 +49,13 @@ export const sequelizeDetector: Detector = {
     }
 
     if (candidates.length === 0) {
-      const fallbackDirs = ["models", "src/models", "db/models", "app/models"];
-      for (const dir of fallbackDirs) {
-        const candidate = resolve(cwd, dir);
-        if (existsSync(candidate) && statSync(candidate).isDirectory()) {
-          candidates.push(relative(cwd, candidate));
-        }
-      }
+      candidates.push(...findFallbackModelDirs(cwd));
     }
 
     return {
       found: candidates.length > 0,
       candidates,
-      confidence: candidates.length === 1 ? 1 : candidates.length > 1 ? 0.5 : 0,
+      confidence: confidenceFromCandidates(candidates),
     };
   },
 };

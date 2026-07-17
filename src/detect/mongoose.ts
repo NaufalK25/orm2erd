@@ -1,6 +1,7 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
 import type { Detector } from "./types";
+import { confidenceFromCandidates, findFallbackModelDirs } from "./shared";
 import { readPackageJson } from "../core/package";
 import { looksLikeMongooseSchemaSource } from "../adapters/mongoose/schema-source";
 
@@ -98,13 +99,7 @@ export const mongooseDetector: Detector = {
     }
 
     if (candidates.length === 0) {
-      const fallbackDirs = ["models", "src/models", "db/models", "app/models"];
-      for (const dir of fallbackDirs) {
-        const candidate = resolve(cwd, dir);
-        if (existsSync(candidate) && statSync(candidate).isDirectory()) {
-          candidates.push(relative(cwd, candidate));
-        }
-      }
+      candidates.push(...findFallbackModelDirs(cwd));
     }
 
     // No naming convention hit — fall back to scanning file contents for
@@ -117,7 +112,7 @@ export const mongooseDetector: Detector = {
     return {
       found: candidates.length > 0,
       candidates,
-      confidence: candidates.length === 1 ? 1 : candidates.length > 1 ? 0.5 : 0,
+      confidence: confidenceFromCandidates(candidates),
     };
   },
 };

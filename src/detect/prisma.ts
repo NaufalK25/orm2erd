@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { Detector } from "./types";
+import { confidenceFromCandidates } from "./shared";
 import { resolvePrismaConfigSchema } from "../adapters/prisma/config";
 
 export const prismaDetector: Detector = {
@@ -37,7 +38,7 @@ export const prismaDetector: Detector = {
     return {
       found: candidates.length > 0,
       candidates,
-      confidence: candidates.length === 1 ? 1 : candidates.length > 1 ? 0.5 : 0,
+      confidence: confidenceFromCandidates(candidates),
     };
   },
 };

@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import { tsImport } from "tsx/esm/api";
 import type { ORMAdapter, ResolvedEntry } from "../types";
 import type { CanonicalType, ERDModel, Relation } from "../../core/model";
+import { loadDotEnvFiles } from "../../core/dotenv";
 import type { RelationSide, SequelizeInstance, SequelizeModel } from "./types";
 
 const SEQUELIZE_TYPE_TO_CANONICAL: Record<string, CanonicalType> = {
@@ -157,14 +158,7 @@ export const sequelizeAdapter: ORMAdapter = {
   },
 
   async extract(entry: ResolvedEntry): Promise<ERDModel> {
-    // Loaded in priority order (.env.local wins on shared keys) since
-    // loadEnvFile doesn't override vars already set by an earlier call.
-    // Best-effort: most projects only have one of these, if any.
-    for (const file of [".env.local", ".env"]) {
-      try {
-        process.loadEnvFile(file);
-      } catch {}
-    }
+    loadDotEnvFiles();
 
     const stat = statSync(entry.path);
     const sequelize = stat.isFile()
