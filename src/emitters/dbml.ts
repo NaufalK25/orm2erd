@@ -37,7 +37,7 @@ export const dbmlEmitter: Emitter = {
           enumsByName.set(field.nativeType, field.enumValues);
         }
       }
-      lines.push("  }");
+      lines.push("}");
     }
 
     for (const rel of model.relations) {
