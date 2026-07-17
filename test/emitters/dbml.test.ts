@@ -65,8 +65,8 @@ describe("dbmlEmitter", () => {
 
     expect(output).toContain("status enum_Post_status");
     expect(output).toContain("Enum enum_Post_status {");
-    expect(output).toContain("  draft");
-    expect(output).toContain("  published");
+    expect(output).toContain("  \"draft\"");
+    expect(output).toContain("  \"published\"");
   });
 
   it("dedupes an enum shared by multiple fields into a single Enum block", () => {
