@@ -1,8 +1,8 @@
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { relative, resolve } from "node:path";
 import type { Detector } from "./types";
-import { PackageJson } from "../core/package";
+import { readPackageJson } from "../core/package";
 
 const require = createRequire(import.meta.url);
 
@@ -12,17 +12,8 @@ export const sequelizeDetector: Detector = {
   async detect(cwd) {
     const candidates: string[] = [];
 
-    const packageJsonPath = resolve(cwd, "package.json");
-    if (!existsSync(packageJsonPath)) {
-      return { found: false, candidates, confidence: 0 };
-    }
-
-    let packageJson: PackageJson;
-    try {
-      packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
-    } catch {
-      // Can't confirm the sequelize dependency without valid JSON, so bail
-      // rather than continue probing the filesystem.
+    const packageJson = readPackageJson(cwd);
+    if (!packageJson) {
       return { found: false, candidates, confidence: 0 };
     }
 

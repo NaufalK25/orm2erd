@@ -5,6 +5,7 @@ import type { Field } from "@prisma/dmmf";
 import type { ORMAdapter, ResolvedEntry } from "../types";
 import type { CanonicalType, ERDModel } from "../../core/model";
 import { resolvePrismaConfigSchema } from "./config";
+import type { RelationSide } from "./types";
 
 const PRISMA_SCALAR_TO_CANONICAL: Record<string, CanonicalType> = {
   String: "string",
@@ -114,16 +115,6 @@ export const prismaAdapter: ORMAdapter = {
           })),
       };
     });
-
-    interface RelationSide {
-      modelName: string;
-      fieldName: string;
-      relatedModel: string;
-      isList: boolean;
-      hasFK: boolean;
-      fkColumn?: string;
-      refColumn?: string;
-    }
 
     // Prisma emits a relation field on both related models, so group by
     // relationName and collapse each pair into a single Relation below.

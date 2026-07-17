@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import type { Detector } from "./types";
-import { PackageJson } from "../core/package";
+import { readPackageJson } from "../core/package";
 import { looksLikeMongooseSchemaSource } from "../adapters/mongoose/schema-source";
 
 // Mongoose has no config file or folder convention, so this content scan is
@@ -84,17 +84,8 @@ export const mongooseDetector: Detector = {
   async detect(cwd) {
     const candidates: string[] = [];
 
-    const packageJsonPath = resolve(cwd, "package.json");
-    if (!existsSync(packageJsonPath)) {
-      return { found: false, candidates, confidence: 0 };
-    }
-
-    let packageJson: PackageJson;
-    try {
-      packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
-    } catch {
-      // Can't confirm the mongoose dependency without valid JSON, so bail
-      // rather than continue probing the filesystem.
+    const packageJson = readPackageJson(cwd);
+    if (!packageJson) {
       return { found: false, candidates, confidence: 0 };
     }
 
