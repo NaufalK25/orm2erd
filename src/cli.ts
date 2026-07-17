@@ -19,6 +19,7 @@ import { DetectedORM, detectORMs } from "./detect";
 import { adapters, getAdapter, ORMAdapter } from "./adapters";
 import { Emitter, emitters, getEmitter } from "./emitters";
 import { withSuppressedOutput } from "./core/suppress-output";
+import { withGuardedExit } from "./core/guard-exit";
 import type { OutputFormat, TypeMode } from "./core/format";
 import type { ORMName } from "./core/orm";
 import type { PackageJson } from "./core/package";
@@ -293,9 +294,11 @@ async function generateAndWrite(
 
   try {
     const entry = await adapter.resolveEntry(entryPath, cwd);
-    const model = verbose
-      ? await adapter.extract(entry)
-      : await withSuppressedOutput(() => adapter.extract(entry));
+    const model = await withGuardedExit(() =>
+      verbose
+        ? adapter.extract(entry)
+        : withSuppressedOutput(() => adapter.extract(entry)),
+    );
 
     const outDir = dirname(outBase);
     if (outDir !== ".") {
