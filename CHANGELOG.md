@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🏷️ [1.3.0] - 2026-07-17
+
+### 🚀 Added
+
+- **Mongoose support.** Detection scans model files for `Schema`/`model`
+  calls (no config-file convention to anchor on like Prisma's
+  `schema.prisma` or Sequelize's model dir), and extraction runs the user's
+  compiled/ts-node'd model files at runtime to read `mongoose.models` and
+  each schema's `paths`. Relations are inferred from `ref` options, with
+  cardinality read off array-vs-singular paths and `unique`.
+- **PlantUML output** (`--format plantuml`), emitting entity-relationship
+  syntax with crow's-foot notation (`hide circle`,
+  `skinparam linetype ortho`), matching the existing Mermaid/DBML emitters.
+
+### 💊 Fixed
+
+- The Mermaid emitter wrote files with a `.mermaid` extension, which few
+  editors or GitHub recognize for syntax highlighting. It now uses `.mmd`,
+  the extension actually recognized by the Mermaid CLI, Live Editor, and
+  GitHub/GitLab's native rendering.
+- DBML enum values were emitted unquoted (e.g. `admin`), which broke for
+  values containing spaces, dashes, or other symbols (e.g. `in-progress`,
+  `pending review`) since DBML parses an unquoted value as a bare
+  identifier. Values are now wrapped in double quotes (`"in-progress"`),
+  matching DBML's actual enum syntax.
+- The DBML table emitter's closing `}` was indented two spaces, inconsistent
+  with every other emitted line.
+- Sequelize default values that are sentinel `DataTypes` instances (e.g.
+  `DataTypes.UUIDV4`, `DataTypes.NOW`) have no own properties, so
+  `JSON.stringify` on them just produced `"{}"`. These now fall back to the
+  constructor name (e.g. `UUIDV4()`), matching how column types are already
+  resolved, with `()` appended to signal it's generated rather than a
+  literal.
+
 ## 🏷️ [1.2.3] - 2026-07-17
 
 ### 🚀 Added
