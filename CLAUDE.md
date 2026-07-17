@@ -130,7 +130,7 @@ $ npx orm2erd
 ? Entry point for Prisma: ./prisma/schema.prisma (confirm/edit)
 ? Output format(s): [x] Mermaid [x] DBML [ ] PlantUML [ ] D2 (multi-select)
 ? Output path: ./erd
-Generating... ✔ Written to ./erd.mermaid.md, ./erd.dbml
+Generating... ✔ Written to ./erd.mmd, ./erd.dbml
 ```
 
 Non-interactive flags for CI:

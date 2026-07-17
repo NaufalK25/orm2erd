@@ -34,7 +34,7 @@ Space
 Sleep 500ms
 Enter
 
-# ? Output path: (prefilled with erd, writes erd.mermaid + erd.dbml)
+# ? Output path: (prefilled with erd, writes erd.mmd + erd.dbml)
 Sleep 1.5s
 Enter
 

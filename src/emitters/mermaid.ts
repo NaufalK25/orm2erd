@@ -2,7 +2,7 @@ import type { Emitter } from "./types";
 
 export const mermaidEmitter: Emitter = {
   format: "mermaid",
-  fileExtension: "mermaid",
+  fileExtension: "mmd",
   emit(model, options) {
     const { typeMode } = options;
 

@@ -200,7 +200,7 @@ function resolveOutPath(
   }
 
   // With multiple formats, only strip an existing extension if it matches
-  // one this run will actually produce (e.g. base "erd.mermaid" while also
+  // one this run will actually produce (e.g. base "erd.mmd" while also
   // emitting dbml) — otherwise it's part of the intended name (e.g.
   // "file.erd") and each emitter's extension is appended after it.
   if (ext && allExtensions.includes(ext)) {

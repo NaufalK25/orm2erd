@@ -69,11 +69,11 @@ npx orm2erd
 ◆  Output format(s):
 │  mermaid
 ◆  Output path:
-│  erd.mermaid
+│  erd.mmd
 ◆  Type labels:
 │  Canonical
 │
-◇  Written to erd.mermaid
+◇  Written to erd.mmd
 │
 └  Done
 ```
