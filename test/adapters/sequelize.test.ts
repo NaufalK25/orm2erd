@@ -79,6 +79,12 @@ describe("sequelizeAdapter.extract — export shapes", () => {
       /Unsupported Sequelize version/,
     );
   });
+
+  it("loads sequelize-cli's generated index.js, which uses __filename/__dirname/require at module scope", async () => {
+    const model = await extractFixture("cli-generated-index.ts");
+    expect(model.entities).toHaveLength(1);
+    expect(model.entities[0].name).toBe("User");
+  });
 });
 
 describe("sequelizeAdapter.extract — field mapping", () => {

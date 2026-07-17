@@ -1,6 +1,6 @@
 import { existsSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { tsImport } from "tsx/esm/api";
 import type { ORMAdapter, ResolvedEntry } from "../types";
@@ -128,11 +128,11 @@ function findSequelizeInstance(
 }
 
 async function loadSequelizeInstance(path: string): Promise<SequelizeInstance> {
-  // Some real-world files mix a raw `require()` into otherwise-real ESM
-  // (often written for Bun, which allows this; Node's ESM does not). Polyfill
-  // a global `require` bound to the target file so those calls still work,
-  // resolving against the target project's own node_modules.
+  // Polyfill CJS globals (sequelize-cli's generated index.js uses all three)
+  // since tsImport loads the file as ESM, where none of them exist.
   globalThis.require = createRequire(path);
+  globalThis.__filename = path;
+  globalThis.__dirname = dirname(path);
 
   const mod = await tsImport(pathToFileURL(path).href, import.meta.url);
   const candidate = findSequelizeInstance(mod);

@@ -17,6 +17,10 @@ export default defineConfig({
     ],
     "typescript/no-explicit-any": "error",
     "eslint/no-console": "off",
+    "eslint/no-underscore-dangle": [
+      "warn",
+      { allow: ["__filename", "__dirname"] },
+    ],
   },
   overrides: [
     {
