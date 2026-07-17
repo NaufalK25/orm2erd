@@ -31,7 +31,10 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           TAG="v$VERSION"
           if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
-            TAG_SHA=$(git rev-parse -q --verify "refs/tags/$TAG" || true)
+            # `^{}` peels an annotated tag to the commit it points at; Auto
+            # Tag creates annotated tags, so without this TAG_SHA resolves to
+            # the tag *object*'s own SHA and never matches HEAD_SHA.
+            TAG_SHA=$(git rev-parse -q --verify "refs/tags/$TAG^{}" || true)
             HEAD_SHA=$(git rev-parse HEAD)
             if [ "$TAG_SHA" != "$HEAD_SHA" ]; then
               echo "No new tag $TAG at $HEAD_SHA — skipping release."
