@@ -21,7 +21,7 @@ src/
   detect/          # index.ts + one file per ORM
   adapters/        # types.ts + one folder per ORM (prisma/, sequelize/, mongoose/)
   core/model.ts    # the ERDModel IR types
-  emitters/        # types.ts + one file per format (mermaid.ts, dbml.ts, plantuml.ts, d2.ts)
+  emitters/        # types.ts + one file per format (mermaid.ts, dbml.ts, plantuml.ts, d2.ts, etc)
 bin/
   orm2erd.js       # shebang wrapper: #!/usr/bin/env node → import('../dist/cli.js')
 ```
