@@ -196,9 +196,14 @@ export const sequelizeAdapter: ORMAdapter = {
   },
 
   async extract(entry: ResolvedEntry): Promise<ERDModel> {
-    try {
-      process.loadEnvFile();
-    } catch {}
+    // Loaded in priority order (.env.local wins on shared keys) since
+    // loadEnvFile doesn't override vars already set by an earlier call.
+    // Best-effort: most projects only have one of these, if any.
+    for (const file of [".env.local", ".env"]) {
+      try {
+        process.loadEnvFile(file);
+      } catch {}
+    }
 
     const stat = statSync(entry.path);
     const sequelize = stat.isFile()
