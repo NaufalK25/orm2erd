@@ -58,7 +58,7 @@ export const dbmlEmitter: Emitter = {
     for (const [name, values] of enumsByName) {
       lines.push(`Enum ${name} {`);
       for (const value of values) {
-        lines.push(`  ${value}`);
+        lines.push(`  "${value}"`);
       }
       lines.push(`}`);
     }
