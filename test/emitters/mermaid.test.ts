@@ -45,6 +45,29 @@ describe("mermaidEmitter", () => {
     );
   });
 
+  it("escapes embedded double quotes in a default value instead of breaking the quoted comment", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "Config",
+          fields: [
+            {
+              name: "monthlyOverride",
+              type: "json",
+              nativeType: "JSONB",
+              defaultValue: '{"january":"","february":""}',
+            },
+          ],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = mermaidEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain(`default: {'january':'','february':''}"`);
+  });
+
   it("renders each relation type with the correct crow's-foot notation", () => {
     const model: ERDModel = {
       entities: [],

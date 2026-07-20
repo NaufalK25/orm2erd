@@ -19,9 +19,7 @@ export const dbmlEmitter: Emitter = {
             : field.type;
         const typeLabel = `${displayType}${field.isList ? "[]" : ""}`;
         const defaultValueDisplay = field.defaultValue
-          ? typeof field.defaultValue === "string"
-            ? `"${field.defaultValue}"`
-            : field.defaultValue
+          ? `"${field.defaultValue.replaceAll('"', "'")}"`
           : undefined;
         const constraints = [
           field.isPrimaryKey && "pk",

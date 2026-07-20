@@ -21,7 +21,8 @@ export const mermaidEmitter: Emitter = {
         ].filter((c): c is string => Boolean(c));
         const comments = [
           field.enumValues && "enum: " + field.enumValues.join(", "),
-          field.defaultValue && "default: " + field.defaultValue,
+          field.defaultValue &&
+            "default: " + field.defaultValue.replaceAll('"', "'"),
         ].filter((c): c is string => Boolean(c));
         lines.push(
           `    ${typeLabel} ${field.name}${constraints.length > 0 ? " " + constraints.join(", ") : ""}${comments.length > 0 ? ' "' + comments.join(" | ") + '"' : ""}`,
