@@ -1,0 +1,31 @@
+// Entities
+Table User {
+  id int [pk, not null, default: "autoincrement()"]
+  email string [unique, not null]
+  name string
+}
+
+Table Post {
+  id int [pk, not null, default: "autoincrement()"]
+  title string [not null]
+  content string
+  published boolean [not null, default: "false"]
+  authorId int [not null]
+}
+
+Table Comment {
+  id int [pk, not null, default: "autoincrement()"]
+  text string [not null]
+  postId int [not null]
+  authorId int [not null]
+}
+
+Table Tag {
+  id int [pk, not null, default: "autoincrement()"]
+  name string [unique, not null]
+}
+
+// Relationships
+Ref: User.id > Post.authorId
+Ref: User.id > Comment.authorId
+Ref: Post.id > Comment.postId
