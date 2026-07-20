@@ -3,6 +3,7 @@ import type { Emitter } from "./types";
 import { mermaidEmitter } from "./mermaid";
 import { dbmlEmitter } from "./dbml";
 import { plantumlEmitter } from "./plantuml";
+import { d2Emitter } from "./d2";
 
 export type { Emitter } from "./types";
 
@@ -10,6 +11,7 @@ export const emitters: Partial<Record<OutputFormat, Emitter>> = {
   mermaid: mermaidEmitter,
   dbml: dbmlEmitter,
   plantuml: plantumlEmitter,
+  d2: d2Emitter,
 };
 
 export function getEmitter(format: OutputFormat): Emitter {

@@ -44,7 +44,7 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 | <img src="./.github/assets/mermaid.svg" width="16" height="16" alt="Mermaid Icon" style="vertical-align:middle;"> | Mermaid | ✅ Supported |
 | <img src="./.github/assets/dbml.svg" width="16" height="16" alt="DBML Icon" style="vertical-align:middle;"> | DBML | ✅ Supported |
 | <img src="./.github/assets/plantuml.svg" width="16" height="16" alt="PlantUML Icon" style="vertical-align:middle;"> | PlantUML | ✅ Supported |
-| | D2 | 🚧 Planned |
+| <img src="./.github/assets/d2.svg" width="16" height="16" alt="D2 Icon" style="vertical-align:middle;"> | D2 | ✅ Supported |
 | | Nomnoml | 🚧 Planned |
 | | QuickDBD | 🚧 Planned |
 | | Graphviz DOT | 🚧 Planned |
