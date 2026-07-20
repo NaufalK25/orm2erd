@@ -6,7 +6,13 @@ export const plantumlEmitter: Emitter = {
   emit(model, options) {
     const { typeMode } = options;
 
-    const lines = ["@startuml", "hide circle", "skinparam linetype ortho"];
+    const lines = [
+      "@startuml",
+      "hide circle",
+      "skinparam linetype ortho",
+      "",
+      "' Entities",
+    ];
 
     for (const entity of model.entities) {
       lines.push(`entity ${entity.name} {`);
@@ -41,8 +47,10 @@ export const plantumlEmitter: Emitter = {
       otherFields.forEach(renderField);
 
       lines.push("}");
+      lines.push("");
     }
 
+    lines.push("' Relationships");
     for (const rel of model.relations) {
       // Plantuml's crow's-foot notation: ||--o{ = one-to-many, }o--o{ =
       // many-to-many, ||--|| = one-to-one.

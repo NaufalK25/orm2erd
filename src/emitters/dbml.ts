@@ -6,7 +6,7 @@ export const dbmlEmitter: Emitter = {
   emit(model, options) {
     const { typeMode } = options;
 
-    const lines = [];
+    const lines = ["// Entities"];
     const enumsByName = new Map<string, string[]>();
 
     for (const entity of model.entities) {
@@ -38,8 +38,10 @@ export const dbmlEmitter: Emitter = {
         }
       }
       lines.push("}");
+      lines.push("");
     }
 
+    lines.push("// Relationships");
     for (const rel of model.relations) {
       // A DBML Ref requires a real table.column on both sides — skip
       // relations we can't resolve columns for (e.g. an implicit
@@ -53,6 +55,13 @@ export const dbmlEmitter: Emitter = {
       lines.push(
         `Ref: ${rel.from}.${rel.fromColumn} ${symbol} ${rel.to}.${rel.toColumn}`,
       );
+    }
+
+    if (enumsByName.size > 0) {
+      if (lines[lines.length - 1] !== "") {
+        lines.push("");
+      }
+      lines.push("// Enums");
     }
 
     for (const [name, values] of enumsByName) {
