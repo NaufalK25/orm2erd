@@ -38,11 +38,15 @@ function resolveDefaultValue(value: unknown): string | undefined {
   if (value === undefined) return undefined;
   if (typeof value === "function") return value.name || "(function)";
   if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    const ctorName = value.constructor?.name;
+    // Sequelize.literal("nextval('...')") wraps the raw SQL in a `.val` prop.
+    if (ctorName === "Literal" && "val" in value) {
+      return String((value as { val: unknown }).val);
+    }
     // Sentinel DataTypes like DataTypes.UUIDV4/DataTypes.NOW are class
     // instances with no own properties — JSON.stringify would just give
     // "{}". Use the constructor name instead, same as column types, with
     // "()" to signal it's generated rather than a literal value.
-    const ctorName = value.constructor?.name;
     if (ctorName && ctorName !== "Object" && Object.keys(value).length === 0) {
       return `${ctorName}()`;
     }

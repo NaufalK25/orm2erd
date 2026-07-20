@@ -117,6 +117,13 @@ describe("sequelizeAdapter.extract — field mapping", () => {
     const externalId = user.fields.find((f) => f.name === "externalId")!;
     expect(externalId.defaultValue).toBe("UUIDV4()");
   });
+
+  it("resolves a Sequelize.literal(...) default to its raw SQL expression, not the stringified wrapper", async () => {
+    const model = await extractFixture("named-export.js");
+    const post = model.entities.find((e) => e.name === "Post")!;
+    const id = post.fields.find((f) => f.name === "id")!;
+    expect(id.defaultValue).toBe("nextval('posts_id_seq')");
+  });
 });
 
 describe("sequelizeAdapter.extract — relation dedup", () => {

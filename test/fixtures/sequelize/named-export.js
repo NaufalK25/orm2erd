@@ -6,6 +6,14 @@ function dataType(name, values) {
 // instances with no own properties, used as-is as a defaultValue.
 class UUIDV4 {}
 
+// Mirrors Sequelize.literal(...): a raw SQL expression wrapped in a class
+// instance with a single `val` property (e.g. a Postgres sequence default).
+class Literal {
+  constructor(val) {
+    this.val = val;
+  }
+}
+
 export const sequelize = {
   models: {
     User: {
@@ -37,6 +45,7 @@ export const sequelize = {
           type: dataType("INTEGER"),
           primaryKey: true,
           autoIncrement: true,
+          defaultValue: new Literal("nextval('posts_id_seq')"),
         },
         title: { type: dataType("STRING"), allowNull: false },
         status: {
