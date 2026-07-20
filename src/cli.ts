@@ -324,6 +324,10 @@ async function generateAndWrite(
     } else {
       console.log(`✔ ${summary}`);
     }
+
+    // Importing the target codebase can leave open handles (DB connection,
+    // timers) that would otherwise hold the event loop open forever.
+    process.exit(0);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (interactive) {

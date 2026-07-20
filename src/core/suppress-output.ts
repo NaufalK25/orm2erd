@@ -19,7 +19,8 @@ export async function withSuppressedOutput<T>(
     (stream) => [stream, process[stream].write] as const,
   );
   for (const stream of SUPPRESSIBLE_STREAMS) {
-    process[stream].write = (() => true) as typeof process[typeof stream]["write"];
+    process[stream].write = (() =>
+      true) as (typeof process)[typeof stream]["write"];
   }
 
   try {
