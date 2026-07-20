@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🏷️ [1.4.0] - 2026-07-20
+
+### 🚀 Added
+
+- **D2 output** (`--format d2`), emitting `sql_table`-shaped nodes with
+  `pk`/`fk`/`unique` field constraints, `NOT NULL`/`DEFAULT ...` inline
+  comments, and crow's-foot cardinality via `cf-one`/`cf-many` arrowhead
+  shapes on `<->` connections (D2 has no inline symbol for it like
+  Mermaid/DBML). Identifiers are always quoted to sidestep D2's reserved
+  top-level keywords (`shape`, `style`, `layers`, …).
+- **nomnoml output** (`--format nomnoml`), emitting `<table>`-classifier
+  nodes with `PK`/`FK`/`unique`/`NN` field tags and `1 -- 1`/`1 -- *`/`* -- *`
+  multiplicity relations.
+- Every emitter now separates entities and relationships with an
+  `// Entities` / `// Relationships` heading (or the format's own comment
+  syntax) and a blank line between entity blocks, instead of one unbroken
+  stream of lines.
+
+### 💊 Fixed
+
+- Target codebases whose entry file logs straight to `process.stdout`/
+  `process.stderr` (e.g. pino, morgan, winston's default console transport)
+  instead of going through `console.*` leaked that output past
+  `--verbose`'s suppression, since only `console.*` was being patched. Both
+  streams are now patched too.
+- The CLI could hang after a successful run instead of exiting — importing
+  the target codebase to introspect it (a DB connection, timers, etc.) can
+  leave open handles that hold Node's event loop open forever. The process
+  now exits explicitly once output is written.
+- `Sequelize.literal(...)` default values (e.g. `nextval('posts_id_seq')`
+  for a Postgres sequence default) were resolved to the wrapper's
+  constructor name instead of the actual SQL expression — the fallback for
+  sentinel `DataTypes` instances (`UUIDV4`, `NOW`, …) matched it too, since
+  both are property-less class instances. `Literal`'s wrapped `val` is now
+  read directly instead.
+- A default value containing a double quote (e.g. a JSON default like
+  `{"a":""}`) broke the emitted DBML/Mermaid output by prematurely closing
+  the surrounding quoted attribute. Embedded double quotes are now escaped
+  to single quotes before emitting, consistent with how string defaults are
+  already handled elsewhere.
+
 ## 🏷️ [1.3.0] - 2026-07-17
 
 ### 🚀 Added
