@@ -1,4 +1,5 @@
 import { Command, Option } from "commander";
+import pc from "picocolors";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, extname } from "node:path";
@@ -14,6 +15,7 @@ import {
   log,
   isTTY,
   isCI,
+  unicode,
 } from "@clack/prompts";
 import { DetectedORM, detectORMs } from "./detect";
 import { adapters, getAdapter, ORMAdapter } from "./adapters";
@@ -66,20 +68,38 @@ program
   .addHelpText(
     "after",
     `
-Examples:
+${pc.bold("Examples:")}
   $ orm2erd
   $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid,dbml --out ./erd
   $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --type-mode native`,
   )
+  .configureHelp({
+    styleTitle: (str) => pc.bold(pc.underline(str)),
+    styleCommandText: (str) => pc.cyan(str),
+    styleCommandDescription: (str) => pc.dim(str),
+    styleDescriptionText: (str) => pc.white(str),
+    styleOptionText: (str) => pc.green(str),
+    styleArgumentText: (str) => pc.yellow(str),
+    styleSubcommandText: (str) => pc.cyan(str),
+  })
   .parse();
 
 const opts = program.opts<ProgramOptions>();
+
+// Emoji only render where the terminal's locale/environment signals support
+// for it (same heuristic @clack/prompts uses for its own box-drawing
+// characters); everywhere else falls back to plain ASCII, or nothing for
+// purely decorative icons.
+function icon(symbol: string, fallback = ""): string {
+  if (unicode) return `${symbol} `;
+  return fallback ? `${fallback} ` : "";
+}
 
 // Unwraps a clack prompt result, exiting cleanly on Ctrl+C instead of
 // letting the cancel symbol leak into the rest of the pipeline.
 function orExit<T>(value: T | symbol): T {
   if (isCancel(value)) {
-    cancel("Cancelled.");
+    cancel(pc.red(`${icon("🚫", "x")}Cancelled.`));
     process.exit(0);
   }
   return value;
@@ -97,18 +117,20 @@ async function resolveORM(
       ormName = detected[0].name;
       entryCandidates = detected[0].candidates;
       if (interactive) {
-        log.step(`Detected: ${ormName}`);
+        log.step(`${icon("🔍")}Detected: ${ormName}`);
       }
     } else if (detected.length > 1) {
       if (!interactive) {
         console.error(
-          `Multiple ORMs detected (${detected.map((d) => d.name).join(", ")}). Pass --orm <name> to specify one.`,
+          pc.red(
+            `${icon("✖", "x")}Multiple ORMs detected (${detected.map((d) => d.name).join(", ")}). Pass --orm <name> to specify one.`,
+          ),
         );
         process.exit(1);
       }
       ormName = orExit(
         await select({
-          message: "Multiple ORMs detected — which one?",
+          message: `${icon("🔍")}Multiple ORMs detected — which one?`,
           options: detected.map((d) => ({
             value: d.name,
             label: d.name,
@@ -121,13 +143,15 @@ async function resolveORM(
     } else {
       if (!interactive) {
         console.error(
-          "No supported ORM detected. Pass --orm <name> to specify one manually.",
+          pc.red(
+            `${icon("✖", "x")}No supported ORM detected. Pass --orm <name> to specify one manually.`,
+          ),
         );
         process.exit(1);
       }
       ormName = orExit(
         await select({
-          message: "No ORM detected. Which one are you using?",
+          message: `${icon("🔍")}No ORM detected. Which one are you using?`,
           options: ALL_ORM_NAMES.map((name) => ({ value: name, label: name })),
         }),
       );
@@ -151,15 +175,17 @@ async function resolveEntryPath(
     if (interactive) {
       return orExit(
         await select({
-          message: `Multiple schema locations found for ${ormName} — which one?`,
+          message: `${icon("📁")}Multiple schema locations found for ${ormName} — which one?`,
           options: entryCandidates.map((c) => ({ value: c, label: c })),
         }),
       );
     }
     console.error(
-      `Multiple possible entry points found for ${ormName}:\n` +
-        entryCandidates.map((c) => `  - ${c}`).join("\n") +
-        `\nPass one explicitly via --entry.`,
+      pc.red(
+        `${icon("✖", "x")}Multiple possible entry points found for ${ormName}:\n` +
+          entryCandidates.map((c) => `  - ${c}`).join("\n") +
+          `\nPass one explicitly via --entry.`,
+      ),
     );
     process.exit(1);
   }
@@ -168,7 +194,7 @@ async function resolveEntryPath(
     const suggestedEntry = entryCandidates[0];
     return orExit(
       await text({
-        message: `Entry point for ${ormName}:`,
+        message: `${icon("📄")}Entry point for ${ormName}:`,
         initialValue: suggestedEntry,
         placeholder: suggestedEntry ?? "./path/to/schema",
         validate: (value) => (value ? undefined : "Entry path is required."),
@@ -181,7 +207,9 @@ async function resolveEntryPath(
   }
 
   console.error(
-    `No entry point found for ${ormName}. Provide one via --entry.`,
+    pc.red(
+      `${icon("✖", "x")}No entry point found for ${ormName}. Provide one via --entry.`,
+    ),
   );
   process.exit(1);
 }
@@ -220,7 +248,7 @@ async function resolveFormats(interactive: boolean): Promise<OutputFormat[]> {
     const available = Object.keys(emitters) as OutputFormat[];
     formats = orExit(
       await multiselect({
-        message: "Output format(s):",
+        message: `${icon("🎨")}Output format(s):`,
         options: available.map((f) => ({ value: f, label: f })),
         initialValues: available.includes("mermaid") ? ["mermaid"] : [],
         required: true,
@@ -239,7 +267,7 @@ async function resolveTypeMode(interactive: boolean): Promise<TypeMode> {
   if (interactive) {
     return orExit(
       await select({
-        message: "Type labels:",
+        message: `${icon("🏷️ ")}Type labels:`,
         options: [
           {
             value: "canonical",
@@ -269,7 +297,7 @@ async function resolveOutBase(
         : "";
     return orExit(
       await text({
-        message: `Output path:${preview}`,
+        message: `${icon("💾")}Output path:${preview}`,
         initialValue: outExample,
         defaultValue: outExample,
       }),
@@ -290,7 +318,7 @@ async function generateAndWrite(
   interactive: boolean,
 ): Promise<void> {
   const s = interactive ? spinner() : undefined;
-  s?.start("Generating...");
+  s?.start(`${icon("⚙️")}Generating...`);
 
   try {
     const entry = await adapter.resolveEntry(entryPath, cwd);
@@ -319,10 +347,10 @@ async function generateAndWrite(
 
     const summary = `Written to ${written.join(", ")}`;
     if (interactive) {
-      s?.stop(summary);
-      outro("Done");
+      s?.stop(pc.green(`${icon("✔", "o")}${summary}`));
+      outro(pc.green(`${icon("✔", "o")}Done`));
     } else {
-      console.log(`✔ ${summary}`);
+      console.log(pc.green(`${icon("✔", "o")}${summary}`));
     }
 
     // Importing the target codebase can leave open handles (DB connection,
@@ -332,9 +360,9 @@ async function generateAndWrite(
     const message = err instanceof Error ? err.message : String(err);
     if (interactive) {
       s?.error(message);
-      outro("Failed");
+      outro(pc.red(`${icon("✖", "x")}Failed`));
     } else {
-      console.error(message);
+      console.error(pc.red(`${icon("✖", "x")}${message}`));
     }
     process.exit(1);
   }
@@ -345,7 +373,7 @@ async function main() {
   // isCI() is also checked because some CI runners still report a TTY.
   const interactive = isTTY(process.stdout) && !isCI();
 
-  if (interactive) intro("orm2erd");
+  if (interactive) intro(`${icon("📊")}${pc.bold("orm2erd")}`);
 
   // Both flags are required to skip detection, not just --orm: without
   // --entry, detection still needs to run to populate entryCandidates.
