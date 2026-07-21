@@ -3,6 +3,7 @@ import type { ORMAdapter } from "./types";
 import { prismaAdapter } from "./prisma";
 import { sequelizeAdapter } from "./sequelize";
 import { mongooseAdapter } from "./mongoose";
+import { typeormAdapter } from "./typeorm";
 
 export type { ORMAdapter, ResolvedEntry } from "./types";
 
@@ -10,6 +11,7 @@ export const adapters: Partial<Record<ORMName, ORMAdapter>> = {
   prisma: prismaAdapter,
   sequelize: sequelizeAdapter,
   mongoose: mongooseAdapter,
+  typeorm: typeormAdapter,
 };
 
 export function getAdapter(name: ORMName): ORMAdapter {

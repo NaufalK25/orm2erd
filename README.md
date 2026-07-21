@@ -29,7 +29,7 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 | <img src="./.github/assets/prisma.svg" width="16" height="16" alt="Prisma Icon" style="vertical-align:middle;"> | Prisma | ✅ Supported |
 | <img src="./.github/assets/sequelize.svg" width="16" height="16" alt="Sequelize Icon" style="vertical-align:middle;"> | Sequelize | ✅ Supported |
 | <img src="./.github/assets/mongoose.svg" width="16" height="16" alt="Mongoose Icon" style="vertical-align:middle;"> | Mongoose | ✅ Supported |
-| | TypeORM | 🚧 Planned |
+| <img src="./.github/assets/typeorm.svg" width="16" height="16" alt="TypeORM Icon" style="vertical-align:middle;"> | TypeORM | 🚧 Planned |
 | | Drizzle | 🚧 Planned |
 | | MikroORM | 🚧 Planned |
 <!-- | | BookShelf.js | 🚧 Planned | -->

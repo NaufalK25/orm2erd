@@ -1,0 +1,5 @@
+{
+  "type": "sqljs",
+  "synchronize": false,
+  "entities": ["entity/**/*.ts"]
+}

@@ -1,0 +1,4 @@
+{
+  "type": "postgres",
+  "entities": ["src/entity/**/*.ts"]
+}
