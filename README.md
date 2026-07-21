@@ -101,7 +101,7 @@ npx orm2erd
 ```mermaid
 erDiagram
 
-%% Entities
+  %% Entities
   User {
     int id PK "default: autoincrement()"
     string email UK
@@ -128,7 +128,7 @@ erDiagram
     string name UK
   }
 
-%% Relationships
+  %% Relationships
   User ||--o{ Post : "posts"
   User ||--o{ Comment : "comments"
   Post ||--o{ Comment : "comments"
