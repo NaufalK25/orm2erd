@@ -6,7 +6,7 @@ export const mermaidEmitter: Emitter = {
   emit(model, options) {
     const { typeMode } = options;
 
-    const lines = ["erDiagram", "", "    %% Entities"];
+    const lines = ["erDiagram", "", "  %% Entities"];
 
     for (const entity of model.entities) {
       lines.push(`  ${entity.name} {`);
@@ -32,7 +32,7 @@ export const mermaidEmitter: Emitter = {
       lines.push("");
     }
 
-    lines.push("    %% Relationships");
+    lines.push("  %% Relationships");
     for (const rel of model.relations) {
       // Mermaid's crow's-foot notation: ||--o{ = one-to-many, }o--o{ =
       // many-to-many, ||--|| = one-to-one.

@@ -4,6 +4,7 @@
 [![CI](https://github.com/NaufalK25/orm2erd/actions/workflows/ci.yml/badge.svg)](https://github.com/NaufalK25/orm2erd/actions/workflows/ci.yml)
 [![node](https://img.shields.io/node/v/orm2erd.svg)](https://www.npmjs.com/package/orm2erd)
 [![license](https://img.shields.io/npm/l/orm2erd.svg)](./LICENSE)
+[![unpacked size](https://img.shields.io/npm/unpacked-size/orm2erd.svg)](https://www.npmjs.com/package/orm2erd)
 
 You already built the app — your ORM models are the schema. `orm2erd` reads them and generates an
 ERD (Entity-Relationship Diagram) for you, instead of you drawing and maintaining one by hand.
@@ -171,7 +172,8 @@ prompts are skipped — pass `--orm`, `--entry`, and `--format` explicitly, or t
 error telling you which one is missing.
 
 For Prisma, if a `prisma.config.*` file is present, its `schema` field is respected as the entry
-point's default candidate, same as the Prisma CLI.
+point's default candidate,
+[same as the Prisma CLI](https://www.prisma.io/docs/orm/reference/prisma-config-reference#options-reference).
 
 ## Why
 
@@ -182,6 +184,7 @@ redraw it.
 ## Contributing
 
 See [CLAUDE.md](./CLAUDE.md) for architecture, the adapter/emitter contract, and design decisions.
+For exactly how each ORM is detected and parsed, see [docs/adapters.md](./docs/adapters.md).
 
 ## License
 
