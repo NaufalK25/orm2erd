@@ -5,6 +5,7 @@ import { dbmlEmitter } from "./dbml";
 import { plantumlEmitter } from "./plantuml";
 import { d2Emitter } from "./d2";
 import { nomnomlEmitter } from "./nomnoml";
+import { quickdbdEmitter } from "./quickdbd";
 
 export type { Emitter } from "./types";
 
@@ -14,6 +15,7 @@ export const emitters: Partial<Record<OutputFormat, Emitter>> = {
   plantuml: plantumlEmitter,
   d2: d2Emitter,
   nomnoml: nomnomlEmitter,
+  quickdbd: quickdbdEmitter,
 };
 
 export function getEmitter(format: OutputFormat): Emitter {
