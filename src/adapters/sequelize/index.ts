@@ -230,41 +230,63 @@ export const sequelizeAdapter: ORMAdapter = {
           fieldName: assoc.as,
           associationType: assoc.associationType,
           foreignKey: assoc.foreignKey,
+          throughModel: assoc.through?.model?.name,
         });
         sidesByKey.set(key, sides);
       }
     }
 
-    const relations: Relation[] = Array.from(sidesByKey.values()).map(
-      (sides) => {
+    // Names of the models we emit as entities — used to detect a
+    // BelongsToMany whose junction is itself an emitted table.
+    const entityNames = new Set(entities.map((e) => e.name));
+
+    const relations: Relation[] = Array.from(sidesByKey.values()).flatMap(
+      (sides): Relation[] => {
         const belongsToMany = sides.find(
           (s) => s.associationType === "BelongsToMany",
         );
         if (belongsToMany) {
+          // When the `through` junction is itself an emitted entity, the two
+          // 1-n relations to it (from each side's HasMany/BelongsTo) already
+          // convey this m-n. Emitting the derived n-n edge on top is
+          // redundant, so drop it — standard ERD practice keeps the junction
+          // table, not the derived crossing. Only suppress when the junction
+          // is actually an entity we render; an implicit string-named join
+          // table isn't emitted, so keep the n-n there or the link is lost.
+          if (
+            belongsToMany.throughModel &&
+            entityNames.has(belongsToMany.throughModel)
+          ) {
+            return [];
+          }
           // Implicit join table — Sequelize doesn't model its two FK
           // columns as attributes on either side, so nothing to attach.
-          return {
-            from: belongsToMany.modelName,
-            to: belongsToMany.relatedModel,
-            type: "n-n",
-            fieldName: belongsToMany.fieldName,
-          };
+          return [
+            {
+              from: belongsToMany.modelName,
+              to: belongsToMany.relatedModel,
+              type: "n-n",
+              fieldName: belongsToMany.fieldName,
+            },
+          ];
         }
 
         const hasMany = sides.find((s) => s.associationType === "HasMany");
         if (hasMany) {
           // HasMany's foreignKey column lives on the target (`to`), not the
           // declaring (`from`) model — it references `from`'s primary key.
-          return {
-            from: hasMany.modelName,
-            to: hasMany.relatedModel,
-            type: "1-n",
-            fieldName: hasMany.fieldName,
-            fromColumn: findPrimaryKeyField(
-              sequelize.models[hasMany.modelName],
-            ),
-            toColumn: hasMany.foreignKey,
-          };
+          return [
+            {
+              from: hasMany.modelName,
+              to: hasMany.relatedModel,
+              type: "1-n",
+              fieldName: hasMany.fieldName,
+              fromColumn: findPrimaryKeyField(
+                sequelize.models[hasMany.modelName],
+              ),
+              toColumn: hasMany.foreignKey,
+            },
+          ];
         }
 
         // 1-1: prefer the BelongsTo side, since it's the one carrying the
@@ -282,14 +304,16 @@ export const sequelizeAdapter: ORMAdapter = {
           owner.associationType === "BelongsTo"
             ? findPrimaryKeyField(sequelize.models[owner.relatedModel])
             : owner.foreignKey;
-        return {
-          from: owner.modelName,
-          to: owner.relatedModel,
-          type: "1-1",
-          fieldName: owner.fieldName,
-          fromColumn,
-          toColumn,
-        };
+        return [
+          {
+            from: owner.modelName,
+            to: owner.relatedModel,
+            type: "1-1",
+            fieldName: owner.fieldName,
+            fromColumn,
+            toColumn,
+          },
+        ];
       },
     );
 

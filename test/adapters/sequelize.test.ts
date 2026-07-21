@@ -150,4 +150,17 @@ describe("sequelizeAdapter.extract — relation dedup", () => {
     const model = await extractFixture("named-export.js");
     expect(model.relations).toHaveLength(2);
   });
+
+  it("suppresses the derived n-n when the BelongsToMany's through table is itself an emitted entity", async () => {
+    const model = await extractFixture("explicit-join-table.js");
+    // The junction is rendered, and both sides link to it via 1-n; the
+    // derived Department<->Group crossing is redundant and dropped.
+    expect(model.relations.some((r) => r.type === "n-n")).toBe(false);
+    expect(
+      model.relations.filter(
+        (r) => r.type === "1-n" && r.to === "DepartmentGroup",
+      ),
+    ).toHaveLength(2);
+    expect(model.relations).toHaveLength(2);
+  });
 });

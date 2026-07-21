@@ -31,6 +31,10 @@ export interface SequelizeAssociation {
   otherKey?: string; // BelongsToMany only — the join column for the *other* model
   target: { name: string };
   as?: string;
+  // BelongsToMany only — the junction. `.model.name` is the through model's
+  // modelName, which matches its key in `sequelize.models` when the join
+  // table is an explicit, registered model (vs. an implicit string table).
+  through?: { model?: { name: string } };
 }
 
 // Mirrors the static `Model.rawAttributes`/`Model.associations` members in
@@ -54,4 +58,5 @@ export interface RelationSide {
   fieldName?: string;
   associationType: SequelizeAssociation["associationType"];
   foreignKey: string;
+  throughModel?: string; // BelongsToMany only — the junction model's name
 }
