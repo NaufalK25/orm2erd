@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🏷️ [1.5.0] - 2026-07-21
+
+### 🚀 Added
+
+- **TypeORM support.** Detection recognizes legacy 0.2.x `ormconfig.*` (JSON)
+  alongside the 0.3+ convention of a `data-source.ts`/`.js` file exporting a
+  `DataSource`, falling back to a content scan when neither exists — the same
+  tiered approach as Sequelize/Mongoose detection. Extraction builds metadata
+  via TypeORM's own internal `ConnectionMetadataBuilder` (the same class
+  TypeORM itself uses inside `DataSource#initialize()`, before ever opening a
+  real connection), so it stays DB-connection-free. `.ts` entity/DataSource
+  files are compiled with the target project's own installed `typescript` +
+  `tsconfig.json` first, since TypeORM's decorators rely on
+  `emitDecoratorMetadata`/the legacy `experimentalDecorators` calling
+  convention, neither of which `tsx`'s esbuild-based transform can emit
+  correctly. Supports decorator entities, `EntitySchema` (plain-object)
+  entities, and legacy 0.2.x connections built without ever calling
+  `.connect()`.
+- **QuickDBD output** (`--format quickdbd`), emitting dbdiagram.io's QuickDBD
+  syntax with inline `PK`/`FK`/`UNIQUE`/`NULL` field constraints — QuickDBD
+  has no separate relationship section, so the FK marker sits directly on
+  whichever field physically holds the key — plus enum/default values as
+  trailing `#` comments.
+- Colorized CLI output (help text, prompts, success/error messages) via
+  `picocolors`, plus an icon on each interactive step (detection, entry
+  point, format, output path, type mode, generating, result). Both color and
+  icons auto-disable in environments without color/Unicode support (CI,
+  `NO_COLOR`, non-UTF8 terminals), using the same detection heuristic
+  `@clack/prompts` already relies on for its own prompt symbols — falling
+  back to plain ASCII (`o`/`x`) for status icons and to nothing for purely
+  decorative ones.
+
+### 💊 Fixed
+
+- The Mermaid emitter's `%% Entities`/`%% Relationships` section comments
+  weren't indented to match the rest of the diagram body.
+
 ## 🏷️ [1.4.0] - 2026-07-20
 
 ### 🚀 Added

@@ -1,6 +1,6 @@
 {
   "name": "orm2erd",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Generate ERD diagrams (Mermaid, DBML, PlantUML, D2, and more) straight from your ORM's models/schema — no manual diagramming.",
   "bin": {
     "orm2erd": "./bin/orm2erd.js"
@@ -30,10 +30,14 @@
     "prisma",
     "sequelize",
     "mongoose",
+    "typeorm",
     "mermaid",
     "dbml",
     "plantuml",
     "d2",
+    "nomnoml",
+    "quickdbd",
+    "dbdiagram",
     "schema",
     "database",
     "diagram",
