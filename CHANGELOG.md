@@ -237,14 +237,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test suite (Vitest) covering the Prisma adapter, Sequelize adapter, and
   Mermaid emitter, plus a `coverage` script.
 
-### Changed
+### 💊 Fixed
 
 - Removed the `typeorm`/`drizzle` placeholders from `--orm` and the ORM
   picker — they were never implemented and only added noise to the CLI's
   option list.
-
-### 💊 Fixed
-
 - Primary keys were shown as nullable in Sequelize output — Sequelize
   doesn't set `allowNull` on primary-key columns even though they're
   always `NOT NULL`.

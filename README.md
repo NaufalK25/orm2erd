@@ -13,6 +13,19 @@ ERD (Entity-Relationship Diagram) for you, instead of you drawing and maintainin
 
 ![orm2erd demo](./.github/assets/demo.gif)
 
+## Table of Contents
+
+- [What it does](#what-it-does)
+- [Supported ORMs](#supported-orms)
+- [Output formats](#output-formats)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Flags](#flags)
+- [Why](#why)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## What it does
 
 `orm2erd` scans your project, figures out which ORM you're using, and turns your existing
@@ -62,6 +75,13 @@ Run without installing (recommended — always gets the latest version):
 
 ```bash
 npx orm2erd
+# or npx orm2erd@latest to bypass a locally cached version
+
+pnpm dlx orm2erd
+# or pnpm dlx orm2erd@latest
+
+bunx orm2erd
+# or bunx orm2erd@latest
 ```
 
 Or install globally:
@@ -154,13 +174,47 @@ By default, field types are emitted in a canonical, portable form (e.g. `string`
 npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --type-mode native
 ```
 
+Same flow works for any [supported ORM](#supported-orms) — just swap `--orm` and `--entry`. For
+example, a Sequelize project with associations declared via `hasMany`/`belongsTo`:
+
+```bash
+npx orm2erd --orm sequelize --entry ./models/index.js --format mermaid --out ./erd
+```
+
+`erd.mmd`:
+
+```mermaid
+erDiagram
+
+  %% Entities
+  User {
+    int id PK
+    string email UK
+    string? name
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  Post {
+    int id PK
+    string title
+    boolean? published "default: false"
+    datetime createdAt
+    datetime updatedAt
+    int? authorId FK
+  }
+
+  %% Relationships
+  User ||--o{ Post : "posts"
+```
+
 ### Flags
 
 | Flag | Description |
 | --- | --- |
-| `--orm <name>` | ORM to use (`prisma`, `sequelize`, `mongoose`). Skips detection. |
+| `--orm <name>` | ORM to use — see [Supported ORMs](#supported-orms). Skips detection. |
 | `--entry <path>` | Path to the ORM's schema/model entry. Skips the entry-point prompt. |
-| `--format <formats>` | Output format(s), comma-separated (`mermaid`, `dbml`, `plantuml`). |
+| `--format <formats>` | Output format(s), comma-separated — see [Output formats](#output-formats). |
 | `--out <path>` | Output path — bare name gets each format's extension appended; a full filename is used as-is when there's only one format. |
 | `--type-mode <mode>` | Type labels to emit: `canonical` (portable, default) or `native` (ORM-specific). |
 | `--verbose` | Show log output from the target codebase during extraction (suppressed by default). |
