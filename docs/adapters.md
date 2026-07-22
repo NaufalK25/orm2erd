@@ -78,9 +78,9 @@ already-computed metadata (`.models`, `.associations`) can be read directly:
 Mongoose has no config file or folder convention to anchor on, so detection gets progressively
 more expensive:
 
-1. Requires `mongoose` in `dependencies`/`devDependencies`.
-2. Falls back to conventional directory names (same list as Sequelize).
-3. If none of those exist, scans source files' contents for the pattern in
+- Requires `mongoose` in `dependencies`/`devDependencies`.
+- Falls back to conventional directory names (same list as Sequelize).
+- If none of those exist, scans source files' contents for the pattern in
    [`src/adapters/mongoose/schema-source.ts`](../src/adapters/mongoose/schema-source.ts) — a file
    that both imports `"mongoose"` and calls `model(...)` / `new Schema(...)` — and suggests the
    parent directories of whatever matches. The scan
