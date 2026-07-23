@@ -25,7 +25,12 @@ import { withGuardedExit } from "./core/guard-exit";
 import type { OutputFormat, TypeMode } from "./core/format";
 import type { ORMName } from "./core/orm";
 import type { PackageJson } from "./core/package";
-import { checkOutput } from "./core/check";
+import {
+  checkOutput,
+  diffWords,
+  type DiffRow,
+  type DiffSegment,
+} from "./core/check";
 
 const ALL_ORM_NAMES = Object.keys(adapters) as ORMName[];
 
@@ -101,19 +106,40 @@ function icon(symbol: string, fallback = ""): string {
   return fallback ? `${fallback} ` : "";
 }
 
-// Colorizes a unified-style diff for terminal output: removals red, additions
-// green, the ---/+++ file headers dimmed. picocolors auto-disables when output
-// isn't a TTY (e.g. piped into a CI log), so this stays plain there.
-function colorizeDiff(diff: string): string {
-  return diff
-    .split("\n")
-    .map((line) => {
-      if (line.startsWith("---") || line.startsWith("+++")) return pc.dim(line);
-      if (line.startsWith("-")) return pc.red(line);
-      if (line.startsWith("+")) return pc.green(line);
-      return line;
-    })
-    .join("\n");
+// Renders one side of a "change" row: the prefix and changed words in yellow
+// (bold), unchanged words dimmed so the eye lands on what actually changed.
+function renderChangedSide(prefix: string, segments: DiffSegment[]): string {
+  const body = segments
+    .map((seg) =>
+      seg.changed ? pc.bold(pc.yellow(seg.text)) : pc.dim(seg.text),
+    )
+    .join("");
+  return pc.yellow(prefix) + body;
+}
+
+// Renders classified diff rows for the terminal: additions green, removals red,
+// and edits ("change") as a yellow before/after pair with only the changed
+// words highlighted. The ---/+++ headers are dimmed. picocolors auto-disables
+// when output isn't a TTY (e.g. a CI log), so this degrades to plain text there.
+function renderDiff(path: string, rows: DiffRow[]): string {
+  const out = [
+    pc.dim(`--- ${path} (on disk)`),
+    pc.dim(`+++ ${path} (regenerated)`),
+  ];
+
+  for (const row of rows) {
+    if (row.kind === "add") {
+      out.push(pc.green(`+ ${row.line}`));
+    } else if (row.kind === "remove") {
+      out.push(pc.red(`- ${row.line}`));
+    } else {
+      const { removed, added } = diffWords(row.before, row.after);
+      out.push(renderChangedSide("- ", removed));
+      out.push(renderChangedSide("+ ", added));
+    }
+  }
+
+  return out.join("\n");
 }
 
 // Unwraps a clack prompt result, exiting cleanly on Ctrl+C instead of
@@ -382,7 +408,7 @@ async function generateAndWrite(
           console.error(
             pc.yellow(`${icon("≠", "~")}${r.path} is out of date:`),
           );
-          console.error(colorizeDiff(r.diff ?? ""));
+          console.error(renderDiff(r.path, r.rows ?? []));
         }
       }
       console.error(pc.dim("\nRun orm2erd without --check to regenerate."));
