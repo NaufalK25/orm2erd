@@ -70,6 +70,13 @@ already-computed metadata (`.models`, `.associations`) can be read directly:
   swap between the two inverse sides). The association type on each group picks the relation type:
   `BelongsToMany` → `n-n`, `HasMany` → `1-n`, otherwise `1-1` — preferring the `BelongsTo` side as
   the FK-holding "owner" when both directions are declared.
+- A `BelongsToMany` whose `through` junction is **itself an emitted entity** (an explicit,
+  registered join model, matched by `through.model.name` against the emitted entity names) does
+  **not** get a derived `n-n` edge: the two 1-n relations into that junction already convey the
+  many-to-many, so the extra crossing edge would be redundant (standard ERD practice keeps the
+  junction table, not the derived crossing). The `n-n` is only kept when the junction is an
+  *implicit* string-named join table that isn't emitted as an entity — otherwise the link would be
+  lost entirely.
 
 ## Mongoose
 
