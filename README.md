@@ -21,6 +21,7 @@ ERD (Entity-Relationship Diagram) for you, instead of you drawing and maintainin
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
+  - [Keeping the ERD in sync (CI)](#keeping-the-erd-in-sync-ci)
   - [Flags](#flags)
 - [Why](#why)
 - [Contributing](#contributing)
@@ -174,6 +175,48 @@ By default, field types are emitted in a canonical, portable form (e.g. `string`
 npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --type-mode native
 ```
 
+### Keeping the ERD in sync (CI)
+
+Commit your generated ERD, then use `--check` to fail CI whenever the committed file no longer
+matches what your current models would produce — so the diagram can never silently drift out of
+date:
+
+```bash
+npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --out ./docs/erd.mmd --check
+```
+
+- **matches** → prints `ERD up to date` and exits `0`
+- **differs** → prints a diff of what changed and exits `1`
+- **missing** → tells you to generate it first and exits `1`
+
+`--check` never touches the filesystem, so it's safe in a pre-commit hook or a pull-request check.
+It's flag-driven and non-interactive by design: pass it the **same** output-affecting flags you
+generated with (`--format`, `--out`, and `--type-mode` if you use it), or it will report drift
+against a differently-rendered file.
+
+Drop it into a workflow:
+
+```yaml
+# .github/workflows/erd.yml
+name: ERD in sync
+on: [pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npx orm2erd --orm sequelize --entry ./models/index.js --format mermaid --out ./docs/erd.mmd --check
+```
+
+> **Note:** ORMs parsed statically from a schema file (e.g. Prisma) need nothing but that file in
+> CI. ORMs introspected by importing your models require CI to be able to run them (install
+> dependencies, and provide any env vars the models need at import time) — same as generating the
+> ERD normally. See [docs/adapters.md](./docs/adapters.md) for how each ORM is parsed.
+
 Same flow works for any [supported ORM](#supported-orms) — just swap `--orm` and `--entry`. For
 example, a Sequelize project with associations declared via `hasMany`/`belongsTo`:
 
@@ -217,6 +260,7 @@ erDiagram
 | `--format <formats>` | Output format(s), comma-separated — see [Output formats](#output-formats). |
 | `--out <path>` | Output path — bare name gets each format's extension appended; a full filename is used as-is when there's only one format. |
 | `--type-mode <mode>` | Type labels to emit: `canonical` (portable, default) or `native` (ORM-specific). |
+| `--check` | Verify the committed ERD file(s) are up to date instead of writing. Exits non-zero on drift or if a file is missing; writes nothing. See [Keeping the ERD in sync](#keeping-the-erd-in-sync-ci). |
 | `--verbose` | Show log output from the target codebase during extraction (suppressed by default). |
 | `-v, --version` | Output the current version. |
 | `-h, --help` | Show usage and examples. |

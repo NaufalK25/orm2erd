@@ -25,6 +25,7 @@ import { withGuardedExit } from "./core/guard-exit";
 import type { OutputFormat, TypeMode } from "./core/format";
 import type { ORMName } from "./core/orm";
 import type { PackageJson } from "./core/package";
+import { checkOutput } from "./core/check";
 
 const ALL_ORM_NAMES = Object.keys(adapters) as ORMName[];
 
@@ -37,6 +38,7 @@ interface ProgramOptions {
   format: string;
   out: string;
   typeMode: TypeMode;
+  check: boolean;
   verbose: boolean;
 }
 
@@ -60,6 +62,10 @@ program
       "--type-mode <mode>",
       "type labels to emit: canonical (portable) or native (ORM-specific)",
     ).choices(["canonical", "native"]),
+  )
+  .option(
+    "--check",
+    "verify committed ERD file(s) are up to date; exit non-zero on drift or if missing (writes nothing)",
   )
   .option(
     "--verbose",
@@ -93,6 +99,21 @@ const opts = program.opts<ProgramOptions>();
 function icon(symbol: string, fallback = ""): string {
   if (unicode) return `${symbol} `;
   return fallback ? `${fallback} ` : "";
+}
+
+// Colorizes a unified-style diff for terminal output: removals red, additions
+// green, the ---/+++ file headers dimmed. picocolors auto-disables when output
+// isn't a TTY (e.g. piped into a CI log), so this stays plain there.
+function colorizeDiff(diff: string): string {
+  return diff
+    .split("\n")
+    .map((line) => {
+      if (line.startsWith("---") || line.startsWith("+++")) return pc.dim(line);
+      if (line.startsWith("-")) return pc.red(line);
+      if (line.startsWith("+")) return pc.green(line);
+      return line;
+    })
+    .join("\n");
 }
 
 // Unwraps a clack prompt result, exiting cleanly on Ctrl+C instead of
@@ -314,6 +335,7 @@ async function generateAndWrite(
   selectedEmitters: Emitter[],
   outBase: string,
   typeMode: TypeMode,
+  check: boolean,
   verbose: boolean,
   interactive: boolean,
 ): Promise<void> {
@@ -328,21 +350,54 @@ async function generateAndWrite(
         : withSuppressedOutput(() => adapter.extract(entry)),
     );
 
+    const allExtensions = selectedEmitters.map((e) => e.fileExtension);
+    const outputs = selectedEmitters.map((emitter) => ({
+      path: resolveOutPath(outBase, emitter.fileExtension, allExtensions),
+      content: emitter.emit(model, { typeMode }),
+    }));
+
+    if (check) {
+      const results = await Promise.all(
+        outputs.map((o) => checkOutput(o.path, o.content)),
+      );
+      const failed = results.filter((r) => r.status !== "ok");
+
+      if (failed.length === 0) {
+        console.log(
+          pc.green(
+            `${icon("✔", "o")}ERD up to date (${results.map((r) => r.path).join(", ")})`,
+          ),
+        );
+        process.exit(0);
+      }
+
+      for (const r of failed) {
+        if (r.status === "missing") {
+          console.error(
+            pc.red(
+              `${icon("✖", "x")}${r.path} does not exist — run without --check to create it`,
+            ),
+          );
+        } else {
+          console.error(
+            pc.yellow(`${icon("≠", "~")}${r.path} is out of date:`),
+          );
+          console.error(colorizeDiff(r.diff ?? ""));
+        }
+      }
+      console.error(pc.dim("\nRun orm2erd without --check to regenerate."));
+      process.exit(1);
+    }
+
     const outDir = dirname(outBase);
     if (outDir !== ".") {
       await mkdir(outDir, { recursive: true });
     }
 
-    const allExtensions = selectedEmitters.map((e) => e.fileExtension);
     const written: string[] = [];
-    for (const emitter of selectedEmitters) {
-      const outPath = resolveOutPath(
-        outBase,
-        emitter.fileExtension,
-        allExtensions,
-      );
-      await writeFile(outPath, emitter.emit(model, { typeMode }), "utf-8");
-      written.push(outPath);
+    for (const { path, content } of outputs) {
+      await writeFile(path, content, "utf-8");
+      written.push(path);
     }
 
     const summary = `Written to ${written.join(", ")}`;
@@ -371,7 +426,9 @@ async function generateAndWrite(
 async function main() {
   const cwd = process.cwd();
   // isCI() is also checked because some CI runners still report a TTY.
-  const interactive = isTTY(process.stdout) && !isCI();
+  // --check must never prompt (it runs in CI); force non-interactive so it
+  // relies on flags / detection only.
+  const interactive = isTTY(process.stdout) && !isCI() && !opts.check;
 
   if (interactive) intro(`${icon("📊")}${pc.bold("orm2erd")}`);
 
@@ -404,6 +461,7 @@ async function main() {
     selectedEmitters,
     outBase,
     typeMode,
+    opts.check,
     opts.verbose,
     interactive,
   );
