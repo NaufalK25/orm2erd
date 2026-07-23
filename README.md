@@ -59,9 +59,9 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 | <img src="./.github/assets/dbml.svg" width="16" height="16" alt="DBML Icon" style="vertical-align:middle;"> | DBML | ✅ Supported |
 | <img src="./.github/assets/plantuml.svg" width="16" height="16" alt="PlantUML Icon" style="vertical-align:middle;"> | PlantUML | ✅ Supported |
 | <img src="./.github/assets/d2.svg" width="16" height="16" alt="D2 Icon" style="vertical-align:middle;"> | D2 | ✅ Supported |
-| <img src="./.github/assets/nomnoml.png" width="16" height="16" alt="nomnoml Icon" style="vertical-align:middle;"> | nomnoml | ✅ Supported |
+| <img src="./.github/assets/nomnoml.svg" width="16" height="16" alt="nomnoml Icon" style="vertical-align:middle;"> | nomnoml | ✅ Supported |
 | <img src="./.github/assets/quickdbd.svg" width="16" height="16" alt="QuickDBD Icon" style="vertical-align:middle;"> | QuickDBD | ✅ Supported |
-| <img src="./.github/assets/graphvizdot.png" width="16" height="16" alt="Graphviz DOT Icon" style="vertical-align:middle;"> | Graphviz DOT | ✅ Supported |
+| <img src="./.github/assets/graphvizdot.svg" width="16" height="16" alt="Graphviz DOT Icon" style="vertical-align:middle;"> | Graphviz DOT | ✅ Supported |
 | | Structurizr DSL | 🚧 Planned |
 | | Pikchr | 🚧 Planned |
 
