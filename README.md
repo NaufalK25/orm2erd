@@ -61,7 +61,7 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 | <img src="./.github/assets/d2.svg" width="16" height="16" alt="D2 Icon" style="vertical-align:middle;"> | D2 | ✅ Supported |
 | <img src="./.github/assets/nomnoml.png" width="16" height="16" alt="nomnoml Icon" style="vertical-align:middle;"> | nomnoml | ✅ Supported |
 | <img src="./.github/assets/quickdbd.svg" width="16" height="16" alt="QuickDBD Icon" style="vertical-align:middle;"> | QuickDBD | ✅ Supported |
-| | Graphviz DOT | 🚧 Planned |
+| <img src="./.github/assets/graphvizdot.png" width="16" height="16" alt="Graphviz DOT Icon" style="vertical-align:middle;"> | Graphviz DOT | ✅ Supported |
 | | Structurizr DSL | 🚧 Planned |
 | | Pikchr | 🚧 Planned |
 
