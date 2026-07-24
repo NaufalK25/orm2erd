@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import prismaInternals from "@prisma/internals";
 import type { Field } from "@prisma/dmmf";
 import type { ORMAdapter, ResolvedEntry } from "../types";
-import type { CanonicalType, ERDModel } from "../../core/model";
+import type { CanonicalType, ERDModel, RelationAction } from "../../core/model";
 import { resolvePrismaConfigSchema } from "./config";
 import type { RelationSide } from "./types";
 
@@ -22,6 +22,18 @@ const PRISMA_SCALAR_TO_CANONICAL: Record<string, CanonicalType> = {
 function toCanonicalType(kind: Field["kind"], type: string): CanonicalType {
   if (kind === "enum") return "enum";
   return PRISMA_SCALAR_TO_CANONICAL[type] ?? "unknown";
+}
+
+const PRISMA_ACTION_TO_CANONICAL: Record<string, RelationAction> = {
+  Cascade: "cascade",
+  Restrict: "restrict",
+  SetNull: "set null",
+  NoAction: "no action",
+  SetDefault: "set default",
+};
+
+function toRelationAction(action?: string): RelationAction | undefined {
+  return action ? PRISMA_ACTION_TO_CANONICAL[action] : undefined;
 }
 
 // getDMMF() only needs schema shape, not a real connection, but Prisma
@@ -165,6 +177,8 @@ export const prismaAdapter: ORMAdapter = {
           hasFK: Boolean(f.relationFromFields?.length),
           fkColumn: f.relationFromFields?.[0],
           refColumn: f.relationToFields?.[0],
+          onDelete: f.relationOnDelete,
+          onUpdate: f.relationOnUpdate,
         });
         sidesByRelationName.set(f.relationName, sides);
       }
@@ -180,6 +194,8 @@ export const prismaAdapter: ORMAdapter = {
           fieldName: only.fieldName,
           fromColumn: only.hasFK ? only.fkColumn : undefined,
           toColumn: only.hasFK ? only.refColumn : undefined,
+          onDelete: only.hasFK ? toRelationAction(only.onDelete) : undefined,
+          onUpdate: only.hasFK ? toRelationAction(only.onUpdate) : undefined,
         };
       }
 
@@ -205,6 +221,8 @@ export const prismaAdapter: ORMAdapter = {
           fieldName: oneSide.fieldName,
           fromColumn: manySide.refColumn,
           toColumn: manySide.fkColumn,
+          onDelete: toRelationAction(manySide.onDelete),
+          onUpdate: toRelationAction(manySide.onUpdate),
         };
       }
       // 1-1: use the side that actually holds the FK column as "from".
@@ -216,6 +234,8 @@ export const prismaAdapter: ORMAdapter = {
         fieldName: owner.fieldName,
         fromColumn: owner.fkColumn,
         toColumn: owner.refColumn,
+        onDelete: toRelationAction(owner.onDelete),
+        onUpdate: toRelationAction(owner.onUpdate),
       };
     });
 

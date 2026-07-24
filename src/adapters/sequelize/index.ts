@@ -9,6 +9,7 @@ import type {
   ERDModel,
   Index,
   Relation,
+  RelationAction,
 } from "../../core/model";
 import { loadDotEnvFiles } from "../../core/dotenv";
 import type { RelationSide, SequelizeInstance, SequelizeModel } from "./types";
@@ -127,6 +128,34 @@ function findPrimaryKeyField(model: SequelizeModel): string | undefined {
   return Object.entries(model.rawAttributes).find(
     ([, attr]) => attr.primaryKey,
   )?.[0];
+}
+
+const SEQUELIZE_ACTION_TO_CANONICAL: Record<string, RelationAction> = {
+  CASCADE: "cascade",
+  RESTRICT: "restrict",
+  "SET NULL": "set null",
+  "NO ACTION": "no action",
+  "SET DEFAULT": "set default",
+};
+
+function toRelationAction(action?: string): RelationAction | undefined {
+  return action
+    ? SEQUELIZE_ACTION_TO_CANONICAL[action.toUpperCase()]
+    : undefined;
+}
+
+// The FK attribute's own `.onDelete`/`.onUpdate` (see the SequelizeAttribute
+// comment) — not `association.options`, which HasMany never writes back to.
+function findForeignKeyActions(
+  models: Record<string, SequelizeModel>,
+  modelName: string,
+  foreignKey: string,
+): { onDelete?: RelationAction; onUpdate?: RelationAction } {
+  const attr = models[modelName]?.rawAttributes[foreignKey];
+  return {
+    onDelete: toRelationAction(attr?.onDelete),
+    onUpdate: toRelationAction(attr?.onUpdate),
+  };
 }
 
 // Multi-column key/unique groupings a per-attribute flag can't express.
@@ -329,6 +358,11 @@ export const sequelizeAdapter: ORMAdapter = {
                 sequelize.models[hasMany.modelName],
               ),
               toColumn: hasMany.foreignKey,
+              ...findForeignKeyActions(
+                sequelize.models,
+                hasMany.relatedModel,
+                hasMany.foreignKey,
+              ),
             },
           ];
         }
@@ -348,6 +382,12 @@ export const sequelizeAdapter: ORMAdapter = {
           owner.associationType === "BelongsTo"
             ? findPrimaryKeyField(sequelize.models[owner.relatedModel])
             : owner.foreignKey;
+        // FK attribute lives wherever `toColumn` does: the declaring model
+        // for BelongsTo, the related model for a lone HasOne.
+        const fkModelName =
+          owner.associationType === "BelongsTo"
+            ? owner.modelName
+            : owner.relatedModel;
         return [
           {
             from: owner.modelName,
@@ -356,6 +396,11 @@ export const sequelizeAdapter: ORMAdapter = {
             fieldName: owner.fieldName,
             fromColumn,
             toColumn,
+            ...findForeignKeyActions(
+              sequelize.models,
+              fkModelName,
+              owner.foreignKey,
+            ),
           },
         ];
       },

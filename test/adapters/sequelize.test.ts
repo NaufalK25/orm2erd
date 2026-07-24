@@ -183,6 +183,24 @@ describe("sequelizeAdapter.extract — relation dedup", () => {
   });
 });
 
+describe("sequelizeAdapter.extract — relation actions", () => {
+  it("reads onDelete/onUpdate off the FK attribute, not association.options", async () => {
+    const model = await extractFixture("named-export.js");
+    const userToPost = model.relations.find(
+      (r) => r.type === "1-n" && r.from === "User" && r.to === "Post",
+    )!;
+    expect(userToPost.onDelete).toBe("cascade");
+    expect(userToPost.onUpdate).toBe("cascade");
+  });
+
+  it("leaves onDelete/onUpdate undefined for a relation with no FK column to attach them to", async () => {
+    const model = await extractFixture("named-export.js");
+    const postTag = model.relations.find((r) => r.type === "n-n")!;
+    expect(postTag.onDelete).toBeUndefined();
+    expect(postTag.onUpdate).toBeUndefined();
+  });
+});
+
 describe("sequelizeAdapter.extract — composite keys", () => {
   it("carries composite PK and multi-column unique, ignoring single-column and non-unique indexes", async () => {
     const model = await extractFixture("composite-keys.js");

@@ -84,8 +84,14 @@ export const dbmlEmitter: Emitter = {
       // Dbml's ref notation: > = one-to-many, <> =
       // many-to-many, - = one-to-one.
       const symbol = rel.type === "1-n" ? ">" : rel.type === "n-n" ? "<>" : "-";
+      // DBML's action names are already the IR's own canonical spelling
+      // ("cascade", "set null", ...) — no translation needed.
+      const actions = [
+        rel.onDelete && `delete: ${rel.onDelete}`,
+        rel.onUpdate && `update: ${rel.onUpdate}`,
+      ].filter((a): a is string => Boolean(a));
       lines.push(
-        `Ref: ${rel.from}.${rel.fromColumn} ${symbol} ${rel.to}.${rel.toColumn}`,
+        `Ref: ${rel.from}.${rel.fromColumn} ${symbol} ${rel.to}.${rel.toColumn}${actions.length > 0 ? " [" + actions.join(", ") + "]" : ""}`,
       );
     }
 

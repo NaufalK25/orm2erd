@@ -57,7 +57,11 @@ export const sequelize = {
           type: dataType("ENUM", ["draft", "published"]),
           defaultValue: "draft",
         },
-        userId: { type: dataType("INTEGER") },
+        userId: {
+          type: dataType("INTEGER"),
+          onDelete: "CASCADE",
+          onUpdate: "CASCADE",
+        },
       },
       associations: {
         user: {

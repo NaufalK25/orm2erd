@@ -90,6 +90,31 @@ describe("typeormAdapter.extract — raw .ts DataSource (compiled via the target
     expect(profileToUser).toHaveLength(1);
   });
 
+  it("carries onDelete/onUpdate from the owning @ManyToOne side of a 1-n relation", async () => {
+    const model = await extractFixture("basic", "data-source.ts");
+    const userToPost = model.relations.find(
+      (r) => r.type === "1-n" && r.from === "User" && r.to === "Post",
+    )!;
+    expect(userToPost.onDelete).toBe("cascade");
+    expect(userToPost.onUpdate).toBe("cascade");
+  });
+
+  it("carries onDelete from the owning @OneToOne side, leaving unset onUpdate undefined", async () => {
+    const model = await extractFixture("basic", "data-source.ts");
+    const profileToUser = model.relations.find(
+      (r) => r.type === "1-1" && r.from === "Profile" && r.to === "User",
+    )!;
+    expect(profileToUser.onDelete).toBe("set null");
+    expect(profileToUser.onUpdate).toBeUndefined();
+  });
+
+  it("leaves onDelete/onUpdate undefined for a @ManyToMany relation", async () => {
+    const model = await extractFixture("basic", "data-source.ts");
+    const postTag = model.relations.find((r) => r.type === "n-n")!;
+    expect(postTag.onDelete).toBeUndefined();
+    expect(postTag.onUpdate).toBeUndefined();
+  });
+
   it("collapses a @ManyToMany/@JoinTable pair into a single n-n relation", async () => {
     const model = await extractFixture("basic", "data-source.ts");
     const postTag = model.relations.filter(

@@ -48,6 +48,11 @@ export interface TypeOrmIndexMetadata {
   name: string;
 }
 
+// Mirrors `metadata/types/OnDeleteType.ts`/`OnUpdateType.ts`. "DEFAULT" (not
+// "SET DEFAULT") is TypeORM's own spelling for that action.
+export type TypeOrmForeignKeyAction =
+  "RESTRICT" | "CASCADE" | "SET NULL" | "DEFAULT" | "NO ACTION";
+
 // Mirrors `metadata/RelationMetadata.ts`.
 export interface TypeOrmRelationMetadata {
   relationType: "one-to-one" | "one-to-many" | "many-to-one" | "many-to-many";
@@ -56,6 +61,8 @@ export interface TypeOrmRelationMetadata {
   joinColumns: TypeOrmColumnMetadata[];
   inverseEntityMetadata: TypeOrmEntityMetadata;
   inverseRelation?: TypeOrmRelationMetadata;
+  onDelete?: TypeOrmForeignKeyAction;
+  onUpdate?: TypeOrmForeignKeyAction;
 }
 
 // Mirrors `metadata/EntityMetadata.ts`. `tableType` distinguishes real

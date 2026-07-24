@@ -19,6 +19,7 @@ import type {
   Field,
   Index,
   Relation,
+  RelationAction,
 } from "../../core/model";
 import { loadDotEnvFiles } from "../../core/dotenv";
 import type {
@@ -105,6 +106,18 @@ function toCanonicalType(columnType: string | Function): CanonicalType {
 
 function nativeTypeName(columnType: string | Function): string {
   return typeof columnType === "string" ? columnType : columnType.name;
+}
+
+const TYPEORM_ACTION_TO_CANONICAL: Record<string, RelationAction> = {
+  CASCADE: "cascade",
+  RESTRICT: "restrict",
+  "SET NULL": "set null",
+  "NO ACTION": "no action",
+  DEFAULT: "set default",
+};
+
+function toRelationAction(action?: string): RelationAction | undefined {
+  return action ? TYPEORM_ACTION_TO_CANONICAL[action] : undefined;
 }
 
 function resolveDefaultValue(value: unknown): string | undefined {
@@ -468,8 +481,10 @@ function buildRelation(
 
   switch (relation.relationType) {
     case "one-to-many": {
-      // The declaring entity is the "one" side; the FK column physically
-      // lives on the paired many-to-one (owning) side, if declared.
+      // The declaring entity is the "one" side; the FK column — and any
+      // onDelete/onUpdate, which TypeORM only accepts on the owning
+      // @ManyToOne/@JoinColumn side — physically lives on the paired
+      // many-to-one (owning) side, if declared.
       const owningSide = relation.inverseRelation;
       return {
         from: entityMetadata.name,
@@ -478,6 +493,8 @@ function buildRelation(
         fieldName: relation.propertyName,
         fromColumn: entityMetadata.primaryColumns[0]?.propertyName,
         toColumn: owningSide?.joinColumns[0]?.propertyName,
+        onDelete: toRelationAction(owningSide?.onDelete),
+        onUpdate: toRelationAction(owningSide?.onUpdate),
       };
     }
     case "many-to-one": {
@@ -491,6 +508,8 @@ function buildRelation(
         fromColumn:
           relation.inverseEntityMetadata.primaryColumns[0]?.propertyName,
         toColumn: relation.joinColumns[0]?.propertyName,
+        onDelete: toRelationAction(relation.onDelete),
+        onUpdate: toRelationAction(relation.onUpdate),
       };
     }
     case "one-to-one": {
@@ -505,6 +524,8 @@ function buildRelation(
         fromColumn: relation.joinColumns[0]?.propertyName,
         toColumn:
           relation.inverseEntityMetadata.primaryColumns[0]?.propertyName,
+        onDelete: toRelationAction(relation.onDelete),
+        onUpdate: toRelationAction(relation.onUpdate),
       };
     }
     case "many-to-many": {

@@ -344,4 +344,70 @@ describe("dbmlEmitter", () => {
     expect(output).not.toContain("Ref: Post ");
     expect(output).toContain("Ref: User.id > Post.authorId");
   });
+
+  it("renders onDelete/onUpdate as a DBML ref action attribute", () => {
+    const model: ERDModel = {
+      entities: [],
+      relations: [
+        {
+          from: "Post",
+          to: "User",
+          type: "1-n",
+          fromColumn: "id",
+          toColumn: "authorId",
+          onDelete: "cascade",
+          onUpdate: "restrict",
+        },
+      ],
+    };
+
+    const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain(
+      "Ref: Post.id > User.authorId [delete: cascade, update: restrict]",
+    );
+  });
+
+  it("renders only the declared action when just one of onDelete/onUpdate is set", () => {
+    const model: ERDModel = {
+      entities: [],
+      relations: [
+        {
+          from: "Profile",
+          to: "User",
+          type: "1-1",
+          fromColumn: "userId",
+          toColumn: "id",
+          onDelete: "set null",
+        },
+      ],
+    };
+
+    const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain(
+      "Ref: Profile.userId - User.id [delete: set null]",
+    );
+  });
+
+  it("omits the action attribute entirely when neither onDelete nor onUpdate is set", () => {
+    const model: ERDModel = {
+      entities: [],
+      relations: [
+        {
+          from: "Profile",
+          to: "User",
+          type: "1-1",
+          fromColumn: "userId",
+          toColumn: "id",
+        },
+      ],
+    };
+
+    const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain("Ref: Profile.userId - User.id");
+    expect(output).not.toContain("[delete");
+    expect(output).not.toContain("[update");
+  });
 });

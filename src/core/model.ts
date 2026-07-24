@@ -33,6 +33,9 @@ export interface Index {
   name?: string;
 }
 
+export type RelationAction =
+  "cascade" | "restrict" | "set null" | "no action" | "set default";
+
 export interface Entity {
   name: string;
   fields: Field[];
@@ -65,6 +68,10 @@ export interface Relation {
   // implicit many-to-many join tables.
   fromColumn?: string;
   toColumn?: string;
+  // Referential actions on the FK constraint, when the ORM declares (or, for
+  // Sequelize, defaults) one. Only meaningful alongside fromColumn/toColumn.
+  onDelete?: RelationAction;
+  onUpdate?: RelationAction;
 }
 
 export interface ERDModel {

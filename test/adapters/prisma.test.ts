@@ -134,6 +134,34 @@ describe("prismaAdapter.extract — composite keys", () => {
   });
 });
 
+describe("prismaAdapter.extract — relation actions", () => {
+  it("carries `onDelete`/`onUpdate` from the FK-holding side's `@relation` attribute", async () => {
+    const entry = await prismaAdapter.resolveEntry(
+      join(fixturesDir, "single/schema.prisma"),
+      fixturesDir,
+    );
+    const model = await prismaAdapter.extract(entry);
+    const userToPost = model.relations.find(
+      (r) => r.type === "1-n" && r.from === "User" && r.to === "Post",
+    )!;
+
+    expect(userToPost.onDelete).toBe("cascade");
+    expect(userToPost.onUpdate).toBe("restrict");
+  });
+
+  it("leaves onDelete/onUpdate undefined when `@relation` doesn't declare them", async () => {
+    const entry = await prismaAdapter.resolveEntry(
+      join(fixturesDir, "single/schema.prisma"),
+      fixturesDir,
+    );
+    const model = await prismaAdapter.extract(entry);
+    const postTag = model.relations.find((r) => r.type === "n-n")!;
+
+    expect(postTag.onDelete).toBeUndefined();
+    expect(postTag.onUpdate).toBeUndefined();
+  });
+});
+
 describe("prismaAdapter.extract — descriptions", () => {
   it("carries `///` doc comments as entity and field descriptions", async () => {
     const entry = await prismaAdapter.resolveEntry(

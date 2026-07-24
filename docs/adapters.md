@@ -48,6 +48,10 @@ only adapter that doesn't need to import the target project's code at runtime:
   fields are grouped by that name and each pair collapses into one `Relation`. Cardinality comes
   from each side's `isList`; for 1-1, whichever side carries `relationFromFields` (the actual FK
   columns) becomes the `from`/owning side.
+- Relation actions: `onDelete`/`onUpdate` come from the FK-holding side's `relationOnDelete`/
+  `relationOnUpdate` (only set when `@relation(...)` declares them explicitly), mapped from
+  Prisma's PascalCase action names (`Cascade`, `Restrict`, `NoAction`, `SetNull`, `SetDefault`) to
+  the IR's lowercase spelling.
 
 ## Sequelize
 
@@ -98,6 +102,16 @@ already-computed metadata (`.models`, `.associations`) can be read directly:
   junction table, not the derived crossing). The `n-n` is only kept when the junction is an
   *implicit* string-named join table that isn't emitted as an entity — otherwise the link would be
   lost entirely.
+- Relation actions: `onDelete`/`onUpdate` are read off the FK attribute itself
+  (`rawAttributes[foreignKey].onDelete`/`.onUpdate`), not `association.options`. Sequelize's own
+  `Association#_injectAttributes` (`belongs-to.js`/`has-many.js`/`belongs-to-many.js`) always
+  resolves and writes these onto the FK attribute whenever `constraints !== false`, but only
+  `BelongsTo` also mirrors them back onto `this.options` — `HasMany` doesn't, so reading `options`
+  would silently miss most 1-n relations. Because Sequelize always defaults an unspecified
+  `onDelete`/`onUpdate` (`SET NULL`/`CASCADE` depending on the FK's nullability) rather than
+  leaving it unset, these get attached even when the model definition never declares them
+  explicitly — this reflects the constraint Sequelize will actually create, not just what the user
+  wrote.
 
 ## Mongoose
 
@@ -152,6 +166,8 @@ module instance gets imported and *which* files get executed:
   models) is emitted as standalone relations per side rather than guessed at, with cardinality
   inferred from `isList`/`isUnique` (see the comments on `buildPairedRelation`/
   `buildStandaloneRelation` for the exact rules).
+- No relation actions: Mongoose has no FK-constraint/referential-action concept (no DB-level
+  `ON DELETE`/`ON UPDATE`), so `Relation.onDelete`/`.onUpdate` are never populated by this adapter.
 
 ## TypeORM
 
@@ -227,3 +243,10 @@ Once a `DataSource`-like instance exists, regardless of path:
   emitted from exactly one side to avoid double-counting: `one-to-many` emits from the "one" side;
   `many-to-one` only emits standalone if no paired `@OneToMany` exists; `one-to-one` and
   `many-to-many` only emit from the owning side (the one carrying `@JoinColumn`/`@JoinTable`).
+- Relation actions: `onDelete`/`onUpdate` come from `RelationMetadata.onDelete`/`.onUpdate` on
+  whichever side actually owns the `@JoinColumn` — the paired `@ManyToOne` side for a
+  `one-to-many`'s "one" side, or the relation itself for a standalone `many-to-one`/owning
+  `one-to-one`, since that's the only place TypeORM accepts these options. TypeORM's own action
+  spelling (`RESTRICT`, `CASCADE`, `SET NULL`, `DEFAULT`, `NO ACTION` — note `DEFAULT`, not
+  `SET DEFAULT`) is mapped to the IR's lowercase form. Not read for `many-to-many`, since those
+  relations carry no FK columns in the IR to attach an action to anyway.

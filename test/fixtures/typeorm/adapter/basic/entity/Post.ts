@@ -16,7 +16,10 @@ export class Post {
   @Column({ default: false })
   published: boolean;
 
-  @ManyToOne(() => User, (user) => user.posts)
+  @ManyToOne(() => User, (user) => user.posts, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  })
   author: User;
 
   @ManyToMany(() => Tag, (tag) => tag.posts)

@@ -20,6 +20,13 @@ export interface SequelizeAttribute {
   unique?: boolean;
   defaultValue?: unknown;
   comment?: string;
+  // Only present on a foreign-key attribute — Association#_injectAttributes
+  // (belongs-to.js/has-many.js/belongs-to-many.js) always resolves and
+  // writes these onto the FK attribute via addForeignKeyConstraints, once
+  // per association unless `constraints: false` was set, defaulting
+  // unspecified onDelete to "SET NULL"/"CASCADE" depending on nullability.
+  onDelete?: string;
+  onUpdate?: string;
 }
 
 // Mirrors the `Association` base class in
