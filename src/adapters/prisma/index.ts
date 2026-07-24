@@ -108,6 +108,7 @@ export const prismaAdapter: ORMAdapter = {
         name: model.name,
         primaryKey,
         uniques: uniques.length > 0 ? uniques : undefined,
+        description: model.documentation,
         fields: model.fields
           .filter((f) => f.kind !== "object")
           .map((f) => ({
@@ -124,6 +125,7 @@ export const prismaAdapter: ORMAdapter = {
               : undefined,
             enumValues:
               f.kind === "enum" ? enumValuesByName.get(f.type) : undefined,
+            description: f.documentation,
           })),
       };
     });

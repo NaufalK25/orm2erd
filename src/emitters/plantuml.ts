@@ -30,6 +30,7 @@ export const plantumlEmitter: Emitter = {
         const extras = [
           constraints.length > 0 && `<<${constraints.join(", ")}>>`,
           field.defaultValue && ` = ${field.defaultValue}`,
+          field.description && `-- ${field.description}`,
         ].filter((c): c is string => Boolean(c));
         const marker = field.isPrimaryKey || !field.isNullable ? "* " : "";
         lines.push(
@@ -47,6 +48,9 @@ export const plantumlEmitter: Emitter = {
       otherFields.forEach(renderField);
 
       lines.push("}");
+      if (entity.description) {
+        lines.push(`note bottom of ${entity.name} : ${entity.description}`);
+      }
       lines.push("");
     }
 

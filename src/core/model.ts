@@ -23,11 +23,15 @@ export interface Field {
   isUnique?: boolean;
   defaultValue?: string;
   enumValues?: string[];
+  /** Free-text doc comment, e.g. Prisma's `///`, Sequelize's `comment`, TypeORM's `@Column({ comment })`. */
+  description?: string;
 }
 
 export interface Entity {
   name: string;
   fields: Field[];
+  /** Free-text doc comment, e.g. Prisma's `///`, Sequelize's `comment`, TypeORM's `@Entity({ comment })`. */
+  description?: string;
   // Composite key metadata. Single-column keys/uniques stay expressed via
   // the per-field `isPrimaryKey`/`isUnique` booleans; these arrays carry
   // only the multi-column groupings that a per-field boolean can't express.

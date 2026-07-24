@@ -404,6 +404,7 @@ function buildField(
     isUnique: uniqueColumnNames.has(column.propertyName),
     defaultValue: resolveDefaultValue(column.default),
     enumValues: column.enum?.map(String),
+    description: column.comment,
   };
 }
 
@@ -430,6 +431,7 @@ function buildEntity(entityMetadata: TypeOrmEntityMetadata): Entity {
   return {
     name: entityMetadata.name,
     ...extractCompositeKeys(entityMetadata),
+    description: entityMetadata.comment,
     fields: entityMetadata.columns.map((column) =>
       buildField(column, fkColumnNames, uniqueColumnNames),
     ),

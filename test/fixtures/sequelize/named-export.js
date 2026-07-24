@@ -18,13 +18,18 @@ export const sequelize = {
   models: {
     User: {
       name: "User",
+      options: { comment: "Registered application users." },
       rawAttributes: {
         id: {
           type: dataType("INTEGER"),
           primaryKey: true,
           autoIncrement: true,
         },
-        name: { type: dataType("STRING"), allowNull: false },
+        name: {
+          type: dataType("STRING"),
+          allowNull: false,
+          comment: "The user's display name.",
+        },
         email: { type: dataType("STRING"), unique: true },
         isActive: { type: dataType("BOOLEAN"), defaultValue: true },
         externalId: { type: dataType("UUID"), defaultValue: new UUIDV4() },

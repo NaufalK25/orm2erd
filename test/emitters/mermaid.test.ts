@@ -114,4 +114,29 @@ describe("mermaidEmitter", () => {
     expect(output).toContain("string? title");
     expect(output).toContain("string[] tags");
   });
+
+  it("renders field descriptions in the trailing comment slot and entity descriptions as a %% line", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          description: "Registered application users.",
+          fields: [
+            {
+              name: "name",
+              type: "string",
+              nativeType: "STRING",
+              description: "The user's display name.",
+            },
+          ],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = mermaidEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain("%% Registered application users.");
+    expect(output).toContain(`string name "The user's display name."`);
+  });
 });

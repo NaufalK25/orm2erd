@@ -209,6 +209,7 @@ export const sequelizeAdapter: ORMAdapter = {
       return {
         name,
         ...extractCompositeKeys(model),
+        description: model.options?.comment,
         fields: Object.entries(model.rawAttributes).map(
           ([fieldName, attr]) => ({
             name: fieldName,
@@ -228,6 +229,7 @@ export const sequelizeAdapter: ORMAdapter = {
               attr.type.constructor.name === "ENUM"
                 ? attr.type.values
                 : undefined,
+            description: attr.comment,
           }),
         ),
       };

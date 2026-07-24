@@ -37,6 +37,8 @@ only adapter that doesn't need to import the target project's code at runtime:
   and `model.uniqueFields`) can't be expressed per-field, so they're carried on the entity as
   `primaryKey`/`uniques` arrays. Composite-PK member fields still keep `isPrimaryKey` too, so
   emitters that only read per-field flags still mark them.
+- Descriptions: `///` doc comments come through DMMF as `documentation` on both `Model` and
+  `Field`, mapped straight to `Entity.description`/`Field.description` — no extra parsing needed.
 - Relations: Prisma emits a relation field on **both** related models sharing a `relationName`, so
   fields are grouped by that name and each pair collapses into one `Relation`. Cardinality comes
   from each side's `isList`; for 1-1, whichever side carries `relationFromFields` (the actual FK
@@ -73,6 +75,8 @@ already-computed metadata (`.models`, `.associations`) can be read directly:
 - Composite keys: a composite PK comes from `model.primaryKeyAttributes` (only carried on the
   entity when it spans >1 column); multi-column uniques come from `model.options.indexes` entries
   with `unique: true` and >1 field. Single-column PK/unique stay on the per-field flags.
+- Descriptions: `Entity.description` comes from the model's `options.comment` (table comment);
+  `Field.description` comes from each attribute's own `comment` option.
 - Relations come from `model.associations`. Sides are grouped by a key of the sorted model-name
   pair plus `foreignKey` (with `BelongsToMany`'s `foreignKey`/`otherKey` sorted too, since they
   swap between the two inverse sides). The association type on each group picks the relation type:
@@ -126,6 +130,8 @@ module instance gets imported and *which* files get executed:
 - Composite keys: there's no composite PK (`_id` is always the single key), but multi-column
   uniques are read from `schema.indexes()` — each compound index with `{ unique: true }` and >1
   field. Single-field `unique` stays on the path's own flag.
+- No descriptions: Mongoose has no built-in comment/description option on a schema path or model,
+  so `Entity.description`/`Field.description` are never populated by this adapter.
 - Relations are the trickiest part: Mongoose has no shared relation key like Prisma's
   `relationName` or Sequelize's `foreignKey`. `ref`-bearing paths ("sides") are grouped by the
   sorted pair of the two model names, and only collapsed into one `Relation` when there's an exact
@@ -197,6 +203,9 @@ Once a `DataSource`-like instance exists, regardless of path:
 - Composite keys: a composite PK comes from `entityMetadata.primaryColumns` (>1 column), and
   multi-column uniques from `entityMetadata.uniques` (each `@Unique([...])` spanning >1 column).
   Single-column PK/unique stay on the per-field flags.
+- Descriptions: `Entity.description` comes from `@Entity({ comment })`, read off
+  `entityMetadata.comment`; `Field.description` comes from `@Column({ comment })`, read off each
+  column's own `comment`.
 - Relations: TypeORM creates one `RelationMetadata` per declared side (e.g. `User.posts` and
   `Post.author` are two separate objects linked via `.inverseRelation`). Each relation type is
   emitted from exactly one side to avoid double-counting: `one-to-many` emits from the "one" side;

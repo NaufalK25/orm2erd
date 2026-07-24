@@ -105,6 +105,24 @@ describe("typeormAdapter.extract — raw .ts DataSource (compiled via the target
     const model = await extractFixture("basic", "data-source.ts");
     expect(model.relations).toHaveLength(3);
   });
+
+  it("carries @Entity/@Column `comment` as entity and field descriptions", async () => {
+    const model = await extractFixture("basic", "data-source.ts");
+    const user = model.entities.find((e) => e.name === "User")!;
+    expect(user.description).toBe("Registered application users.");
+    expect(user.fields.find((f) => f.name === "name")?.description).toBe(
+      "The user's display name.",
+    );
+    expect(
+      user.fields.find((f) => f.name === "email")?.description,
+    ).toBeUndefined();
+  });
+
+  it("leaves description undefined when no comment option is set", async () => {
+    const model = await extractFixture("basic", "data-source.ts");
+    const post = model.entities.find((e) => e.name === "Post")!;
+    expect(post.description).toBeUndefined();
+  });
 });
 
 describe("typeormAdapter.extract — plain .js entry (no tsc compile needed)", () => {

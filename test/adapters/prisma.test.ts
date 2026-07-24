@@ -122,3 +122,33 @@ describe("prismaAdapter.extract — composite keys", () => {
     expect(user.uniques).toBeUndefined();
   });
 });
+
+describe("prismaAdapter.extract — descriptions", () => {
+  it("carries `///` doc comments as entity and field descriptions", async () => {
+    const entry = await prismaAdapter.resolveEntry(
+      join(fixturesDir, "single/schema.prisma"),
+      fixturesDir,
+    );
+    const model = await prismaAdapter.extract(entry);
+    const user = model.entities.find((e) => e.name === "User")!;
+
+    expect(user.description).toBe("Registered application users.");
+    expect(user.fields.find((f) => f.name === "name")?.description).toBe(
+      "The user's display name.",
+    );
+    expect(
+      user.fields.find((f) => f.name === "email")?.description,
+    ).toBeUndefined();
+  });
+
+  it("leaves description undefined when a model/field has no doc comment", async () => {
+    const entry = await prismaAdapter.resolveEntry(
+      join(fixturesDir, "composite/schema.prisma"),
+      fixturesDir,
+    );
+    const model = await prismaAdapter.extract(entry);
+    const membership = model.entities.find((e) => e.name === "Membership")!;
+
+    expect(membership.description).toBeUndefined();
+  });
+});

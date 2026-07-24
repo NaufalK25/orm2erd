@@ -9,6 +9,9 @@ export const mermaidEmitter: Emitter = {
     const lines = ["erDiagram", "", "  %% Entities"];
 
     for (const entity of model.entities) {
+      if (entity.description) {
+        lines.push(`  %% ${entity.description}`);
+      }
       lines.push(`  ${entity.name} {`);
       for (const field of entity.fields) {
         const displayType =
@@ -23,6 +26,7 @@ export const mermaidEmitter: Emitter = {
           field.enumValues && "enum: " + field.enumValues.join(", "),
           field.defaultValue &&
             "default: " + field.defaultValue.replaceAll('"', "'"),
+          field.description && field.description.replaceAll('"', "'"),
         ].filter((c): c is string => Boolean(c));
         lines.push(
           `    ${typeLabel} ${field.name}${constraints.length > 0 ? " " + constraints.join(", ") : ""}${comments.length > 0 ? ' "' + comments.join(" | ") + '"' : ""}`,

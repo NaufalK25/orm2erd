@@ -177,6 +177,33 @@ describe("plantumlEmitter", () => {
     expect(output).toContain("* tags : string[]");
   });
 
+  it("renders field descriptions inline and entity descriptions as a bottom note", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          description: "Registered application users.",
+          fields: [
+            {
+              name: "name",
+              type: "string",
+              nativeType: "STRING",
+              description: "The user's display name.",
+            },
+          ],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = plantumlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain("-- The user's display name.");
+    expect(output).toContain(
+      "note bottom of User : Registered application users.",
+    );
+  });
+
   it("does not use an alias, referencing entities by their bare name", () => {
     const model: ERDModel = {
       entities: [

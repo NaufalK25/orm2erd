@@ -253,6 +253,31 @@ describe("dbmlEmitter", () => {
     expect(output).not.toContain("indexes {");
   });
 
+  it("renders field and entity descriptions as DBML notes", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          description: "Registered application users.",
+          fields: [
+            {
+              name: "name",
+              type: "string",
+              nativeType: "STRING",
+              description: "The user's display name.",
+            },
+          ],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain(`note: 'The user"s display name.'`);
+    expect(output).toContain(`Note: 'Registered application users.'`);
+  });
+
   it("skips a relation missing a column on either side instead of emitting a bare table-to-table Ref", () => {
     const model: ERDModel = {
       entities: [],

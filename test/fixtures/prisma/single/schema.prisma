@@ -7,8 +7,10 @@ enum Status {
   published
 }
 
+/// Registered application users.
 model User {
   id       Int     @id @default(autoincrement())
+  /// The user's display name.
   name     String
   email    String  @unique
   isActive Boolean @default(true)

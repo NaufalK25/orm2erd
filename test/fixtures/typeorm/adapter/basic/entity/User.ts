@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne } from "typ
 import { Post } from "./Post";
 import { Profile } from "./Profile";
 
-@Entity()
+@Entity({ comment: "Registered application users." })
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -10,7 +10,7 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, comment: "The user's display name." })
   name?: string;
 
   @OneToMany(() => Post, (post) => post.author)

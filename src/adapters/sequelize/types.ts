@@ -19,6 +19,7 @@ export interface SequelizeAttribute {
   allowNull?: boolean;
   unique?: boolean;
   defaultValue?: unknown;
+  comment?: string;
 }
 
 // Mirrors the `Association` base class in
@@ -53,7 +54,7 @@ export interface SequelizeModel {
   rawAttributes: Record<string, SequelizeAttribute>;
   associations: Record<string, SequelizeAssociation>;
   primaryKeyAttributes?: string[];
-  options?: { indexes?: SequelizeIndex[] };
+  options?: { indexes?: SequelizeIndex[]; comment?: string };
   associate?: (models: Record<string, SequelizeModel>) => void;
 }
 

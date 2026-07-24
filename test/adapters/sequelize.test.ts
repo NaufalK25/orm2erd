@@ -124,6 +124,24 @@ describe("sequelizeAdapter.extract — field mapping", () => {
     const id = post.fields.find((f) => f.name === "id")!;
     expect(id.defaultValue).toBe("nextval('posts_id_seq')");
   });
+
+  it("carries table/attribute `comment` as entity and field descriptions", async () => {
+    const model = await extractFixture("named-export.js");
+    const user = model.entities.find((e) => e.name === "User")!;
+    expect(user.description).toBe("Registered application users.");
+    expect(user.fields.find((f) => f.name === "name")?.description).toBe(
+      "The user's display name.",
+    );
+    expect(
+      user.fields.find((f) => f.name === "email")?.description,
+    ).toBeUndefined();
+  });
+
+  it("leaves description undefined when no comment option is set", async () => {
+    const model = await extractFixture("named-export.js");
+    const post = model.entities.find((e) => e.name === "Post")!;
+    expect(post.description).toBeUndefined();
+  });
 });
 
 describe("sequelizeAdapter.extract — relation dedup", () => {

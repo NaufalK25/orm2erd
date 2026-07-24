@@ -29,6 +29,8 @@ export const dbmlEmitter: Emitter = {
           field.isUnique && "unique",
           !field.isNullable && "not null",
           field.defaultValue && "default: " + defaultValueDisplay,
+          field.description &&
+            `note: '${field.description.replaceAll("'", '"')}'`,
         ].filter((c): c is string => Boolean(c));
         lines.push(
           `  ${field.name} ${typeLabel}${constraints.length > 0 ? " [" + constraints.join(", ") + "]" : ""}`,
@@ -48,6 +50,10 @@ export const dbmlEmitter: Emitter = {
       ].filter((l): l is string => Boolean(l));
       if (indexLines.length > 0) {
         lines.push("", "  indexes {", ...indexLines, "  }");
+      }
+
+      if (entity.description) {
+        lines.push(`  Note: '${entity.description.replaceAll("'", '"')}'`);
       }
 
       lines.push("}");

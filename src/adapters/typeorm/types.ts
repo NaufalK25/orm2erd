@@ -33,6 +33,7 @@ export interface TypeOrmColumnMetadata {
   isNullable: boolean;
   default?: unknown;
   enum?: (string | number)[];
+  comment?: string;
 }
 
 // Mirrors `metadata/UniqueMetadata.ts`.
@@ -68,4 +69,5 @@ export interface TypeOrmEntityMetadata {
   relations: TypeOrmRelationMetadata[];
   uniques: TypeOrmUniqueMetadata[];
   primaryColumns: TypeOrmColumnMetadata[];
+  comment?: string;
 }
