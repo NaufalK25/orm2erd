@@ -1,0 +1,7 @@
+{
+  "name": "e2e-sequelize-app-fixture",
+  "version": "1.0.0",
+  "dependencies": {
+    "sequelize": "^6.37.8"
+  }
+}

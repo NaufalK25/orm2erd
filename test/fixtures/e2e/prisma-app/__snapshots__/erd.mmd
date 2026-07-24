@@ -1,0 +1,24 @@
+erDiagram
+
+  %% Entities
+  User {
+    int id PK "default: autoincrement()"
+    string email UK
+    enum role "enum: MEMBER, ADMIN | default: MEMBER"
+  }
+
+  Post {
+    int id PK "default: autoincrement()"
+    string title
+    string? content
+    int authorId FK
+  }
+
+  Tag {
+    int id PK "default: autoincrement()"
+    string name UK
+  }
+
+  %% Relationships
+  User ||--o{ Post : "posts"
+  Post }o--o{ Tag : "tags"

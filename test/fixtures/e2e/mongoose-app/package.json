@@ -1,0 +1,7 @@
+{
+  "name": "e2e-mongoose-app-fixture",
+  "version": "1.0.0",
+  "dependencies": {
+    "mongoose": "^9.7.4"
+  }
+}

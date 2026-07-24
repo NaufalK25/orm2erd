@@ -1,0 +1,33 @@
+erDiagram
+
+  %% Entities
+  Tag {
+    int id PK
+    string name UK
+  }
+
+  Post {
+    int id PK
+    string title
+    string? content
+    boolean published "default: false"
+    int? author FK
+  }
+
+  Profile {
+    int id PK
+    string? bio
+    int? user FK, UK
+  }
+
+  %% Registered application users.
+  User {
+    int id PK
+    string email UK
+    string? name "The user's display name."
+  }
+
+  %% Relationships
+  Post }o--o{ Tag : "tags"
+  Profile ||--|| User : "user"
+  User ||--o{ Post : "posts"

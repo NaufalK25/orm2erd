@@ -1,0 +1,28 @@
+// Entities
+Table Author {
+  name string [not null]
+  email string [unique, not null]
+  posts string[]
+  _id string [pk, not null]
+}
+
+Table Post {
+  title string [not null]
+  content string
+  author string [not null]
+  tags string[]
+  _id string [pk, not null]
+
+  indexes {
+    (author, title) [unique]
+  }
+}
+
+Table Tag {
+  name string [unique, not null]
+  posts string[]
+  _id string [pk, not null]
+}
+
+// Relationships
+Ref: Author._id > Post.author

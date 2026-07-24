@@ -1,0 +1,39 @@
+erDiagram
+
+  %% Entities
+  %% Registered application users.
+  User {
+    int id PK
+    string email UK
+    string? name
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  Post {
+    int id PK
+    string title
+    enum? status "enum: draft, published | default: draft"
+    int authorId FK
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  Tag {
+    int id PK
+    string name UK
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  PostTag {
+    int postId PK, FK, UK
+    int tagId PK, FK, UK
+    datetime createdAt
+    datetime updatedAt
+  }
+
+  %% Relationships
+  User ||--o{ Post : "posts"
+  Post ||--o{ PostTag : "tagLinks"
+  Tag ||--o{ PostTag : "postLinks"

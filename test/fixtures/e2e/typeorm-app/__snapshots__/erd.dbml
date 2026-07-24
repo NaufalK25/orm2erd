@@ -1,0 +1,30 @@
+// Entities
+Table Tag {
+  id int [pk, not null]
+  name string [unique, not null]
+}
+
+Table Post {
+  id int [pk, not null]
+  title string [not null]
+  content string
+  published boolean [not null, default: "false"]
+  author int
+}
+
+Table Profile {
+  id int [pk, not null]
+  bio string
+  user int [unique]
+}
+
+Table User {
+  id int [pk, not null]
+  email string [unique, not null]
+  name string [note: "The user's display name."]
+  Note: "Registered application users."
+}
+
+// Relationships
+Ref: Profile.user - User.id [delete: set null]
+Ref: User.id > Post.author [delete: cascade, update: cascade]

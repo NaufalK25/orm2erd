@@ -1,0 +1,47 @@
+// Entities
+Table User {
+  id int [pk, not null]
+  email string [unique, not null]
+  name string
+  createdAt datetime [not null]
+  updatedAt datetime [not null]
+  Note: "Registered application users."
+}
+
+Table Post {
+  id int [pk, not null]
+  title string [not null]
+  status enum_Post_status [default: "draft"]
+  authorId int [not null]
+  createdAt datetime [not null]
+  updatedAt datetime [not null]
+}
+
+Table Tag {
+  id int [pk, not null]
+  name string [unique, not null]
+  createdAt datetime [not null]
+  updatedAt datetime [not null]
+}
+
+Table PostTag {
+  postId int [unique, not null]
+  tagId int [unique, not null]
+  createdAt datetime [not null]
+  updatedAt datetime [not null]
+
+  indexes {
+    (postId, tagId) [pk]
+  }
+}
+
+// Relationships
+Ref: User.id > Post.authorId [delete: cascade, update: cascade]
+Ref: Post.id > PostTag.postId [delete: cascade, update: cascade]
+Ref: Tag.id > PostTag.tagId [delete: cascade, update: cascade]
+
+// Enums
+Enum enum_Post_status {
+  "draft"
+  "published"
+}

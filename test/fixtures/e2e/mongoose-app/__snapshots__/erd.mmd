@@ -1,0 +1,27 @@
+erDiagram
+
+  %% Entities
+  Author {
+    string name
+    string email UK
+    string[]? posts FK
+    string _id PK
+  }
+
+  Post {
+    string title
+    string? content
+    string author FK
+    string[]? tags FK
+    string _id PK
+  }
+
+  Tag {
+    string name UK
+    string[]? posts FK
+    string _id PK
+  }
+
+  %% Relationships
+  Author ||--o{ Post : "posts"
+  Post }o--o{ Tag : "tags"

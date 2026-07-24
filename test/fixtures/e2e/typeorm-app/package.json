@@ -1,0 +1,8 @@
+{
+  "name": "e2e-typeorm-app-fixture",
+  "version": "1.0.0",
+  "dependencies": {
+    "typeorm": "^1.1.0",
+    "reflect-metadata": "^0.2.2"
+  }
+}

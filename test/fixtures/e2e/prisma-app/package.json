@@ -1,0 +1,10 @@
+{
+  "name": "e2e-prisma-app-fixture",
+  "version": "1.0.0",
+  "dependencies": {
+    "@prisma/client": "^7.0.0"
+  },
+  "devDependencies": {
+    "prisma": "^7.0.0"
+  }
+}

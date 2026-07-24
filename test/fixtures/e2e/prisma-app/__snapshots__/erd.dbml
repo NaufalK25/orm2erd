@@ -1,0 +1,31 @@
+// Entities
+Table User {
+  id int [pk, not null, default: "autoincrement()"]
+  email string [unique, not null]
+  role Role [not null, default: "MEMBER"]
+}
+
+Table Post {
+  id int [pk, not null, default: "autoincrement()"]
+  title string [not null]
+  content string
+  authorId int [not null]
+
+  indexes {
+    (authorId, title) [unique]
+  }
+}
+
+Table Tag {
+  id int [pk, not null, default: "autoincrement()"]
+  name string [unique, not null]
+}
+
+// Relationships
+Ref: User.id > Post.authorId [delete: cascade]
+
+// Enums
+Enum Role {
+  "MEMBER"
+  "ADMIN"
+}
