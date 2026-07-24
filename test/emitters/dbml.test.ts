@@ -224,7 +224,7 @@ describe("dbmlEmitter", () => {
     expect(output).toContain("indexes {");
     expect(output).toContain("role");
     expect(output).not.toContain("role [");
-    expect(output).toContain("(userId, role) [name: 'user_role_idx']");
+    expect(output).toContain(`(userId, role) [name: "user_role_idx"]`);
   });
 
   it("declares a composite PK only in the indexes block, not per-field (no double pk)", () => {
@@ -279,7 +279,7 @@ describe("dbmlEmitter", () => {
     expect(output).not.toContain("indexes {");
   });
 
-  it("renders field and entity descriptions as DBML notes", () => {
+  it("renders field and entity descriptions as DBML notes, preserving apostrophes", () => {
     const model: ERDModel = {
       entities: [
         {
@@ -300,8 +300,27 @@ describe("dbmlEmitter", () => {
 
     const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
 
-    expect(output).toContain(`note: 'The user"s display name.'`);
-    expect(output).toContain(`Note: 'Registered application users.'`);
+    expect(output).toContain(`note: "The user's display name."`);
+    expect(output).toContain(`Note: "Registered application users."`);
+  });
+
+  it("escapes embedded double quotes in a description instead of breaking the quoted note", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "Post",
+          description: 'Known as the "hero" post on the homepage.',
+          fields: [],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain(
+      `Note: "Known as the 'hero' post on the homepage."`,
+    );
   });
 
   it("skips a relation missing a column on either side instead of emitting a bare table-to-table Ref", () => {

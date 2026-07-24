@@ -30,7 +30,7 @@ export const dbmlEmitter: Emitter = {
           !field.isNullable && "not null",
           field.defaultValue && "default: " + defaultValueDisplay,
           field.description &&
-            `note: '${field.description.replaceAll("'", '"')}'`,
+            `note: "${field.description.replaceAll('"', "'")}"`,
         ].filter((c): c is string => Boolean(c));
         lines.push(
           `  ${field.name} ${typeLabel}${constraints.length > 0 ? " [" + constraints.join(", ") + "]" : ""}`,
@@ -56,7 +56,7 @@ export const dbmlEmitter: Emitter = {
               : idx.fields[0];
           const attrs = [
             idx.isUnique && "unique",
-            idx.name && `name: '${idx.name.replaceAll("'", '"')}'`,
+            idx.name && `name: "${idx.name.replaceAll('"', "'")}"`,
           ].filter((a): a is string => Boolean(a));
           return `    ${columns}${attrs.length > 0 ? " [" + attrs.join(", ") + "]" : ""}`;
         }),
@@ -66,7 +66,7 @@ export const dbmlEmitter: Emitter = {
       }
 
       if (entity.description) {
-        lines.push(`  Note: '${entity.description.replaceAll("'", '"')}'`);
+        lines.push(`  Note: "${entity.description.replaceAll('"', "'")}"`);
       }
 
       lines.push("}");
