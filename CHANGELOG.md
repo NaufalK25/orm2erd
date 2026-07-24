@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🏷️ [1.6.0] - 2026-07-24
+
+### 🚀 Added
+
+- **`--check` flag**: regenerates the ERD in memory and compares it against what's already on
+  disk instead of writing — up to date exits `0`; drifted prints a diff and exits `1`; missing
+  exits `1` too. Never touches the filesystem, so it's safe in a pre-commit hook or CI. The diff
+  highlights only the changed words within an edited line (via an LCS-based word diff), not the
+  whole line, alongside plain `+`/`-` for added/removed lines. Forces non-interactive mode so it
+  never blocks on a prompt. See the new "Keeping the ERD in sync (CI)" README section for a
+  drop-in GitHub Actions workflow.
+- **Composite primary keys and multi-column unique constraints.** `Entity.primaryKey`/`.uniques`
+  carry the ordered member columns of a composite key/multi-column unique across all four adapters
+  (Prisma's `@@id`/`@@unique`, Sequelize's `primaryKeyAttributes`/`options.indexes`, Mongoose's
+  compound `schema.indexes()`, TypeORM's `primaryColumns`/`uniques`); single-column keys still use
+  the existing per-field `isPrimaryKey`/`isUnique`. DBML renders these as a native
+  `indexes { (a, b) [pk] }`/`[unique]` block; other emitters mark the member fields individually.
+- **Plain (non-unique) indexes.** `Entity.indexes` carries single- or multi-column lookup indexes
+  (Prisma `@@index`, Sequelize `options.indexes`, Mongoose `schema.indexes()`, TypeORM `@Index()`),
+  rendered as DBML `indexes { ... }` entries; other emitters have no equivalent construct and
+  skip them.
+- **Descriptions and comments.** Doc comments (Prisma's `///`, Sequelize's `comment` option,
+  TypeORM's `@Entity({ comment })`/`@Column({ comment })`) are read onto `Entity.description`/
+  `Field.description` and rendered as a DBML `Note`/inline `note:`, a Mermaid comment line/trailing
+  annotation, or a PlantUML note. Mongoose has no comment concept on a schema, so its adapter never
+  populates these.
+- **`onDelete`/`onUpdate` relation actions.** Referential actions declared on a foreign key
+  (Prisma's `@relation(onDelete: ...)`, Sequelize's FK attribute options — including the defaults
+  Sequelize itself applies when nothing is declared, and TypeORM's `@ManyToOne`/`@OneToOne`
+  options) are carried on `Relation.onDelete`/`.onUpdate` and rendered as DBML's
+  `[delete: cascade, update: restrict]`. Mongoose has no FK-constraint concept, so its adapter
+  never populates these.
+- **GraphViz DOT output** (`--format graphvizdot`), emitting an HTML-label table per entity with
+  `PK`/`FK`/`UK` markers and directed edges with crow's-foot-style arrowheads for `1-1`/`1-n`/`n-n`
+  cardinality.
+- Friendlier errors for common Sequelize/Mongoose/TypeORM extraction failures: a missing
+  target-project dependency, a missing `reflect-metadata` import, an eager database connection
+  attempt at import time, or a CommonJS/ESM mismatch now get an actionable hint appended below the
+  raw error, instead of surfacing only the bare error message.
+
+### 💊 Fixed
+
+- A Sequelize `BelongsToMany` whose `through` junction is itself an emitted entity produced a
+  redundant derived `n-n` relation on top of the two `1-n` edges already implied by the junction's
+  own associations. The derived edge is now suppressed whenever the junction is actually rendered
+  as its own table (an implicit, unnamed join table that isn't emitted as an entity still keeps its
+  `n-n` edge, since nothing else conveys the relationship for it).
+- DBML `Note`/index-name values were wrapped in single quotes with embedded single quotes escaped
+  to double quotes, which read oddly for descriptions that were themselves already double-quoted
+  prose. Both are now consistently double-quoted, with embedded double quotes escaped to single
+  quotes instead.
+
 ## 🏷️ [1.5.0] - 2026-07-21
 
 ### 🚀 Added
