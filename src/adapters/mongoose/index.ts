@@ -211,9 +211,24 @@ function buildField(
   };
 }
 
+// Compound `unique` indexes — the only multi-column grouping Mongoose
+// expresses (single-field `unique` stays on the path). No composite PK
+// concept exists: `_id` is always the single primary key.
+function extractCompositeUniques(
+  schema: MongooseModel["schema"],
+): string[][] | undefined {
+  const uniques = schema
+    .indexes()
+    .filter(([, options]) => options?.unique)
+    .map(([fields]) => Object.keys(fields))
+    .filter((fields) => fields.length > 1);
+  return uniques.length > 0 ? uniques : undefined;
+}
+
 function buildEntity(name: string, model: MongooseModel): Entity {
   return {
     name,
+    uniques: extractCompositeUniques(model.schema),
     fields: Object.entries(model.schema.paths)
       // __v is Mongoose's own bookkeeping column, not modeled data — every
       // document gets one, so surfacing it would just add noise to every entity.

@@ -124,6 +124,26 @@ function findPrimaryKeyField(model: SequelizeModel): string | undefined {
   )?.[0];
 }
 
+// Multi-column key/unique groupings a per-attribute flag can't express.
+// Single-column PK/unique stay on the field's isPrimaryKey/isUnique.
+function extractCompositeKeys(model: SequelizeModel): {
+  primaryKey?: string[];
+  uniques?: string[][];
+} {
+  const pkAttrs = model.primaryKeyAttributes ?? [];
+  const uniques = (model.options?.indexes ?? [])
+    .filter((idx) => idx.unique)
+    .map((idx) =>
+      (idx.fields ?? []).map((f) => (typeof f === "string" ? f : f.name)),
+    )
+    .filter((fields) => fields.length > 1);
+
+  return {
+    primaryKey: pkAttrs.length > 1 ? [...pkAttrs] : undefined,
+    uniques: uniques.length > 0 ? uniques : undefined,
+  };
+}
+
 export const sequelizeAdapter: ORMAdapter = {
   name: "sequelize",
 
@@ -188,6 +208,7 @@ export const sequelizeAdapter: ORMAdapter = {
       );
       return {
         name,
+        ...extractCompositeKeys(model),
         fields: Object.entries(model.rawAttributes).map(
           ([fieldName, attr]) => ({
             name: fieldName,

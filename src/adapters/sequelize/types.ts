@@ -37,12 +37,23 @@ export interface SequelizeAssociation {
   through?: { model?: { name: string } };
 }
 
+// Mirrors one entry of `IndexesOptions[]` in `sequelize/types/model.d.ts`.
+// A field is either a bare attribute name or an object whose `name` is the
+// attribute name (the `{ name, order, length, ... }` normalized form).
+export interface SequelizeIndex {
+  unique?: boolean;
+  fields?: (string | { name: string })[];
+}
+
 // Mirrors the static `Model.rawAttributes`/`Model.associations` members in
-// `sequelize/types/model.d.ts`.
+// `sequelize/types/model.d.ts`. `primaryKeyAttributes` and `options.indexes`
+// carry the multi-column key/unique groupings a per-attribute flag can't.
 export interface SequelizeModel {
   name: string;
   rawAttributes: Record<string, SequelizeAttribute>;
   associations: Record<string, SequelizeAssociation>;
+  primaryKeyAttributes?: string[];
+  options?: { indexes?: SequelizeIndex[] };
   associate?: (models: Record<string, SequelizeModel>) => void;
 }
 

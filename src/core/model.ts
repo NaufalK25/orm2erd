@@ -28,6 +28,13 @@ export interface Field {
 export interface Entity {
   name: string;
   fields: Field[];
+  // Composite key metadata. Single-column keys/uniques stay expressed via
+  // the per-field `isPrimaryKey`/`isUnique` booleans; these arrays carry
+  // only the multi-column groupings that a per-field boolean can't express.
+  /** Ordered member columns, set only when the PK is composite (length > 1). */
+  primaryKey?: string[];
+  /** Each inner array is one multi-column unique constraint (length > 1). */
+  uniques?: string[][];
 }
 
 export interface Relation {

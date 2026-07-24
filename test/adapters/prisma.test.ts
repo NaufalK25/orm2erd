@@ -93,3 +93,32 @@ describe.each([
     expect(postTag).toBeDefined();
   });
 });
+
+describe("prismaAdapter.extract — composite keys", () => {
+  const schemaPath = join(fixturesDir, "composite/schema.prisma");
+
+  it("carries composite PK and multi-column unique as IR arrays", async () => {
+    const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
+    const model = await prismaAdapter.extract(entry);
+    const membership = model.entities.find((e) => e.name === "Membership")!;
+
+    expect(membership.primaryKey).toEqual(["userId", "orgId"]);
+    expect(membership.uniques).toEqual([["orgId", "role"]]);
+    // Composite PK members still carry the per-field marker.
+    expect(
+      membership.fields.find((f) => f.name === "userId")?.isPrimaryKey,
+    ).toBe(true);
+  });
+
+  it("leaves primaryKey/uniques undefined when nothing is composite", async () => {
+    const entry = await prismaAdapter.resolveEntry(
+      join(fixturesDir, "single/schema.prisma"),
+      fixturesDir,
+    );
+    const model = await prismaAdapter.extract(entry);
+    const user = model.entities.find((e) => e.name === "User")!;
+
+    expect(user.primaryKey).toBeUndefined();
+    expect(user.uniques).toBeUndefined();
+  });
+});

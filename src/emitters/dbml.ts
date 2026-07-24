@@ -11,6 +11,9 @@ export const dbmlEmitter: Emitter = {
 
     for (const entity of model.entities) {
       lines.push(`Table ${entity.name} {`);
+      // Composite PK members are declared once in the `indexes` block below;
+      // also tagging each field `[pk]` would double-define the primary key.
+      const compositePkMembers = new Set(entity.primaryKey ?? []);
       for (const field of entity.fields) {
         const displayType =
           typeMode === "native" ||
@@ -22,7 +25,7 @@ export const dbmlEmitter: Emitter = {
           ? `"${field.defaultValue.replaceAll('"', "'")}"`
           : undefined;
         const constraints = [
-          field.isPrimaryKey && "pk",
+          field.isPrimaryKey && !compositePkMembers.has(field.name) && "pk",
           field.isUnique && "unique",
           !field.isNullable && "not null",
           field.defaultValue && "default: " + defaultValueDisplay,
@@ -35,6 +38,18 @@ export const dbmlEmitter: Emitter = {
           enumsByName.set(field.nativeType, field.enumValues);
         }
       }
+
+      // Composite PK / multi-column uniques → DBML native indexes block.
+      const indexLines = [
+        entity.primaryKey && `    (${entity.primaryKey.join(", ")}) [pk]`,
+        ...(entity.uniques ?? []).map(
+          (cols) => `    (${cols.join(", ")}) [unique]`,
+        ),
+      ].filter((l): l is string => Boolean(l));
+      if (indexLines.length > 0) {
+        lines.push("", "  indexes {", ...indexLines, "  }");
+      }
+
       lines.push("}");
       lines.push("");
     }

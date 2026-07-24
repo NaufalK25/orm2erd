@@ -164,3 +164,26 @@ describe("sequelizeAdapter.extract — relation dedup", () => {
     expect(model.relations).toHaveLength(2);
   });
 });
+
+describe("sequelizeAdapter.extract — composite keys", () => {
+  it("carries composite PK and multi-column unique, ignoring single-column and non-unique indexes", async () => {
+    const model = await extractFixture("composite-keys.js");
+    const membership = model.entities.find((e) => e.name === "Membership")!;
+
+    expect(membership.primaryKey).toEqual(["userId", "orgId"]);
+    // Only the multi-column unique index; `slug` (single) and the non-unique
+    // composite index are excluded.
+    expect(membership.uniques).toEqual([["orgId", "role"]]);
+    // Composite PK members still carry the per-field marker.
+    expect(
+      membership.fields.find((f) => f.name === "userId")?.isPrimaryKey,
+    ).toBe(true);
+  });
+
+  it("leaves primaryKey/uniques undefined for a single-PK model", async () => {
+    const model = await extractFixture("named-export.js");
+    const user = model.entities.find((e) => e.name === "User")!;
+    expect(user.primaryKey).toBeUndefined();
+    expect(user.uniques).toBeUndefined();
+  });
+});

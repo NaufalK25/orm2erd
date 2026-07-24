@@ -177,6 +177,82 @@ describe("dbmlEmitter", () => {
     expect(output).toContain("Ref: User.id > Post.authorId");
   });
 
+  it("renders composite PK and multi-column unique in an indexes block", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "Membership",
+          primaryKey: ["userId", "orgId"],
+          uniques: [["orgId", "role"]],
+          fields: [
+            { name: "userId", type: "int", nativeType: "INTEGER" },
+            { name: "orgId", type: "int", nativeType: "INTEGER" },
+            { name: "role", type: "string", nativeType: "STRING" },
+          ],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain("indexes {");
+    expect(output).toContain("(userId, orgId) [pk]");
+    expect(output).toContain("(orgId, role) [unique]");
+  });
+
+  it("declares a composite PK only in the indexes block, not per-field (no double pk)", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "Membership",
+          primaryKey: ["userId", "orgId"],
+          fields: [
+            // Members carry isPrimaryKey from the adapter, but DBML must not
+            // also tag them [pk] or dbdiagram double-defines the primary key.
+            {
+              name: "userId",
+              type: "int",
+              nativeType: "INTEGER",
+              isPrimaryKey: true,
+              isNullable: false,
+            },
+            {
+              name: "orgId",
+              type: "int",
+              nativeType: "INTEGER",
+              isPrimaryKey: true,
+              isNullable: false,
+            },
+          ],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain("userId int [not null]");
+    expect(output).not.toContain("userId int [pk");
+    expect(output).toContain("(userId, orgId) [pk]");
+  });
+
+  it("omits the indexes block when there are no composite keys", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          fields: [{ name: "id", type: "int", nativeType: "INTEGER" }],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).not.toContain("indexes {");
+  });
+
   it("skips a relation missing a column on either side instead of emitting a bare table-to-table Ref", () => {
     const model: ERDModel = {
       entities: [],

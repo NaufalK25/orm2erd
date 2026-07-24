@@ -158,3 +158,21 @@ describe("typeormAdapter.extract — error cases", () => {
     );
   });
 });
+
+describe("typeormAdapter.extract — composite keys", () => {
+  it("carries composite PK and multi-column unique, keeping single-column unique on the field", async () => {
+    const model = await extractFixture("composite", "data-source.ts");
+    const membership = model.entities.find((e) => e.name === "Membership")!;
+
+    expect(membership.primaryKey).toEqual(["userId", "orgId"]);
+    expect(membership.uniques).toEqual([["orgId", "role"]]);
+    // Composite PK members still carry the per-field marker.
+    expect(
+      membership.fields.find((f) => f.name === "userId")?.isPrimaryKey,
+    ).toBe(true);
+    // The single-column `slug` unique stays on the field, not the group.
+    expect(membership.fields.find((f) => f.name === "slug")?.isUnique).toBe(
+      true,
+    );
+  });
+});

@@ -32,6 +32,11 @@ only adapter that doesn't need to import the target project's code at runtime:
   `getDMMF()` only needs the schema's shape, but errors on missing datasource env vars otherwise.
 - Fields: DMMF's `kind`/`type` map to a canonical type via a lookup table; `@default(...)`
   function calls (e.g. `now()`) are reconstructed as `name(args)` strings.
+- Composite keys: single-column `@id`/`@unique` stay on the per-field `isPrimaryKey`/`isUnique`
+  flags, but multi-column `@@id([...])`/`@@unique([...])` groupings (from `model.primaryKey.fields`
+  and `model.uniqueFields`) can't be expressed per-field, so they're carried on the entity as
+  `primaryKey`/`uniques` arrays. Composite-PK member fields still keep `isPrimaryKey` too, so
+  emitters that only read per-field flags still mark them.
 - Relations: Prisma emits a relation field on **both** related models sharing a `relationName`, so
   fields are grouped by that name and each pair collapses into one `Relation`. Cardinality comes
   from each side's `isList`; for 1-1, whichever side carries `relationFromFields` (the actual FK
@@ -65,6 +70,9 @@ already-computed metadata (`.models`, `.associations`) can be read directly:
 - Fields come from `model.rawAttributes`; type is looked up from the attribute type's
   `constructor.name` (e.g. `STRING`, `ENUM`). Primary keys don't get `allowNull` set even though
   they're implicitly `NOT NULL`, so that's special-cased.
+- Composite keys: a composite PK comes from `model.primaryKeyAttributes` (only carried on the
+  entity when it spans >1 column); multi-column uniques come from `model.options.indexes` entries
+  with `unique: true` and >1 field. Single-column PK/unique stay on the per-field flags.
 - Relations come from `model.associations`. Sides are grouped by a key of the sorted model-name
   pair plus `foreignKey` (with `BelongsToMany`'s `foreignKey`/`otherKey` sorted too, since they
   swap between the two inverse sides). The association type on each group picks the relation type:
@@ -115,6 +123,9 @@ module instance gets imported and *which* files get executed:
   synthetic `"someMap.$*"` value-type path (describes what a `Map` stores, not a field of its own)
   are filtered out. Array fields unwrap to their element type via `caster`/`embeddedSchemaType`.
   `_id` is always treated as the (non-nullable) primary key.
+- Composite keys: there's no composite PK (`_id` is always the single key), but multi-column
+  uniques are read from `schema.indexes()` — each compound index with `{ unique: true }` and >1
+  field. Single-field `unique` stays on the path's own flag.
 - Relations are the trickiest part: Mongoose has no shared relation key like Prisma's
   `relationName` or Sequelize's `foreignKey`. `ref`-bearing paths ("sides") are grouped by the
   sorted pair of the two model names, and only collapsed into one `Relation` when there's an exact
@@ -183,6 +194,9 @@ Once a `DataSource`-like instance exists, regardless of path:
   constructor (`String`/`Number`/`Boolean`/`Date`) for columns with no explicit `type` option.
   Primary keys don't get `isNullable` set even though they're implicitly `NOT NULL`, same caveat
   as Sequelize.
+- Composite keys: a composite PK comes from `entityMetadata.primaryColumns` (>1 column), and
+  multi-column uniques from `entityMetadata.uniques` (each `@Unique([...])` spanning >1 column).
+  Single-column PK/unique stay on the per-field flags.
 - Relations: TypeORM creates one `RelationMetadata` per declared side (e.g. `User.posts` and
   `Post.author` are two separate objects linked via `.inverseRelation`). Each relation type is
   emitted from exactly one side to avoid double-counting: `one-to-many` emits from the "one" side;

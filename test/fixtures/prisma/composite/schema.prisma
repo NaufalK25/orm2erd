@@ -1,0 +1,12 @@
+datasource db {
+  provider = "postgresql"
+}
+
+model Membership {
+  userId Int
+  orgId  Int
+  role   String
+
+  @@id([userId, orgId])
+  @@unique([orgId, role])
+}

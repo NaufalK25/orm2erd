@@ -407,11 +407,29 @@ function buildField(
   };
 }
 
+// Multi-column key/unique groupings a per-column flag can't express.
+// Single-column PK/unique stay on the field's isPrimaryKey/isUnique.
+function extractCompositeKeys(entityMetadata: TypeOrmEntityMetadata): {
+  primaryKey?: string[];
+  uniques?: string[][];
+} {
+  const pk = entityMetadata.primaryColumns.map((c) => c.propertyName);
+  const uniques = entityMetadata.uniques
+    .filter((u) => u.columns.length > 1)
+    .map((u) => u.columns.map((c) => c.propertyName));
+
+  return {
+    primaryKey: pk.length > 1 ? pk : undefined,
+    uniques: uniques.length > 0 ? uniques : undefined,
+  };
+}
+
 function buildEntity(entityMetadata: TypeOrmEntityMetadata): Entity {
   const fkColumnNames = collectForeignKeyColumnNames(entityMetadata);
   const uniqueColumnNames = collectUniqueColumnNames(entityMetadata);
   return {
     name: entityMetadata.name,
+    ...extractCompositeKeys(entityMetadata),
     fields: entityMetadata.columns.map((column) =>
       buildField(column, fkColumnNames, uniqueColumnNames),
     ),

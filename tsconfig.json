@@ -18,6 +18,7 @@
   // by this project's own typecheck/build.
   "exclude": [
     "test/fixtures/typeorm/adapter/basic",
+    "test/fixtures/typeorm/adapter/composite",
     "test/fixtures/typeorm/adapter/legacy-ormconfig"
   ]
 }

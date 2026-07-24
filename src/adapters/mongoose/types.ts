@@ -27,11 +27,24 @@ export interface MongooseSchemaType {
   embeddedSchemaType?: MongooseSchemaType;
 }
 
+// Mirrors `Schema#indexes()` in `mongoose/types/index.d.ts` — returns each
+// declared index as `[fields, options]`, where `fields` maps field paths to
+// a sort direction. Compound `unique` indexes are the only way Mongoose
+// expresses a multi-column unique (single-field `unique: true` lives on the
+// path's own options instead).
+export type MongooseIndex = [
+  fields: Record<string, unknown>,
+  options: { unique?: boolean } | undefined,
+];
+
 // Mirrors the `Model` class's `modelName`/`schema` members in
 // `mongoose/types/models.d.ts` (~lines 625, 1218).
 export interface MongooseModel {
   modelName: string;
-  schema: { paths: Record<string, MongooseSchemaType> };
+  schema: {
+    paths: Record<string, MongooseSchemaType>;
+    indexes(): MongooseIndex[];
+  };
 }
 
 // Mirrors the `models`/`set` exports of `mongoose/types/index.d.ts` (~lines

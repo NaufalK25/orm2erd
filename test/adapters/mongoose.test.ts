@@ -267,3 +267,18 @@ describe("mongooseAdapter.extract — no models found", () => {
     );
   });
 });
+
+describe("mongooseAdapter.extract — composite unique", () => {
+  it("carries a compound unique index, ignoring single-field and non-unique indexes", async () => {
+    const model = await extractFixture("composite-unique.ts");
+    const membership = model.entities.find((e) => e.name === "Membership")!;
+
+    expect(membership.uniques).toEqual([["orgId", "role"]]);
+    // Mongoose has no composite primary key — _id is always the single PK.
+    expect(membership.primaryKey).toBeUndefined();
+    // The single-field `slug` unique stays on the field, not the group.
+    expect(membership.fields.find((f) => f.name === "slug")?.isUnique).toBe(
+      true,
+    );
+  });
+});

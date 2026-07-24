@@ -94,8 +94,20 @@ export const prismaAdapter: ORMAdapter = {
       );
       const compositeKeyFields = new Set(model.primaryKey?.fields ?? []);
 
+      // Composite PK / multi-column uniques the per-field booleans can't
+      // express. Single-column ones (length 1) stay on isPrimaryKey/isUnique.
+      const primaryKey =
+        model.primaryKey && model.primaryKey.fields.length > 1
+          ? [...model.primaryKey.fields]
+          : undefined;
+      const uniques = model.uniqueFields
+        .filter((u) => u.length > 1)
+        .map((u) => [...u]);
+
       return {
         name: model.name,
+        primaryKey,
+        uniques: uniques.length > 0 ? uniques : undefined,
         fields: model.fields
           .filter((f) => f.kind !== "object")
           .map((f) => ({
