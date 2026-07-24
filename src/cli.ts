@@ -31,6 +31,7 @@ import {
   type DiffRow,
   type DiffSegment,
 } from "./core/check";
+import { friendlyImportHint } from "./core/import-hints";
 
 const ALL_ORM_NAMES = Object.keys(adapters) as ORMName[];
 
@@ -439,11 +440,14 @@ async function generateAndWrite(
     process.exit(0);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    const hint = friendlyImportHint(err);
+    const fullMessage = hint ? `${message}\n${pc.dim(hint)}` : message;
     if (interactive) {
-      s?.error(message);
+      s?.error(fullMessage);
       outro(pc.red(`${icon("✖", "x")}Failed`));
     } else {
       console.error(pc.red(`${icon("✖", "x")}${message}`));
+      if (hint) console.error(pc.dim(hint));
     }
     process.exit(1);
   }
