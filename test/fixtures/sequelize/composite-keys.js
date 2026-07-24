@@ -18,7 +18,11 @@ export const sequelize = {
           // Non-unique composite index: not a unique constraint, carried as
           // a plain Index instead.
           { fields: ["userId", "role"], name: "user_role_idx" },
-          // Non-unique single-column index.
+          // Non-unique single-column index, deliberately left unnamed to
+          // test the no-name path. A real `sequelize.define()`/`Model.init()`
+          // call would auto-name this (Utils.nameIndex in sequelize's own
+          // lib/utils.js, e.g. "memberships_role") — this hand-mocked
+          // fixture bypasses that normalization, so `name` stays undefined.
           { fields: ["role"] },
         ],
       },
