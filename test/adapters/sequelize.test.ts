@@ -204,4 +204,20 @@ describe("sequelizeAdapter.extract — composite keys", () => {
     expect(user.primaryKey).toBeUndefined();
     expect(user.uniques).toBeUndefined();
   });
+
+  it("carries non-unique `options.indexes` entries as plain indexes", async () => {
+    const model = await extractFixture("composite-keys.js");
+    const membership = model.entities.find((e) => e.name === "Membership")!;
+
+    expect(membership.indexes).toEqual([
+      { fields: ["userId", "role"], name: "user_role_idx" },
+      { fields: ["role"] },
+    ]);
+  });
+
+  it("leaves indexes undefined when only unique indexes are declared", async () => {
+    const model = await extractFixture("named-export.js");
+    const user = model.entities.find((e) => e.name === "User")!;
+    expect(user.indexes).toBeUndefined();
+  });
 });

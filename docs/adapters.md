@@ -39,6 +39,11 @@ only adapter that doesn't need to import the target project's code at runtime:
   emitters that only read per-field flags still mark them.
 - Descriptions: `///` doc comments come through DMMF as `documentation` on both `Model` and
   `Field`, mapped straight to `Entity.description`/`Field.description` — no extra parsing needed.
+- Plain indexes: `Datamodel.indexes` (top-level, not nested per-model) aggregates every index-like
+  thing across all models — `@id`/`@unique`/`@@index`/`@@fulltext` — tagged with an `IndexType`.
+  Only `type === "normal"` (i.e. `@@index`) is carried onto `Entity.indexes`; `"id"`/`"unique"` are
+  already covered by `primaryKey`/`uniques` above. An index's name comes from `.name ?? .dbName`
+  (both the `name:`/`map:` arguments land on `.dbName` in DMMF).
 - Relations: Prisma emits a relation field on **both** related models sharing a `relationName`, so
   fields are grouped by that name and each pair collapses into one `Relation`. Cardinality comes
   from each side's `isList`; for 1-1, whichever side carries `relationFromFields` (the actual FK
@@ -77,6 +82,10 @@ already-computed metadata (`.models`, `.associations`) can be read directly:
   with `unique: true` and >1 field. Single-column PK/unique stay on the per-field flags.
 - Descriptions: `Entity.description` comes from the model's `options.comment` (table comment);
   `Field.description` comes from each attribute's own `comment` option.
+- Plain indexes: any `model.options.indexes` entry without `unique: true` is carried onto
+  `Entity.indexes` (single- or multi-column), reusing the same field-name normalization as the
+  composite-key extraction above. Unique entries stay excluded here — they're already covered by
+  `primaryKey`/`uniques`.
 - Relations come from `model.associations`. Sides are grouped by a key of the sorted model-name
   pair plus `foreignKey` (with `BelongsToMany`'s `foreignKey`/`otherKey` sorted too, since they
   swap between the two inverse sides). The association type on each group picks the relation type:
@@ -132,6 +141,9 @@ module instance gets imported and *which* files get executed:
   field. Single-field `unique` stays on the path's own flag.
 - No descriptions: Mongoose has no built-in comment/description option on a schema path or model,
   so `Entity.description`/`Field.description` are never populated by this adapter.
+- Plain indexes: every other `schema.indexes()` entry (i.e. without `unique: true`) is carried onto
+  `Entity.indexes`, single- or multi-column alike — this also picks up a path-level `{ index: true }`
+  option, since Mongoose surfaces those through the same `schema.indexes()` call.
 - Relations are the trickiest part: Mongoose has no shared relation key like Prisma's
   `relationName` or Sequelize's `foreignKey`. `ref`-bearing paths ("sides") are grouped by the
   sorted pair of the two model names, and only collapsed into one `Relation` when there's an exact
@@ -206,6 +218,10 @@ Once a `DataSource`-like instance exists, regardless of path:
 - Descriptions: `Entity.description` comes from `@Entity({ comment })`, read off
   `entityMetadata.comment`; `Field.description` comes from `@Column({ comment })`, read off each
   column's own `comment`.
+- Plain indexes: `entityMetadata.indices` (built from `@Index(...)`) filtered to `isUnique: false`
+  is carried onto `Entity.indexes` — unique ones are already covered by
+  `primaryKey`/`uniques`/per-field `isUnique`. Unlike the other adapters, TypeORM always generates
+  an index `name` even when none is given explicitly, so `Index.name` is never empty here.
 - Relations: TypeORM creates one `RelationMetadata` per declared side (e.g. `User.posts` and
   `Post.author` are two separate objects linked via `.inverseRelation`). Each relation type is
   emitted from exactly one side to avoid double-counting: `one-to-many` emits from the "one" side;

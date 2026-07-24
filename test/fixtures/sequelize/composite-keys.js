@@ -15,8 +15,11 @@ export const sequelize = {
           { unique: true, fields: ["orgId", { name: "role" }] },
           // Single-column unique index: already on the field, must be ignored.
           { unique: true, fields: ["slug"] },
-          // Non-unique composite index: not a unique, must be ignored.
-          { fields: ["userId", "role"] },
+          // Non-unique composite index: not a unique constraint, carried as
+          // a plain Index instead.
+          { fields: ["userId", "role"], name: "user_role_idx" },
+          // Non-unique single-column index.
+          { fields: ["role"] },
         ],
       },
       rawAttributes: {

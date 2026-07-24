@@ -44,6 +44,7 @@ export interface SequelizeAssociation {
 export interface SequelizeIndex {
   unique?: boolean;
   fields?: (string | { name: string })[];
+  name?: string;
 }
 
 // Mirrors the static `Model.rawAttributes`/`Model.associations` members in

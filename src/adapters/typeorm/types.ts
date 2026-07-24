@@ -41,6 +41,13 @@ export interface TypeOrmUniqueMetadata {
   columns: TypeOrmColumnMetadata[];
 }
 
+// Mirrors `metadata/IndexMetadata.ts`, trimmed to what this adapter reads.
+export interface TypeOrmIndexMetadata {
+  columns: TypeOrmColumnMetadata[];
+  isUnique: boolean;
+  name: string;
+}
+
 // Mirrors `metadata/RelationMetadata.ts`.
 export interface TypeOrmRelationMetadata {
   relationType: "one-to-one" | "one-to-many" | "many-to-one" | "many-to-many";
@@ -68,6 +75,7 @@ export interface TypeOrmEntityMetadata {
   columns: TypeOrmColumnMetadata[];
   relations: TypeOrmRelationMetadata[];
   uniques: TypeOrmUniqueMetadata[];
+  indices: TypeOrmIndexMetadata[];
   primaryColumns: TypeOrmColumnMetadata[];
   comment?: string;
 }

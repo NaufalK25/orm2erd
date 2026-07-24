@@ -27,6 +27,12 @@ export interface Field {
   description?: string;
 }
 
+export interface Index {
+  fields: string[];
+  isUnique?: boolean;
+  name?: string;
+}
+
 export interface Entity {
   name: string;
   fields: Field[];
@@ -39,6 +45,10 @@ export interface Entity {
   primaryKey?: string[];
   /** Each inner array is one multi-column unique constraint (length > 1). */
   uniques?: string[][];
+  // Non-unique indexes (single or multi-column) — uniques stay on
+  // `primaryKey`/`uniques`/per-field `isUnique` above; this only carries
+  // plain lookup indexes those can't express.
+  indexes?: Index[];
 }
 
 export interface Relation {

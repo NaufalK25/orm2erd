@@ -281,4 +281,14 @@ describe("mongooseAdapter.extract — composite unique", () => {
       true,
     );
   });
+
+  it("carries non-unique schema.index() declarations as plain indexes", async () => {
+    const model = await extractFixture("composite-unique.ts");
+    const membership = model.entities.find((e) => e.name === "Membership")!;
+
+    expect(membership.indexes).toEqual([
+      { fields: ["userId", "role"], name: "user_role_idx" },
+      { fields: ["role"] },
+    ]);
+  });
 });

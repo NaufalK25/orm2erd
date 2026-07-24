@@ -17,6 +17,7 @@ import type {
   Entity,
   ERDModel,
   Field,
+  Index,
   Relation,
 } from "../../core/model";
 import { loadDotEnvFiles } from "../../core/dotenv";
@@ -425,12 +426,28 @@ function extractCompositeKeys(entityMetadata: TypeOrmEntityMetadata): {
   };
 }
 
+// Plain (non-unique) `@Index()` declarations — unique ones are already
+// carried via extractCompositeKeys/the per-column isUnique flag.
+function extractIndexes(
+  entityMetadata: TypeOrmEntityMetadata,
+): Index[] | undefined {
+  const indexes = entityMetadata.indices
+    .filter((idx) => !idx.isUnique)
+    .map((idx) => ({
+      fields: idx.columns.map((c) => c.propertyName),
+      name: idx.name,
+    }));
+
+  return indexes.length > 0 ? indexes : undefined;
+}
+
 function buildEntity(entityMetadata: TypeOrmEntityMetadata): Entity {
   const fkColumnNames = collectForeignKeyColumnNames(entityMetadata);
   const uniqueColumnNames = collectUniqueColumnNames(entityMetadata);
   return {
     name: entityMetadata.name,
     ...extractCompositeKeys(entityMetadata),
+    indexes: extractIndexes(entityMetadata),
     description: entityMetadata.comment,
     fields: entityMetadata.columns.map((column) =>
       buildField(column, fkColumnNames, uniqueColumnNames),

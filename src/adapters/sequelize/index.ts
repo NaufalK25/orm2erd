@@ -4,7 +4,12 @@ import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { tsImport } from "tsx/esm/api";
 import type { ORMAdapter, ResolvedEntry } from "../types";
-import type { CanonicalType, ERDModel, Relation } from "../../core/model";
+import type {
+  CanonicalType,
+  ERDModel,
+  Index,
+  Relation,
+} from "../../core/model";
 import { loadDotEnvFiles } from "../../core/dotenv";
 import type { RelationSide, SequelizeInstance, SequelizeModel } from "./types";
 
@@ -144,6 +149,21 @@ function extractCompositeKeys(model: SequelizeModel): {
   };
 }
 
+// Plain (non-unique) indexes from `options.indexes` — unique ones are
+// already carried via extractCompositeKeys/the per-field isUnique flag.
+function extractIndexes(model: SequelizeModel): Index[] | undefined {
+  const indexes = (model.options?.indexes ?? [])
+    .filter((idx) => !idx.unique)
+    .map((idx) => ({
+      fields: (idx.fields ?? []).map((f) =>
+        typeof f === "string" ? f : f.name,
+      ),
+      name: idx.name,
+    }));
+
+  return indexes.length > 0 ? indexes : undefined;
+}
+
 export const sequelizeAdapter: ORMAdapter = {
   name: "sequelize",
 
@@ -209,6 +229,7 @@ export const sequelizeAdapter: ORMAdapter = {
       return {
         name,
         ...extractCompositeKeys(model),
+        indexes: extractIndexes(model),
         description: model.options?.comment,
         fields: Object.entries(model.rawAttributes).map(
           ([fieldName, attr]) => ({

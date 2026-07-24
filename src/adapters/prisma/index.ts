@@ -88,6 +88,24 @@ export const prismaAdapter: ORMAdapter = {
       dmmf.datamodel.enums.map((e) => [e.name, e.values.map((v) => v.name)]),
     );
 
+    // `@@index(...)` declarations — Datamodel.indexes aggregates every
+    // index-like thing across all models (`@id`/`@unique`/`@@index`
+    // /`@@fulltext`), so "normal" is the only type that isn't already
+    // covered by primaryKey/uniques above.
+    const indexesByModel = new Map<
+      string,
+      { fields: string[]; name?: string }[]
+    >();
+    for (const idx of dmmf.datamodel.indexes) {
+      if (idx.type !== "normal") continue;
+      const list = indexesByModel.get(idx.model) ?? [];
+      list.push({
+        fields: idx.fields.map((f) => f.name),
+        name: idx.name ?? idx.dbName,
+      });
+      indexesByModel.set(idx.model, list);
+    }
+
     const entities = dmmf.datamodel.models.map((model) => {
       const foreignKeyFields = new Set(
         model.fields.flatMap((f) => f.relationFromFields ?? []),
@@ -103,11 +121,13 @@ export const prismaAdapter: ORMAdapter = {
       const uniques = model.uniqueFields
         .filter((u) => u.length > 1)
         .map((u) => [...u]);
+      const indexes = indexesByModel.get(model.name);
 
       return {
         name: model.name,
         primaryKey,
         uniques: uniques.length > 0 ? uniques : undefined,
+        indexes,
         description: model.documentation,
         fields: model.fields
           .filter((f) => f.kind !== "object")

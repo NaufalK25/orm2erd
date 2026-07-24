@@ -18,6 +18,7 @@ import type {
   Entity,
   ERDModel,
   Field,
+  Index,
   Relation,
 } from "../../core/model";
 
@@ -225,10 +226,26 @@ function extractCompositeUniques(
   return uniques.length > 0 ? uniques : undefined;
 }
 
+// Plain (non-unique) indexes, single or multi-column — unique ones are
+// already carried via extractCompositeUniques/the path's own isUnique flag.
+// Covers both explicit `schema.index(...)` calls and a path-level
+// `{ index: true }` option, since both show up in `schema.indexes()`.
+function extractIndexes(schema: MongooseModel["schema"]): Index[] | undefined {
+  const indexes = schema
+    .indexes()
+    .filter(([, options]) => !options?.unique)
+    .map(([fields, options]) => ({
+      fields: Object.keys(fields),
+      name: options?.name,
+    }));
+  return indexes.length > 0 ? indexes : undefined;
+}
+
 function buildEntity(name: string, model: MongooseModel): Entity {
   return {
     name,
     uniques: extractCompositeUniques(model.schema),
+    indexes: extractIndexes(model.schema),
     fields: Object.entries(model.schema.paths)
       // __v is Mongoose's own bookkeeping column, not modeled data — every
       // document gets one, so surfacing it would just add noise to every entity.

@@ -110,6 +110,17 @@ describe("prismaAdapter.extract — composite keys", () => {
     ).toBe(true);
   });
 
+  it("carries `@@index` declarations as plain (non-unique) indexes", async () => {
+    const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
+    const model = await prismaAdapter.extract(entry);
+    const membership = model.entities.find((e) => e.name === "Membership")!;
+
+    expect(membership.indexes).toEqual([
+      { fields: ["role"] },
+      { fields: ["userId", "role"], name: "user_role_idx" },
+    ]);
+  });
+
   it("leaves primaryKey/uniques undefined when nothing is composite", async () => {
     const entry = await prismaAdapter.resolveEntry(
       join(fixturesDir, "single/schema.prisma"),

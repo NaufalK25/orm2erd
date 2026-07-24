@@ -34,7 +34,7 @@ export interface MongooseSchemaType {
 // path's own options instead).
 export type MongooseIndex = [
   fields: Record<string, unknown>,
-  options: { unique?: boolean } | undefined,
+  options: { unique?: boolean; name?: string } | undefined,
 ];
 
 // Mirrors the `Model` class's `modelName`/`schema` members in

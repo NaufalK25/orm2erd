@@ -193,4 +193,14 @@ describe("typeormAdapter.extract — composite keys", () => {
       true,
     );
   });
+
+  it("carries non-unique @Index() declarations as plain indexes", async () => {
+    const model = await extractFixture("composite", "data-source.ts");
+    const membership = model.entities.find((e) => e.name === "Membership")!;
+
+    expect(membership.indexes).toEqual([
+      { fields: ["role"], name: expect.any(String) },
+      { fields: ["userId", "role"], name: "user_role_idx" },
+    ]);
+  });
 });

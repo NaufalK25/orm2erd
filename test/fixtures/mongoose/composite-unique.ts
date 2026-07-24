@@ -10,7 +10,9 @@ const MembershipSchema = new mongoose.Schema({
 
 // Compound unique index — the only way Mongoose expresses a multi-column unique.
 MembershipSchema.index({ orgId: 1, role: 1 }, { unique: true });
-// Compound non-unique index — must be ignored.
-MembershipSchema.index({ userId: 1, role: 1 });
+// Compound non-unique index — carried as a plain Index instead of a unique.
+MembershipSchema.index({ userId: 1, role: 1 }, { name: "user_role_idx" });
+// Single-field non-unique index.
+MembershipSchema.index({ role: 1 });
 
 mongoose.model("Membership", MembershipSchema);

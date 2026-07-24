@@ -41,12 +41,25 @@ export const dbmlEmitter: Emitter = {
         }
       }
 
-      // Composite PK / multi-column uniques → DBML native indexes block.
+      // Composite PK / multi-column uniques / plain indexes → DBML native
+      // indexes block. A single-column index is a bare field name; multiple
+      // columns are wrapped in parens — both accept the same `[...]` attrs.
       const indexLines = [
         entity.primaryKey && `    (${entity.primaryKey.join(", ")}) [pk]`,
         ...(entity.uniques ?? []).map(
           (cols) => `    (${cols.join(", ")}) [unique]`,
         ),
+        ...(entity.indexes ?? []).map((idx) => {
+          const columns =
+            idx.fields.length > 1
+              ? `(${idx.fields.join(", ")})`
+              : idx.fields[0];
+          const attrs = [
+            idx.isUnique && "unique",
+            idx.name && `name: '${idx.name.replaceAll("'", '"')}'`,
+          ].filter((a): a is string => Boolean(a));
+          return `    ${columns}${attrs.length > 0 ? " [" + attrs.join(", ") + "]" : ""}`;
+        }),
       ].filter((l): l is string => Boolean(l));
       if (indexLines.length > 0) {
         lines.push("", "  indexes {", ...indexLines, "  }");

@@ -9,4 +9,6 @@ model Membership {
 
   @@id([userId, orgId])
   @@unique([orgId, role])
+  @@index([role])
+  @@index([userId, role], name: "user_role_idx")
 }

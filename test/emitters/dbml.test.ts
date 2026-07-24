@@ -201,6 +201,32 @@ describe("dbmlEmitter", () => {
     expect(output).toContain("(orgId, role) [unique]");
   });
 
+  it("renders plain (non-unique) indexes, single- and multi-column, in the indexes block", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "Membership",
+          indexes: [
+            { fields: ["role"] },
+            { fields: ["userId", "role"], name: "user_role_idx" },
+          ],
+          fields: [
+            { name: "userId", type: "int", nativeType: "INTEGER" },
+            { name: "role", type: "string", nativeType: "STRING" },
+          ],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain("indexes {");
+    expect(output).toContain("role");
+    expect(output).not.toContain("role [");
+    expect(output).toContain("(userId, role) [name: 'user_role_idx']");
+  });
+
   it("declares a composite PK only in the indexes block, not per-field (no double pk)", () => {
     const model: ERDModel = {
       entities: [
