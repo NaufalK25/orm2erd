@@ -28,7 +28,7 @@ Enter
 
 # ? Output format(s): (mermaid pre-checked, also toggle on dbml)
 Sleep 1.5s
-Down
+Right
 Sleep 500ms
 Space
 Sleep 500ms
