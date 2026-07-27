@@ -281,7 +281,8 @@ redraw it.
 ## Contributing
 
 See [CLAUDE.md](./CLAUDE.md) for architecture, the adapter/emitter contract, and design decisions.
-For exactly how each ORM is detected and parsed, see [docs/adapters.md](./docs/adapters.md).
+For exactly how each ORM is detected and parsed, see [docs/adapters.md](./docs/adapters.md). To
+report a security vulnerability, see [SECURITY.md](./SECURITY.md).
 
 ## License
 
