@@ -46,6 +46,7 @@
     "d2",
     "nomnoml",
     "quickdbd",
+    "graphviz-dot",
     "dbdiagram",
     "schema",
     "database",
