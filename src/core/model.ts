@@ -11,6 +11,7 @@ export type CanonicalType =
   | "enum"
   | "unknown";
 
+/** A single column/attribute on an `Entity`. */
 export interface Field {
   name: string;
   type: CanonicalType;
@@ -27,6 +28,7 @@ export interface Field {
   description?: string;
 }
 
+/** A plain lookup index; unique constraints are expressed via `Entity.uniques` / `Field.isUnique` instead. */
 export interface Index {
   fields: string[];
   isUnique?: boolean;
@@ -36,6 +38,7 @@ export interface Index {
 export type RelationAction =
   "cascade" | "restrict" | "set null" | "no action" | "set default";
 
+/** A table/collection in the schema. */
 export interface Entity {
   name: string;
   fields: Field[];
@@ -54,6 +57,7 @@ export interface Entity {
   indexes?: Index[];
 }
 
+/** A foreign-key / reference relationship between two entities. */
 export interface Relation {
   from: string;
   to: string;
@@ -74,6 +78,7 @@ export interface Relation {
   onUpdate?: RelationAction;
 }
 
+/** The normalized IR: the sole contract between adapters (producers) and emitters (consumers). */
 export interface ERDModel {
   entities: Entity[];
   relations: Relation[];

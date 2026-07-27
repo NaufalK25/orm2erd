@@ -14,6 +14,7 @@ export const adapters: Partial<Record<ORMName, ORMAdapter>> = {
   typeorm: typeormAdapter,
 };
 
+/** Looks up the adapter for `name`. Throws if that ORM has no adapter implemented yet. */
 export function getAdapter(name: ORMName): ORMAdapter {
   const adapter = adapters[name];
   if (!adapter) {

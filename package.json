@@ -2,12 +2,13 @@
   "name": "orm2erd",
   "version": "1.6.0",
   "description": "Generate ERD diagrams (Mermaid, DBML, PlantUML, D2, and more) straight from your ORM's models/schema — no manual diagramming.",
+  "main": "./dist/index.js",
   "bin": {
     "orm2erd": "./bin/orm2erd.js"
   },
   "scripts": {
     "prepublishOnly": "npm run build",
-    "build": "tsup",
+    "build": "tsup && tsc -p tsconfig.build.json",
     "dev": "tsx src/cli.ts",
     "start": "node dist/cli.js",
     "lint": "oxlint .",
@@ -15,6 +16,13 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest"
+  },
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "engines": {
     "node": ">=24"

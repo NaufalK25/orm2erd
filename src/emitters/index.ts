@@ -8,7 +8,7 @@ import { nomnomlEmitter } from "./nomnoml";
 import { quickdbdEmitter } from "./quickdbd";
 import { graphvizdotEmitter } from "./graphvizdot";
 
-export type { Emitter } from "./types";
+export type { Emitter, EmitOptions } from "./types";
 
 export const emitters: Partial<Record<OutputFormat, Emitter>> = {
   mermaid: mermaidEmitter,
@@ -20,6 +20,7 @@ export const emitters: Partial<Record<OutputFormat, Emitter>> = {
   graphvizdot: graphvizdotEmitter,
 };
 
+/** Looks up the emitter for `format`. Throws if that format has no emitter implemented yet. */
 export function getEmitter(format: OutputFormat): Emitter {
   const emitter = emitters[format];
   if (!emitter) {

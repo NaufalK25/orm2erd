@@ -17,6 +17,7 @@ export interface DetectedORM extends DetectResult {
   name: Detector["name"];
 }
 
+/** Runs every built-in detector against `cwd` and returns only the ORMs it found. */
 export async function detectORMs(cwd: string): Promise<DetectedORM[]> {
   const results = await Promise.all(
     detectors.map(async (detector) => ({
