@@ -183,6 +183,63 @@ describe("sequelizeAdapter.extract — relation dedup", () => {
   });
 });
 
+describe("sequelizeAdapter.extract — FK marking respects association direction", () => {
+  it("does not mark a plain column as FK just because a HasMany elsewhere on the model shares its name", async () => {
+    const model = await extractFixture("backwards-relations.js");
+    const order = model.entities.find((e) => e.name === "Order")!;
+    const orderCode = order.fields.find((f) => f.name === "orderCode")!;
+    expect(orderCode.isForeignKey).toBeFalsy();
+  });
+
+  it("still marks the real FK column from the owning BelongsTo association", async () => {
+    const model = await extractFixture("backwards-relations.js");
+    const item = model.entities.find((e) => e.name === "OrderItem")!;
+    const orderCode = item.fields.find((f) => f.name === "orderCode")!;
+    expect(orderCode.isForeignKey).toBe(true);
+  });
+});
+
+describe("sequelizeAdapter.extract — BelongsTo with no reciprocal HasMany/HasOne", () => {
+  it("puts the parent (not the FK-holding child) on the `from` side", async () => {
+    const model = await extractFixture("backwards-relations.js");
+    const rel = model.relations.find(
+      (r) => r.from === "Customer" && r.to === "Invoice",
+    );
+    expect(rel).toBeDefined();
+    expect(
+      model.relations.some((r) => r.from === "Invoice" && r.to === "Customer"),
+    ).toBe(false);
+  });
+
+  it("renders 1-n, not a forced 1-1, when the FK column isn't unique", async () => {
+    const model = await extractFixture("backwards-relations.js");
+    const rel = model.relations.find(
+      (r) => r.from === "Customer" && r.to === "Invoice",
+    )!;
+    expect(rel.type).toBe("1-n");
+    expect(rel.toColumn).toBe("customerId");
+  });
+
+  it("renders 1-1 when the lone BelongsTo's FK column is unique", async () => {
+    const model = await extractFixture("backwards-relations.js");
+    const rel = model.relations.find(
+      (r) => r.from === "Customer" && r.to === "Account",
+    )!;
+    expect(rel.type).toBe("1-1");
+  });
+
+  it("keeps 1-1 parent-on-left for an explicit HasOne/BelongsTo pair even when the FK isn't unique", async () => {
+    const model = await extractFixture("backwards-relations.js");
+    const rel = model.relations.find(
+      (r) => r.from === "Customer" && r.to === "Profile",
+    )!;
+    expect(rel.type).toBe("1-1");
+    expect(
+      model.relations.some((r) => r.from === "Profile" && r.to === "Customer"),
+    ).toBe(false);
+  });
+});
+
 describe("sequelizeAdapter.extract — relation actions", () => {
   it("reads onDelete/onUpdate off the FK attribute, not association.options", async () => {
     const model = await extractFixture("named-export.js");

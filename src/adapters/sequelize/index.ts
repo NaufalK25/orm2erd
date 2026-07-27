@@ -252,8 +252,16 @@ export const sequelizeAdapter: ORMAdapter = {
     }
 
     const entities = Object.entries(sequelize.models).map(([name, model]) => {
+      // Only BelongsTo puts the FK column on the *declaring* model — HasMany/
+      // HasOne's foreignKey names a column on the target, and BelongsToMany's
+      // lives on the through table. Matching on any association's foreignKey
+      // name regardless of type false-positives plain columns that happen to
+      // share a name with some other model's actual FK (e.g. a `code` column
+      // matching a child table's foreign key of the same name).
       const foreignKeyFields = new Set(
-        Object.values(model.associations).map((a) => a.foreignKey),
+        Object.values(model.associations)
+          .filter((a) => a.associationType === "BelongsTo")
+          .map((a) => a.foreignKey),
       );
       return {
         name,
@@ -367,40 +375,34 @@ export const sequelizeAdapter: ORMAdapter = {
           ];
         }
 
-        // 1-1: prefer the BelongsTo side, since it's the one carrying the
-        // FK column — matches the Prisma adapter's "owner = side with FK".
+        // Parent-on-left, same convention as HasMany above. The FK column
+        // always lives with the BelongsTo declarer; a lone HasOne side (no
+        // inverse BelongsTo registered) has it on its target instead.
+        const hasOne = sides.find((s) => s.associationType === "HasOne");
         const belongsTo = sides.find((s) => s.associationType === "BelongsTo");
-        const owner = belongsTo ?? sides[0];
-        // BelongsTo's foreignKey lives on the declaring model (`from`); a
-        // lone HasOne side (no inverse BelongsTo found) has it on `to`
-        // instead, same as HasMany above.
-        const fromColumn =
-          owner.associationType === "BelongsTo"
-            ? owner.foreignKey
-            : findPrimaryKeyField(sequelize.models[owner.modelName]);
-        const toColumn =
-          owner.associationType === "BelongsTo"
-            ? findPrimaryKeyField(sequelize.models[owner.relatedModel])
-            : owner.foreignKey;
-        // FK attribute lives wherever `toColumn` does: the declaring model
-        // for BelongsTo, the related model for a lone HasOne.
-        const fkModelName =
-          owner.associationType === "BelongsTo"
-            ? owner.modelName
-            : owner.relatedModel;
+        const fkOwner = belongsTo ?? hasOne ?? sides[0];
+        const parentModel = belongsTo
+          ? belongsTo.relatedModel
+          : fkOwner.modelName;
+        const childModel = belongsTo
+          ? belongsTo.modelName
+          : fkOwner.relatedModel;
+        const foreignKey = fkOwner.foreignKey;
+        // An explicit HasOne pairing declares 1-1 intent even if the column
+        // itself isn't marked unique. A lone BelongsTo with no reciprocal
+        // could just as well be the "many" side of an undeclared HasMany, so
+        // trust the FK column's actual uniqueness instead of assuming 1-1.
+        const fkAttr = sequelize.models[childModel]?.rawAttributes[foreignKey];
+        const type = hasOne || fkAttr?.unique ? "1-1" : "1-n";
         return [
           {
-            from: owner.modelName,
-            to: owner.relatedModel,
-            type: "1-1",
-            fieldName: owner.fieldName,
-            fromColumn,
-            toColumn,
-            ...findForeignKeyActions(
-              sequelize.models,
-              fkModelName,
-              owner.foreignKey,
-            ),
+            from: parentModel,
+            to: childModel,
+            type,
+            fieldName: (hasOne ?? belongsTo ?? sides[0]).fieldName,
+            fromColumn: findPrimaryKeyField(sequelize.models[parentModel]),
+            toColumn: foreignKey,
+            ...findForeignKeyActions(sequelize.models, childModel, foreignKey),
           },
         ];
       },
