@@ -4,7 +4,6 @@
 [![CI](https://github.com/NaufalK25/orm2erd/actions/workflows/ci.yml/badge.svg)](https://github.com/NaufalK25/orm2erd/actions/workflows/ci.yml)
 [![node](https://img.shields.io/node/v/orm2erd.svg)](https://www.npmjs.com/package/orm2erd)
 [![license](https://img.shields.io/npm/l/orm2erd.svg)](./LICENSE)
-[![unpacked size](https://img.shields.io/npm/unpacked-size/orm2erd.svg)](https://www.npmjs.com/package/orm2erd)
 
 You already built the app — your ORM models are the schema. `orm2erd` reads them and generates an
 ERD (Entity-Relationship Diagram) for you, instead of you drawing and maintaining one by hand.
