@@ -1,0 +1,10 @@
+{
+  "name": "e2e-drizzle-app-fixture",
+  "version": "1.0.0",
+  "dependencies": {
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10"
+  }
+}

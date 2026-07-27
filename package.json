@@ -39,6 +39,7 @@
     "sequelize",
     "mongoose",
     "typeorm",
+    "drizzle",
     "mermaid",
     "dbml",
     "plantuml",
@@ -71,6 +72,8 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
     "mongoose": "^9.7.4",
     "oxlint": "^1.74.0",
     "prettier": "^3.9.5",

@@ -3,6 +3,7 @@ import { prismaDetector } from "./prisma";
 import { sequelizeDetector } from "./sequelize";
 import { mongooseDetector } from "./mongoose";
 import { typeormDetector } from "./typeorm";
+import { drizzleDetector } from "./drizzle";
 
 export type { Detector, DetectResult } from "./types";
 
@@ -11,6 +12,7 @@ export const detectors: Detector[] = [
   sequelizeDetector,
   mongooseDetector,
   typeormDetector,
+  drizzleDetector,
 ];
 
 export interface DetectedORM extends DetectResult {

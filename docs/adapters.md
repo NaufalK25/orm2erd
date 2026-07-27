@@ -250,3 +250,85 @@ Once a `DataSource`-like instance exists, regardless of path:
   spelling (`RESTRICT`, `CASCADE`, `SET NULL`, `DEFAULT`, `NO ACTION` — note `DEFAULT`, not
   `SET DEFAULT`) is mapped to the IR's lowercase form. Not read for `many-to-many`, since those
   relations carry no FK columns in the IR to attach an action to anyway.
+
+## Drizzle
+
+**Detect** — [`src/detect/drizzle.ts`](../src/detect/drizzle.ts)
+
+- Requires `drizzle-orm` in `dependencies`/`devDependencies`.
+- Checks for `drizzle.config.ts`, then `.js`, then `.json` at the project root — the same
+  ts > js > json priority order `drizzle-kit`'s own CLI falls back through (verified against its
+  compiled `drizzleConfigFromFile`). Unlike TypeORM's legacy `ormconfig`, this is a single default
+  the tool itself resolves, not several sibling conventions worth flagging as ambiguous, so only
+  the highest-priority file that actually exists is suggested.
+
+**Parse** — [`src/adapters/drizzle/index.ts`](../src/adapters/drizzle/index.ts)
+
+The entry is the `drizzle.config.*` file itself, not a schema file — the config's `dialect` field
+determines which `drizzle-orm` dialect-core package (`pg-core`/`mysql-core`/`sqlite-core`/
+`singlestore-core`) to introspect tables with, and its `schema` field points at the actual model
+file(s):
+
+- The config is loaded first. `defineConfig()` (from `drizzle-kit`) is just an identity function,
+  so a `.ts`/`.js` config is imported directly via `tsx`'s `tsImport()` without ever needing the
+  `drizzle-kit` package itself; `.json` is parsed directly. A syntactically-ESM config can still
+  come back double-wrapped as `{ default: <config> }` when the nearest `package.json` doesn't
+  declare `"type": "module"` (the same "double-wrapped default" shape the Sequelize adapter's own
+  loader tolerates) — handled with a single conditional unwrap.
+- `config.schema` (a glob or array of globs) is resolved with Node's built-in `fs.globSync`,
+  relative to the config file's own directory — `drizzle-kit` itself resolves these against
+  `process.cwd()`, which in practice is always the same directory the config file lives in. A
+  glob match that's a directory expands to its immediate files (not recursive), mirroring
+  `drizzle-kit`'s own `prepareFilenames`.
+- Every matched file is imported via `tsImport()`, and every export checked with `is(value,
+  PgTable)` (or the dialect's equivalent table class) — `is()` is `drizzle-orm`'s own
+  entityKind-tag check, resistant to the dual-package-hazard `instanceof` would have across
+  separately-installed copies. All of this — `is`, `getTableConfig`, the table/dialect classes —
+  is resolved from the **target project's own installed** `drizzle-orm`, not orm2erd's (via
+  `createRequire` from the config path), the same "use the target's own install" approach the
+  TypeORM adapter takes for its internal metadata builder. Unlike TypeORM's private internals
+  though, this is `drizzle-orm`'s own public API surface — the same surface `drizzle-kit` itself is
+  built on.
+- Fields come from `getTableConfig(table).columns`. Canonical type is decided primarily from
+  `column.dataType` (a small, stable bucket: `string`/`number`/`boolean`/`date`/`json`/`bigint`/
+  `buffer`/...); the generic `number` bucket is further split into `int`/`float`/`decimal` by
+  keyword-matching `column.columnType` (e.g. `PgNumeric`, `MySqlFloat`), since `getSQLType()`'s
+  actual SQL strings vary too much per dialect to enumerate reliably. `column.enumValues` is used
+  directly when present (Drizzle exposes it uniformly across dialects, unlike TypeORM/Sequelize).
+  Primary keys don't get `notNull` set even though they're implicitly `NOT NULL`, same caveat as
+  the other runtime-introspection adapters.
+- A column's actual DB name isn't always `column.name` — when a column has no explicit name
+  (`keyAsName`) and the config sets a project-wide `casing: "camelCase" | "snake_case"` strategy,
+  Drizzle transforms the JS property name at query time instead. This is replicated with the same
+  `getColumnCasing` logic `drizzle-kit` itself uses (via `drizzle-orm/casing`'s `toCamelCase`/
+  `toSnakeCase`), so FK/index column names line up with what the ORM actually sends to the
+  database.
+- Composite keys: a composite PK only ever comes from a table-level `primaryKey({ columns: [...]
+  })` declaration (`getTableConfig(table).primaryKeys`) — a single-column `.primaryKey()` on a
+  column builder instead just sets that column's own `.primary` and never appears there, so both
+  are unioned into one per-field PK set. Multi-column uniques come from `uniqueConstraints` with
+  >1 column; single-column ones (from either `.unique()` on the column or a single-column
+  `unique().on(...)` table constraint) stay on the per-field flag.
+- No descriptions: Drizzle has no comment/description option on a column or table builder, so
+  `Entity.description`/`Field.description` are never populated by this adapter.
+- Plain indexes: non-unique entries from `getTableConfig(table).indexes` are carried onto
+  `Entity.indexes`. A functional index's column can be a raw SQL expression rather than an actual
+  column — resolved to text via the dialect instance's `sqlToQuery`, same as raw defaults below.
+- Relations come from ordinary foreign keys (`getTableConfig(table).foreignKeys`) — Drizzle has no
+  separate declarative relation API backed by real constraints (its `relations()` helper is purely
+  for the query-builder's relational API and isn't guaranteed to reflect an actual FK, so it's
+  deliberately not read here). There's also no many-to-many API: a junction table's two ordinary
+  FKs already produce two `1-n` relations into it, same end result as the other adapters'
+  implicit-join-table case, with no extra collapsing needed.
+- Cardinality: a FK column set that's fully covered by a unique constraint (or is itself a single
+  unique/primary column) reads as a declared `1-1`; anything else is the "many" side of a `1-n` —
+  the same uniqueness-based fallback the Sequelize adapter uses for an undeclared/ambiguous
+  `BelongsTo`, since Drizzle has no separate `OneToOne`/`ManyToOne` declaration to trust instead.
+- Relation actions: `onDelete`/`onUpdate` are read directly off the `ForeignKey` — Drizzle's
+  `UpdateDeleteAction` union (`'cascade' | 'restrict' | 'no action' | 'set null' | 'set default'`)
+  is identical across every dialect *and* identical to the IR's own `RelationAction`, so no mapping
+  table is needed here, unlike the Sequelize/TypeORM adapters.
+- Raw `sql` defaults (e.g. `.defaultNow()`) are resolved to displayable text via the dialect
+  instance's `sqlToQuery` — a pure query-builder call needing no live DB connection. A default
+  that fails to stringify (`drizzle-kit` itself only supports param-free `sql` default
+  expressions) is left undefined rather than surfacing an internal error for a display-only value.

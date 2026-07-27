@@ -1,0 +1,1 @@
+{ "dialect": "sqlite", "schema": "./schema.ts", "dbCredentials": { "url": "./sqlite.db" } }

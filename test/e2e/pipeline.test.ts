@@ -36,6 +36,11 @@ const cases: Case[] = [
     dir: "typeorm-app",
     expectedCandidate: join("src", "data-source.ts"),
   },
+  {
+    orm: "drizzle",
+    dir: "drizzle-app",
+    expectedCandidate: "drizzle.config.ts",
+  },
 ];
 
 describe.each(cases)("$orm app fixture", ({ orm, dir, expectedCandidate }) => {

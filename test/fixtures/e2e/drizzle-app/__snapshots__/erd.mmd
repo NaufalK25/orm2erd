@@ -1,0 +1,40 @@
+erDiagram
+
+  %% Entities
+  post_tags {
+    int post_id PK, FK
+    int tag_id PK, FK
+    string? note "default: ''"
+  }
+
+  posts {
+    int id PK
+    string title
+    boolean published "default: false"
+    int author_id FK
+  }
+
+  profiles {
+    int id PK
+    string? bio
+    int user_id FK, UK
+  }
+
+  tags {
+    int id PK
+    string name UK
+  }
+
+  users {
+    int id PK
+    string email UK
+    string? name
+    enum role "enum: admin, member | default: member"
+    datetime created_at "default: now()"
+  }
+
+  %% Relationships
+  posts ||--o{ post_tags : ""
+  tags ||--o{ post_tags : ""
+  users ||--o{ posts : ""
+  users ||--|| profiles : ""

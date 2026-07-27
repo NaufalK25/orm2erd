@@ -4,6 +4,7 @@ import { prismaAdapter } from "./prisma";
 import { sequelizeAdapter } from "./sequelize";
 import { mongooseAdapter } from "./mongoose";
 import { typeormAdapter } from "./typeorm";
+import { drizzleAdapter } from "./drizzle";
 
 export type { ORMAdapter, ResolvedEntry } from "./types";
 
@@ -12,6 +13,7 @@ export const adapters: Partial<Record<ORMName, ORMAdapter>> = {
   sequelize: sequelizeAdapter,
   mongoose: mongooseAdapter,
   typeorm: typeormAdapter,
+  drizzle: drizzleAdapter,
 };
 
 /** Looks up the adapter for `name`. Throws if that ORM has no adapter implemented yet. */

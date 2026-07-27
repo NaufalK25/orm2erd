@@ -1,0 +1,48 @@
+// Entities
+Table post_tags {
+  post_id int [not null]
+  tag_id int [not null]
+  note string [default: "''"]
+
+  indexes {
+    (post_id, tag_id) [pk]
+  }
+}
+
+Table posts {
+  id int [pk, not null]
+  title string [not null]
+  published boolean [not null, default: "false"]
+  author_id int [not null]
+}
+
+Table profiles {
+  id int [pk, not null]
+  bio string
+  user_id int [unique, not null]
+}
+
+Table tags {
+  id int [pk, not null]
+  name string [unique, not null]
+}
+
+Table users {
+  id int [pk, not null]
+  email string [unique, not null]
+  name string
+  role role [not null, default: "member"]
+  created_at datetime [not null, default: "now()"]
+}
+
+// Relationships
+Ref: posts.id > post_tags.post_id [delete: cascade, update: no action]
+Ref: tags.id > post_tags.tag_id [delete: cascade, update: no action]
+Ref: users.id > posts.author_id [delete: cascade, update: cascade]
+Ref: users.id - profiles.user_id [delete: cascade, update: no action]
+
+// Enums
+Enum role {
+  "admin"
+  "member"
+}
