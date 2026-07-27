@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🏷️ [1.7.0] - 2026-07-27
+
+### 🚀 Added
+
+- **Drizzle support.** Detection requires `drizzle-orm` in dependencies and checks for
+  `drizzle.config.ts`, then `.js`, then `.json` at the project root — the same priority order
+  `drizzle-kit`'s own CLI falls back through. Extraction takes the config file itself as the entry
+  point: its `dialect` field selects which `drizzle-orm` dialect-core package
+  (`pg-core`/`mysql-core`/`sqlite-core`/`singlestore-core`) to introspect tables with, and its
+  `schema` glob(s) point at the actual table files, all imported via `tsx`'s `tsImport()` and read
+  through `drizzle-orm`'s own `is()`/`getTableConfig()` — the target project's own installed
+  `drizzle-orm`, not orm2erd's. Supports composite primary keys, multi-column unique constraints
+  and indexes (including functional/expression indexes resolved via the dialect's `sqlToQuery`),
+  the project's `casing: "camelCase" | "snake_case"` strategy for columns with no explicit name,
+  `onDelete`/`onUpdate` relation actions, and raw `sql` defaults. Cardinality falls back to
+  FK-column uniqueness the same way the Sequelize adapter's undeclared `BelongsTo` does, since
+  Drizzle has no separate `OneToOne`/`ManyToOne` declaration to trust instead. Drizzle has no
+  comment/description option on a column or table, so `description` is never populated. See the
+  new "Drizzle" section in `docs/adapters.md`.
+- **Programmatic API.** `orm2erd` now exports `detectORMs`, `getAdapter`, `getEmitter`, and the
+  `ERDModel`/`Entity`/`Field`/`Relation`/`Index` IR types from its package root (`src/index.ts`),
+  mirroring the CLI's own detect → extract → emit pipeline for use as a library, not just a CLI.
+- **Grid layout for the interactive format picker.** The `Output format(s)` prompt now lays
+  options out in an auto-sized grid — column count computed from terminal width and label length,
+  capped at 3 — instead of one per line, with arrow keys navigating by row/column. Ragged last rows
+  (e.g. 7 options in 3 columns) are handled explicitly so up/down/left/right always land on a real
+  cell instead of wrapping into the wrong one.
+
+### 💊 Fixed
+
+- Sequelize: a plain column that happened to share its name with another model's foreign key was
+  incorrectly marked as an FK itself, because the FK-column set was built from every association's
+  `foreignKey` regardless of association type. Only `BelongsTo` associations contribute now, since
+  `HasMany`/`HasOne` name a column on the *target* model, not the one declaring the association.
+- Sequelize: a 1-1 relation backed only by a lone `BelongsTo` (no reciprocal `HasOne` registered)
+  always rendered `1-1` even when the FK column wasn't actually unique — indistinguishable from an
+  undeclared `HasMany`'s "many" side. It's now trusted as `1-1` only when an explicit `HasOne`
+  pairing exists or the FK column is itself unique; otherwise it renders `1-n`, and the parent/child
+  direction is normalized consistently with the `HasMany` case above.
+
 ## 🏷️ [1.6.0] - 2026-07-24
 
 ### 🚀 Added
