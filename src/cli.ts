@@ -8,7 +8,6 @@ import {
   outro,
   text,
   select,
-  multiselect,
   spinner,
   isCancel,
   cancel,
@@ -32,6 +31,7 @@ import {
   type DiffSegment,
 } from "./core/check";
 import { friendlyImportHint } from "./core/import-hints";
+import { gridMultiselect } from "./core/grid-multiselect";
 
 const ALL_ORM_NAMES = Object.keys(adapters) as ORMName[];
 
@@ -295,7 +295,7 @@ async function resolveFormats(interactive: boolean): Promise<OutputFormat[]> {
   } else if (interactive) {
     const available = Object.keys(emitters) as OutputFormat[];
     formats = orExit(
-      await multiselect({
+      await gridMultiselect({
         message: `${icon("🎨")}Output format(s):`,
         options: available.map((f) => ({ value: f, label: f })),
         initialValues: available.includes("mermaid") ? ["mermaid"] : [],
