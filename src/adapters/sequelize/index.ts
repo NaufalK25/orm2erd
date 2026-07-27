@@ -251,47 +251,34 @@ export const sequelizeAdapter: ORMAdapter = {
       );
     }
 
-    const entities = Object.entries(sequelize.models).map(([name, model]) => {
-      // Only BelongsTo puts the FK column on the *declaring* model — HasMany/
-      // HasOne's foreignKey names a column on the target, and BelongsToMany's
-      // lives on the through table. Matching on any association's foreignKey
-      // name regardless of type false-positives plain columns that happen to
-      // share a name with some other model's actual FK (e.g. a `code` column
-      // matching a child table's foreign key of the same name).
-      const foreignKeyFields = new Set(
-        Object.values(model.associations)
-          .filter((a) => a.associationType === "BelongsTo")
-          .map((a) => a.foreignKey),
-      );
-      return {
-        name,
-        ...extractCompositeKeys(model),
-        indexes: extractIndexes(model),
-        description: model.options?.comment,
-        fields: Object.entries(model.rawAttributes).map(
-          ([fieldName, attr]) => ({
-            name: fieldName,
-            type: toCanonicalType(attr.type.constructor.name),
-            nativeType:
-              attr.type.constructor.name === "ENUM"
-                ? `enum_${name}_${fieldName}`
-                : attr.type.constructor.name,
-            isPrimaryKey: !!attr.primaryKey,
-            isForeignKey: foreignKeyFields.has(fieldName),
-            // rawAttributes doesn't set allowNull on primary keys, even
-            // though they're always NOT NULL.
-            isNullable: attr.primaryKey ? false : attr.allowNull !== false,
-            isUnique: !!attr.unique,
-            defaultValue: resolveDefaultValue(attr.defaultValue),
-            enumValues:
-              attr.type.constructor.name === "ENUM"
-                ? attr.type.values
-                : undefined,
-            description: attr.comment,
-          }),
-        ),
-      };
-    });
+    const entities = Object.entries(sequelize.models).map(([name, model]) => ({
+      name,
+      ...extractCompositeKeys(model),
+      indexes: extractIndexes(model),
+      description: model.options?.comment,
+      fields: Object.entries(model.rawAttributes).map(([fieldName, attr]) => ({
+        name: fieldName,
+        type: toCanonicalType(attr.type.constructor.name),
+        nativeType:
+          attr.type.constructor.name === "ENUM"
+            ? `enum_${name}_${fieldName}`
+            : attr.type.constructor.name,
+        isPrimaryKey: !!attr.primaryKey,
+        // Reading the attribute's own resolved `references` (rather than
+        // reconstructing FK-ness from association direction) is accurate
+        // regardless of which side — BelongsTo vs HasMany/HasOne/
+        // BelongsToMany — declared the association; see SequelizeAttribute.
+        isForeignKey: attr.references != null,
+        // rawAttributes doesn't set allowNull on primary keys, even
+        // though they're always NOT NULL.
+        isNullable: attr.primaryKey ? false : attr.allowNull !== false,
+        isUnique: !!attr.unique,
+        defaultValue: resolveDefaultValue(attr.defaultValue),
+        enumValues:
+          attr.type.constructor.name === "ENUM" ? attr.type.values : undefined,
+        description: attr.comment,
+      })),
+    }));
 
     const sidesByKey = new Map<string, RelationSide[]>();
     for (const model of Object.values(sequelize.models)) {

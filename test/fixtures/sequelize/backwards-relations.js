@@ -2,8 +2,8 @@ function dataType(name, values) {
   return { constructor: { name }, values };
 }
 
-// Regression fixture for two generator bugs found by comparing a generated
-// ERD against a hand-maintained one on a real project.
+// Regression fixture for generator bugs found by comparing a generated ERD
+// against a hand-maintained one on a real project.
 //
 // 1. Order.orderCode is a plain column that happens to share a name with
 //    OrderItem's actual FK column (also "orderCode"). Only OrderItem's own
@@ -19,6 +19,13 @@ function dataType(name, values) {
 //    - Account.customerId is unique -> Customer 1-1 Account.
 //    - Customer<->Profile declares an explicit HasOne/BelongsTo pair, so it
 //      stays 1-1 (parent-on-left) even though the FK isn't unique.
+//
+// 3. Warehouse.hasMany(Shipment) has no reciprocal .belongsTo() anywhere —
+//    real Sequelize still writes `references` onto Shipment.warehouseId via
+//    HasMany's own _injectAttributes (addForeignKeyConstraints runs for any
+//    association type, not just BelongsTo). FK detection must read that
+//    per-attribute `references`, not reconstruct it from which side declared
+//    the association, or this column is silently missed.
 export const sequelize = {
   models: {
     Order: {
@@ -40,7 +47,10 @@ export const sequelize = {
       name: "OrderItem",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
-        orderCode: { type: dataType("STRING") },
+        orderCode: {
+          type: dataType("STRING"),
+          references: { model: "Orders", key: "id" },
+        },
       },
       associations: {
         order: {
@@ -69,7 +79,10 @@ export const sequelize = {
       name: "Invoice",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
-        customerId: { type: dataType("INTEGER") },
+        customerId: {
+          type: dataType("INTEGER"),
+          references: { model: "Customers", key: "id" },
+        },
       },
       associations: {
         customer: {
@@ -84,7 +97,11 @@ export const sequelize = {
       name: "Account",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
-        customerId: { type: dataType("INTEGER"), unique: true },
+        customerId: {
+          type: dataType("INTEGER"),
+          unique: true,
+          references: { model: "Customers", key: "id" },
+        },
       },
       associations: {
         customer: {
@@ -99,7 +116,10 @@ export const sequelize = {
       name: "Profile",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
-        customerId: { type: dataType("INTEGER") },
+        customerId: {
+          type: dataType("INTEGER"),
+          references: { model: "Customers", key: "id" },
+        },
       },
       associations: {
         customer: {
@@ -109,6 +129,31 @@ export const sequelize = {
           as: "customer",
         },
       },
+    },
+    Warehouse: {
+      name: "Warehouse",
+      rawAttributes: {
+        id: { type: dataType("INTEGER"), primaryKey: true },
+      },
+      associations: {
+        shipments: {
+          associationType: "HasMany",
+          foreignKey: "warehouseId",
+          target: { name: "Shipment" },
+          as: "shipments",
+        },
+      },
+    },
+    Shipment: {
+      name: "Shipment",
+      rawAttributes: {
+        id: { type: dataType("INTEGER"), primaryKey: true },
+        warehouseId: {
+          type: dataType("INTEGER"),
+          references: { model: "Warehouses", key: "id" },
+        },
+      },
+      associations: {},
     },
   },
   define: () => {},

@@ -61,6 +61,7 @@ export const sequelize = {
           type: dataType("INTEGER"),
           onDelete: "CASCADE",
           onUpdate: "CASCADE",
+          references: { model: "Users", key: "id" },
         },
       },
       associations: {

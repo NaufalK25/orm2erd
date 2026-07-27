@@ -197,6 +197,13 @@ describe("sequelizeAdapter.extract — FK marking respects association direction
     const orderCode = item.fields.find((f) => f.name === "orderCode")!;
     expect(orderCode.isForeignKey).toBe(true);
   });
+
+  it("marks the FK column even when only the parent's HasMany is declared, with no reciprocal BelongsTo", async () => {
+    const model = await extractFixture("backwards-relations.js");
+    const shipment = model.entities.find((e) => e.name === "Shipment")!;
+    const warehouseId = shipment.fields.find((f) => f.name === "warehouseId")!;
+    expect(warehouseId.isForeignKey).toBe(true);
+  });
 });
 
 describe("sequelizeAdapter.extract — BelongsTo with no reciprocal HasMany/HasOne", () => {

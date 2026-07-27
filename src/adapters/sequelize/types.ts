@@ -27,6 +27,12 @@ export interface SequelizeAttribute {
   // unspecified onDelete to "SET NULL"/"CASCADE" depending on nullability.
   onDelete?: string;
   onUpdate?: string;
+  // Same addForeignKeyConstraints call that writes onDelete/onUpdate above
+  // also writes this — the authoritative "this column is a FK" marker,
+  // independent of which side (BelongsTo vs HasMany/HasOne/BelongsToMany)
+  // declared the association. Shape is `{ model, key }` but only presence
+  // is ever checked here.
+  references?: unknown;
 }
 
 // Mirrors the `Association` base class in
