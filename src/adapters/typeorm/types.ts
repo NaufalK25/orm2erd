@@ -31,6 +31,7 @@ export interface TypeOrmColumnMetadata {
   type: string | Function;
   isPrimary: boolean;
   isNullable: boolean;
+  isArray?: boolean; // e.g. @Column("text", { array: true }) — Postgres-only
   default?: unknown;
   enum?: (string | number)[];
   comment?: string;

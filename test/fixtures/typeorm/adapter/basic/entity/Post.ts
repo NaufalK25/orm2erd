@@ -13,6 +13,9 @@ export class Post {
   @Column({ type: "text", nullable: true })
   content?: string;
 
+  @Column("text", { array: true, nullable: true })
+  labels?: string[];
+
   @Column({ default: false })
   published: boolean;
 

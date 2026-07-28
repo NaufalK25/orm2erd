@@ -5,11 +5,16 @@
 // version's own `.d.ts` files — check those on a real mismatch, not v7's docs.
 
 // Mirrors the instance shape of `sequelize/types/data-types.d.ts`'s
-// `ABSTRACT`/`ENUM` classes (e.g. `DataTypes.STRING()`, `DataTypes.ENUM(...)`);
-// `.constructor.name` is the DataType's class name, e.g. "STRING", "ENUM".
+// `ABSTRACT`/`ENUM`/`ARRAY` classes (e.g. `DataTypes.STRING()`,
+// `DataTypes.ENUM(...)`, `DataTypes.ARRAY(...)`). `.constructor.name` is the
+// DataType's internal class name (e.g. "JSONTYPE" for DataTypes.JSON) and
+// doesn't always match its public type key — `.key` (e.g. "JSON") is the
+// one that does and should be preferred when present.
 export interface SequelizeDataType {
   constructor: { name: string };
+  key?: string;
   values?: string[]; // present on DataTypes.ENUM(...) instances
+  type?: SequelizeDataType; // present on DataTypes.ARRAY(...) instances — the element type
 }
 
 // Mirrors `ModelAttributeColumnOptions` in `sequelize/types/model.d.ts`.

@@ -12,32 +12,78 @@ import type {
   RelationAction,
 } from "../../core/model";
 import { loadDotEnvFiles } from "../../core/dotenv";
-import type { RelationSide, SequelizeInstance, SequelizeModel } from "./types";
+import type {
+  RelationSide,
+  SequelizeAttribute,
+  SequelizeDataType,
+  SequelizeInstance,
+  SequelizeModel,
+} from "./types";
 
 const SEQUELIZE_TYPE_TO_CANONICAL: Record<string, CanonicalType> = {
   STRING: "string",
   TEXT: "string",
   CHAR: "string",
   CITEXT: "string",
+  UUID: "string",
+  UUIDV1: "string",
+  UUIDV4: "string",
   INTEGER: "int",
   SMALLINT: "int",
   TINYINT: "int",
+  MEDIUMINT: "int",
   BIGINT: "bigint",
   FLOAT: "float",
   REAL: "float",
   DOUBLE: "float",
+  "DOUBLE PRECISION": "float",
   DECIMAL: "decimal",
+  NUMBER: "decimal",
   BOOLEAN: "boolean",
   DATE: "datetime",
   DATEONLY: "datetime",
+  TIME: "datetime",
   JSON: "json",
   JSONB: "json",
   BLOB: "bytes",
   ENUM: "enum",
+  // No column-level type at all — a VIRTUAL attribute is computed in JS and
+  // never reaches the database, so there's nothing to map it to.
+  VIRTUAL: "unknown",
+  // Postgres-specific structured types with no equivalent CanonicalType —
+  // treating them as "string" would misrepresent their actual shape.
+  RANGE: "unknown",
+  GEOMETRY: "unknown",
+  GEOGRAPHY: "unknown",
+  HSTORE: "unknown",
+  // Network address types round-trip as plain text in every practical sense.
+  INET: "string",
+  CIDR: "string",
+  MACADDR: "string",
 };
 
 function toCanonicalType(nativeType: string): CanonicalType {
   return SEQUELIZE_TYPE_TO_CANONICAL[nativeType] ?? "unknown";
+}
+
+function typeKey(type: SequelizeDataType): string {
+  return type.key ?? type.constructor.name;
+}
+
+// DataTypes.ARRAY(inner) wraps its element type on `.type` — unwrap once so
+// the canonical-type lookup, nativeType, and enum handling all key off the
+// element (e.g. ARRAY(ENUM) reuses the same enum_<model>_<field> naming
+// path as a bare ENUM) rather than the literal "ARRAY" wrapper.
+function resolveAttributeType(attr: SequelizeAttribute): {
+  key: string;
+  isList: boolean;
+  values?: string[];
+} {
+  const outerKey = typeKey(attr.type);
+  const effective =
+    outerKey === "ARRAY" && attr.type.type ? attr.type.type : attr.type;
+  const key = typeKey(effective);
+  return { key, isList: outerKey === "ARRAY", values: effective.values };
 }
 
 function resolveDefaultValue(value: unknown): string | undefined {
@@ -256,28 +302,29 @@ export const sequelizeAdapter: ORMAdapter = {
       ...extractCompositeKeys(model),
       indexes: extractIndexes(model),
       description: model.options?.comment,
-      fields: Object.entries(model.rawAttributes).map(([fieldName, attr]) => ({
-        name: fieldName,
-        type: toCanonicalType(attr.type.constructor.name),
-        nativeType:
-          attr.type.constructor.name === "ENUM"
-            ? `enum_${name}_${fieldName}`
-            : attr.type.constructor.name,
-        isPrimaryKey: !!attr.primaryKey,
-        // Reading the attribute's own resolved `references` (rather than
-        // reconstructing FK-ness from association direction) is accurate
-        // regardless of which side — BelongsTo vs HasMany/HasOne/
-        // BelongsToMany — declared the association; see SequelizeAttribute.
-        isForeignKey: attr.references != null,
-        // rawAttributes doesn't set allowNull on primary keys, even
-        // though they're always NOT NULL.
-        isNullable: attr.primaryKey ? false : attr.allowNull !== false,
-        isUnique: !!attr.unique,
-        defaultValue: resolveDefaultValue(attr.defaultValue),
-        enumValues:
-          attr.type.constructor.name === "ENUM" ? attr.type.values : undefined,
-        description: attr.comment,
-      })),
+      fields: Object.entries(model.rawAttributes).map(([fieldName, attr]) => {
+        const { key: typeName, isList, values } = resolveAttributeType(attr);
+        return {
+          name: fieldName,
+          type: toCanonicalType(typeName),
+          nativeType:
+            typeName === "ENUM" ? `enum_${name}_${fieldName}` : typeName,
+          isList,
+          isPrimaryKey: !!attr.primaryKey,
+          // Reading the attribute's own resolved `references` (rather than
+          // reconstructing FK-ness from association direction) is accurate
+          // regardless of which side — BelongsTo vs HasMany/HasOne/
+          // BelongsToMany — declared the association; see SequelizeAttribute.
+          isForeignKey: attr.references != null,
+          // rawAttributes doesn't set allowNull on primary keys, even
+          // though they're always NOT NULL.
+          isNullable: attr.primaryKey ? false : attr.allowNull !== false,
+          isUnique: !!attr.unique,
+          defaultValue: resolveDefaultValue(attr.defaultValue),
+          enumValues: typeName === "ENUM" ? values : undefined,
+          description: attr.comment,
+        };
+      }),
     }));
 
     const sidesByKey = new Map<string, RelationSide[]>();

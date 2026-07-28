@@ -144,6 +144,50 @@ describe("sequelizeAdapter.extract — field mapping", () => {
   });
 });
 
+describe("sequelizeAdapter.extract — native type mapping (#5a/#5b)", () => {
+  it("reads the DataType's public key, not its internal constructor name (JSONTYPE -> JSON)", async () => {
+    const model = await extractFixture("types.js");
+    const doc = model.entities.find((e) => e.name === "Document")!;
+    const metadata = doc.fields.find((f) => f.name === "metadata")!;
+    expect(metadata.nativeType).toBe("JSON");
+    expect(metadata.type).toBe("json");
+  });
+
+  it("maps JSONB and UUID to their canonical types", async () => {
+    const model = await extractFixture("types.js");
+    const doc = model.entities.find((e) => e.name === "Document")!;
+    expect(doc.fields.find((f) => f.name === "settings")?.type).toBe("json");
+    expect(doc.fields.find((f) => f.name === "externalRef")?.type).toBe(
+      "string",
+    );
+  });
+
+  it("unwraps ARRAY(STRING) to its element type and sets isList", async () => {
+    const model = await extractFixture("types.js");
+    const doc = model.entities.find((e) => e.name === "Document")!;
+    const tags = doc.fields.find((f) => f.name === "tags")!;
+    expect(tags.type).toBe("string");
+    expect(tags.nativeType).toBe("STRING");
+    expect(tags.isList).toBe(true);
+  });
+
+  it("unwraps ARRAY(ENUM), reusing the same enum_<model>_<field> naming path as a bare ENUM", async () => {
+    const model = await extractFixture("types.js");
+    const doc = model.entities.find((e) => e.name === "Document")!;
+    const roles = doc.fields.find((f) => f.name === "roles")!;
+    expect(roles.type).toBe("enum");
+    expect(roles.nativeType).toBe("enum_Document_roles");
+    expect(roles.enumValues).toEqual(["admin", "member"]);
+    expect(roles.isList).toBe(true);
+  });
+
+  it("leaves isList false for non-array columns", async () => {
+    const model = await extractFixture("types.js");
+    const doc = model.entities.find((e) => e.name === "Document")!;
+    expect(doc.fields.find((f) => f.name === "settings")?.isList).toBe(false);
+  });
+});
+
 describe("sequelizeAdapter.extract — relation dedup", () => {
   it("collapses a HasMany/BelongsTo pair into a single 1-n relation", async () => {
     const model = await extractFixture("named-export.js");

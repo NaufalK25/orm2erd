@@ -37,6 +37,10 @@ export const posts = pgTable("posts", {
   authorId: integer("author_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  labels: text("labels").array(),
+  // A named pgEnum wrapped in .array() — enumValues/columnType only live on
+  // the wrapper's `.baseColumn`, not the PgArray itself.
+  roleTags: roleEnum("role_tags").array(),
 });
 
 export const tags = pgTable("tags", {

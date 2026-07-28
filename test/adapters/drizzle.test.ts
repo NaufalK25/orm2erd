@@ -95,6 +95,27 @@ describe("drizzleAdapter.extract — postgres dialect", () => {
     expect(authorId.isForeignKey).toBe(true);
   });
 
+  it("unwraps a `.array()` column to its element's canonical type and sets isList, without the wrapper's own \"[]\" suffix leaking into nativeType (#5a)", async () => {
+    const model = await extractFixture("postgres-basic");
+    const posts = model.entities.find((e) => e.name === "posts")!;
+    const labels = posts.fields.find((f) => f.name === "labels")!;
+    expect(labels.isList).toBe(true);
+    expect(labels.type).toBe("string");
+    expect(labels.nativeType).toBe("text");
+  });
+
+  it("unwraps a `.array()` of a named pgEnum via `.baseColumn`, since enumValues/columnType only live there, not on the array wrapper (#5a)", async () => {
+    const model = await extractFixture("postgres-basic");
+    const posts = model.entities.find((e) => e.name === "posts")!;
+    const roleTags = posts.fields.find((f) => f.name === "role_tags")!;
+    expect(roleTags.isList).toBe(true);
+    expect(roleTags.type).toBe("enum");
+    expect(roleTags.enumValues).toEqual(["admin", "member"]);
+    // The real pgEnum name, not a synthesized enum_<table>_<column> — same
+    // "keep the real name" rule the non-array pgEnum column already gets.
+    expect(roleTags.nativeType).toBe("role");
+  });
+
   it("detects a single-column unique constraint from `.unique()`", async () => {
     const model = await extractFixture("postgres-basic");
     const users = model.entities.find((e) => e.name === "users")!;

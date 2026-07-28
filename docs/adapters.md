@@ -78,9 +78,15 @@ already-computed metadata (`.models`, `.associations`) can be read directly:
   anything duck-typed as a Sequelize instance (has `.models` + `.define()`).
 - Only Sequelize v6.x is supported — v7 stores `.models` as an iterable `Set` instead of a plain
   object, which would silently yield zero entities, so this is detected and rejected explicitly.
-- Fields come from `model.rawAttributes`; type is looked up from the attribute type's
-  `constructor.name` (e.g. `STRING`, `ENUM`). Primary keys don't get `allowNull` set even though
-  they're implicitly `NOT NULL`, so that's special-cased.
+- Fields come from `model.rawAttributes`; type is looked up from the attribute type's `.key`,
+  falling back to `constructor.name` when `.key` is absent. These usually agree (`STRING`, `ENUM`,
+  ...), but `DataTypes.JSON`'s internal class name is `JSONTYPE` while its public key is `JSON` —
+  reading `constructor.name` alone (the pre-fix behavior) rendered `JSONTYPE`. Primary keys don't
+  get `allowNull` set even though they're implicitly `NOT NULL`, so that's special-cased.
+- `DataTypes.ARRAY(inner)` wraps its element type on `.type` rather than exposing it directly —
+  unwrapped once before the canonical-type lookup so the element's type (and, for
+  `ARRAY(ENUM(...))`, its `enumValues`) carries through and `isList` gets set, instead of the whole
+  column falling through to `unknown` with no list marker.
 - Composite keys: a composite PK comes from `model.primaryKeyAttributes` (only carried on the
   entity when it spans >1 column); multi-column uniques come from `model.options.indexes` entries
   with `unique: true` and >1 field. Single-column PK/unique stay on the per-field flags.
@@ -227,7 +233,10 @@ Once a `DataSource`-like instance exists, regardless of path:
 - Fields: `column.type` is either a driver-specific string (looked up in a table) or a plain JS
   constructor (`String`/`Number`/`Boolean`/`Date`) for columns with no explicit `type` option.
   Primary keys don't get `isNullable` set even though they're implicitly `NOT NULL`, same caveat
-  as Sequelize.
+  as Sequelize. A Postgres array column (`@Column("text", { array: true })`) sets real TypeORM's
+  `ColumnMetadata.isArray`, mapped straight to `Field.isList` — the base type (`text`) was already
+  correct without this, so a missing `isList` silently understated the schema rather than looking
+  obviously wrong.
 - Composite keys: a composite PK comes from `entityMetadata.primaryColumns` (>1 column), and
   multi-column uniques from `entityMetadata.uniques` (each `@Unique([...])` spanning >1 column).
   Single-column PK/unique stay on the per-field flags.
@@ -297,6 +306,12 @@ file(s):
   directly when present (Drizzle exposes it uniformly across dialects, unlike TypeORM/Sequelize).
   Primary keys don't get `notNull` set even though they're implicitly `NOT NULL`, same caveat as
   the other runtime-introspection adapters.
+- A `.array()` column (`dataType === "array"`, e.g. pg-core's `PgArray`) wraps its element column on
+  `.baseColumn` — unwrapped once so canonical type, native type, and `enumValues` all key off the
+  element instead of the array wrapper, and `Field.isList` is set from `dataType === "array"`.
+  `PgArray.getSQLType()` already appends `"[size]"` itself, so `nativeType` is read from the
+  unwrapped element's `getSQLType()` instead — emitters append their own `[]` via `isList` already,
+  and using the wrapper's value directly would double it up.
 - A column's actual DB name isn't always `column.name` — when a column has no explicit name
   (`keyAsName`) and the config sets a project-wide `casing: "camelCase" | "snake_case"` strategy,
   Drizzle transforms the JS property name at query time instead. This is replicated with the same

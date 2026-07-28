@@ -59,6 +59,14 @@ describe("typeormAdapter.extract — raw .ts DataSource (compiled via the target
     expect(published.defaultValue).toBe("false");
   });
 
+  it('sets isList for a @Column("text", { array: true }) column, without losing the element type (#5a)', async () => {
+    const model = await extractFixture("basic", "data-source.ts");
+    const post = model.entities.find((e) => e.name === "Post")!;
+    const labels = post.fields.find((f) => f.name === "labels")!;
+    expect(labels.isList).toBe(true);
+    expect(labels.type).toBe("string");
+  });
+
   it("detects foreign key columns from relations, not just column definitions", async () => {
     const model = await extractFixture("basic", "data-source.ts");
     const post = model.entities.find((e) => e.name === "Post")!;

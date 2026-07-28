@@ -410,6 +410,7 @@ function buildField(
     name: column.propertyName,
     type: toCanonicalType(column.type),
     nativeType: nativeTypeName(column.type),
+    isList: column.isArray,
     isPrimaryKey: column.isPrimary,
     isForeignKey: fkColumnNames.has(column.propertyName),
     // TypeORM doesn't set isNullable on primary keys, even though they're

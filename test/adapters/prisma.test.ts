@@ -94,6 +94,18 @@ describe.each([
   });
 });
 
+describe("prismaAdapter.extract — scalar list fields (#5a reference — DMMF already carries isList independently)", () => {
+  it("marks a scalar list field (String[]) as isList with the element's canonical type", async () => {
+    const schemaPath = join(fixturesDir, "single/schema.prisma");
+    const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
+    const model = await prismaAdapter.extract(entry);
+    const user = model.entities.find((e) => e.name === "User")!;
+    const roles = user.fields.find((f) => f.name === "roles")!;
+    expect(roles.isList).toBe(true);
+    expect(roles.type).toBe("string");
+  });
+});
+
 describe("prismaAdapter.extract — composite keys", () => {
   const schemaPath = join(fixturesDir, "composite/schema.prisma");
 

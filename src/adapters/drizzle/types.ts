@@ -21,6 +21,8 @@ export interface DrizzleKitConfig {
 }
 
 // Mirrors `Column` (column.ts), trimmed to what this adapter reads.
+// `baseColumn` is only present on a `PgArray`/equivalent (`dataType ===
+// "array"`) — the element column it wraps (e.g. pg-core's `PgArray`).
 export interface DrizzleColumn {
   name: string;
   keyAsName: boolean;
@@ -31,6 +33,7 @@ export interface DrizzleColumn {
   dataType: string;
   columnType: string;
   enumValues?: string[];
+  baseColumn?: DrizzleColumn;
   getSQLType(): string;
 }
 

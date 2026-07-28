@@ -211,7 +211,19 @@ function resolveColumnName(
     : casingModule.toSnakeCase(column.name);
 }
 
-function toCanonicalType(column: DrizzleColumn): CanonicalType {
+// A `.array()` column (`dataType === "array"`) wraps its element column on
+// `.baseColumn` (e.g. pg-core's `PgArray`) — unwrap once so canonical-type,
+// native-type, and enum handling all key off the element rather than the
+// array wrapper itself, mirroring the Sequelize/Mongoose adapters' own
+// ARRAY-of/Array-of unwrap.
+function elementColumn(column: DrizzleColumn): DrizzleColumn {
+  return column.dataType === "array" && column.baseColumn
+    ? column.baseColumn
+    : column;
+}
+
+function toCanonicalType(rawColumn: DrizzleColumn): CanonicalType {
+  const column = elementColumn(rawColumn);
   if (column.enumValues && column.enumValues.length > 0) return "enum";
 
   switch (column.dataType) {
@@ -252,16 +264,19 @@ function toCanonicalType(column: DrizzleColumn): CanonicalType {
 // a block name — so those get a synthesized name instead, the same fix the
 // Sequelize adapter applies for its own dialect-agnostic ENUM type.
 function resolveNativeType(
-  column: DrizzleColumn,
+  rawColumn: DrizzleColumn,
   tableName: string,
   columnName: string,
 ): string {
+  const column = elementColumn(rawColumn);
   const isNamedPgEnum =
     column.columnType === "PgEnumColumn" ||
     column.columnType === "PgEnumObjectColumn";
   if (column.enumValues && column.enumValues.length > 0 && !isNamedPgEnum) {
     return `enum_${tableName}_${columnName}`;
   }
+  // The element's own SQL type, not the array wrapper's (`PgArray.getSQLType()`
+  // appends "[size]" itself) — emitters already append "[]" via `isList`.
   return column.getSQLType();
 }
 
@@ -386,6 +401,7 @@ function buildEntity(
       name: columnName,
       type: toCanonicalType(column),
       nativeType: resolveNativeType(column, name, columnName),
+      isList: column.dataType === "array",
       isPrimaryKey,
       isForeignKey: fkColumnNames.has(columnName),
       // Drizzle doesn't set notNull on primary keys, even though they're
@@ -393,7 +409,7 @@ function buildEntity(
       isNullable: isPrimaryKey ? false : !column.notNull,
       isUnique: uniqueColumnNames.has(columnName),
       defaultValue: resolveDefaultValue(column, isSQL, dialect),
-      enumValues: column.enumValues,
+      enumValues: elementColumn(column).enumValues,
     };
   });
 
