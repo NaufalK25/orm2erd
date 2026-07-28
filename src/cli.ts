@@ -3,6 +3,7 @@ import pc from "picocolors";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, extname } from "node:path";
+import type { Writable } from "node:stream";
 import {
   intro,
   outro,
@@ -366,17 +367,54 @@ async function generateAndWrite(
   verbose: boolean,
   interactive: boolean,
 ): Promise<void> {
-  const s = interactive ? spinner() : undefined;
-  s?.start(`${icon("⚙️")}Generating...`);
+  // withSuppressedOutput below patches process.stdout.write to a no-op
+  // during extract(), which would also swallow the spinner's own renders.
+  // Capture the real write fn before that patch exists so the spinner can
+  // bypass it.
+  const realStdoutWrite = process.stdout.write.bind(process.stdout);
+  const spinnerOutput = {
+    write: realStdoutWrite,
+    get columns() {
+      return process.stdout.columns;
+    },
+  } as unknown as Writable;
+
+  // No indicator: "timer" — its digits can't tick during the synchronous
+  // block below and freeze on a number, which reads as broken; a static
+  // glyph doesn't carry that expectation.
+  const s = interactive ? spinner({ output: spinnerOutput }) : undefined;
+  let spinnerStarted = false;
+  const phase = async (label: string) => {
+    const line = `${icon("⚙️ ")}${label}`;
+    if (interactive) {
+      if (!spinnerStarted) {
+        s?.start(line);
+        spinnerStarted = true;
+      } else {
+        s?.message(line);
+      }
+      // The spinner only paints from its own ~80-120ms interval. Some phases
+      // (e.g. importing the target's models) are one long synchronous block
+      // that starves that interval entirely, so without yielding here first,
+      // the label would never render before the block already finished.
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    } else {
+      console.log(line);
+    }
+  };
 
   try {
+    await phase("Resolving entry…");
     const entry = await adapter.resolveEntry(entryPath, cwd);
+
+    await phase("Parsing schema…");
     const model = await withGuardedExit(() =>
       verbose
         ? adapter.extract(entry)
         : withSuppressedOutput(() => adapter.extract(entry)),
     );
 
+    await phase("Generating diagram(s)…");
     const allExtensions = selectedEmitters.map((e) => e.fileExtension);
     const outputs = selectedEmitters.map((emitter) => ({
       path: resolveOutPath(outBase, emitter.fileExtension, allExtensions),
@@ -416,6 +454,7 @@ async function generateAndWrite(
       process.exit(1);
     }
 
+    await phase("Writing output…");
     const outDir = dirname(outBase);
     if (outDir !== ".") {
       await mkdir(outDir, { recursive: true });
