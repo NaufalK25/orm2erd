@@ -8,118 +8,118 @@ function dataType(name, values) {
 // implicitly NOT NULL (same quirk `isNullable` already special-cases).
 export const sequelize = {
   models: {
-    Company: {
-      name: "Company",
+    Customer: {
+      name: "Customer",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
       },
       associations: {
-        employees: {
+        invoices: {
           associationType: "HasMany",
-          foreignKey: "companyId",
-          target: { name: "Employee" },
-          as: "employees",
+          foreignKey: "customerId",
+          target: { name: "Invoice" },
+          as: "invoices",
         },
-        contractors: {
+        payments: {
           associationType: "HasMany",
-          foreignKey: "companyId",
-          target: { name: "Contractor" },
-          as: "contractors",
+          foreignKey: "customerId",
+          target: { name: "Payment" },
+          as: "payments",
         },
       },
     },
     // 1-n, FK NOT NULL -> isFromOptional: false.
-    Employee: {
-      name: "Employee",
+    Invoice: {
+      name: "Invoice",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
-        companyId: {
+        customerId: {
           type: dataType("INTEGER"),
           allowNull: false,
-          references: { model: "Companies", key: "id" },
+          references: { model: "Customers", key: "id" },
         },
       },
       associations: {},
     },
     // 1-n, FK nullable -> isFromOptional: true.
-    Contractor: {
-      name: "Contractor",
+    Payment: {
+      name: "Payment",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
-        companyId: {
+        customerId: {
           type: dataType("INTEGER"),
           allowNull: true,
-          references: { model: "Companies", key: "id" },
+          references: { model: "Customers", key: "id" },
         },
       },
       associations: {},
     },
-    HeadOffice: {
-      name: "HeadOffice",
+    Product: {
+      name: "Product",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
       },
       associations: {
-        // 1-1, FK NOT NULL (HeadquarterAddress.headOfficeId) -> isFromOptional: false.
-        address: {
+        // 1-1, FK NOT NULL (Barcode.productId) -> isFromOptional: false.
+        barcode: {
           associationType: "HasOne",
-          foreignKey: "headOfficeId",
-          target: { name: "HeadquarterAddress" },
-          as: "address",
+          foreignKey: "productId",
+          target: { name: "Barcode" },
+          as: "barcode",
         },
       },
     },
-    HeadquarterAddress: {
-      name: "HeadquarterAddress",
+    Barcode: {
+      name: "Barcode",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
-        headOfficeId: {
+        productId: {
           type: dataType("INTEGER"),
           allowNull: false,
           unique: true,
-          references: { model: "HeadOffices", key: "id" },
+          references: { model: "Products", key: "id" },
         },
       },
       associations: {
-        headOffice: {
+        product: {
           associationType: "BelongsTo",
-          foreignKey: "headOfficeId",
-          target: { name: "HeadOffice" },
-          as: "headOffice",
+          foreignKey: "productId",
+          target: { name: "Product" },
+          as: "product",
         },
       },
     },
-    Branch: {
-      name: "Branch",
+    Supplier: {
+      name: "Supplier",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
       },
       associations: {
-        // 1-1, FK nullable (BranchAddress.branchId) -> isFromOptional: true.
-        address: {
+        // 1-1, FK nullable (Contract.supplierId) -> isFromOptional: true.
+        contract: {
           associationType: "HasOne",
-          foreignKey: "branchId",
-          target: { name: "BranchAddress" },
-          as: "address",
+          foreignKey: "supplierId",
+          target: { name: "Contract" },
+          as: "contract",
         },
       },
     },
-    BranchAddress: {
-      name: "BranchAddress",
+    Contract: {
+      name: "Contract",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
-        branchId: {
+        supplierId: {
           type: dataType("INTEGER"),
           unique: true,
-          references: { model: "Branches", key: "id" },
+          references: { model: "Suppliers", key: "id" },
         },
       },
       associations: {
-        branch: {
+        supplier: {
           associationType: "BelongsTo",
-          foreignKey: "branchId",
-          target: { name: "Branch" },
-          as: "branch",
+          foreignKey: "supplierId",
+          target: { name: "Supplier" },
+          as: "supplier",
         },
       },
     },
@@ -128,32 +128,32 @@ export const sequelize = {
     // never sets allowNull on a primary-key column even though it's
     // implicitly NOT NULL, so isFromOptional must consult `primaryKey`
     // the same way the field-level `isNullable` already does.
-    Project: {
-      name: "Project",
+    Order: {
+      name: "Order",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
       },
       associations: {
-        assignments: {
+        items: {
           associationType: "HasMany",
-          foreignKey: "projectId",
-          target: { name: "ProjectAssignment" },
-          as: "assignments",
+          foreignKey: "orderId",
+          target: { name: "OrderItem" },
+          as: "items",
         },
       },
     },
-    ProjectAssignment: {
-      name: "ProjectAssignment",
+    OrderItem: {
+      name: "OrderItem",
       rawAttributes: {
-        projectId: { type: dataType("INTEGER"), primaryKey: true },
-        employeeId: { type: dataType("INTEGER"), primaryKey: true },
+        orderId: { type: dataType("INTEGER"), primaryKey: true },
+        productId: { type: dataType("INTEGER"), primaryKey: true },
       },
       associations: {
-        project: {
+        order: {
           associationType: "BelongsTo",
-          foreignKey: "projectId",
-          target: { name: "Project" },
-          as: "project",
+          foreignKey: "orderId",
+          target: { name: "Order" },
+          as: "order",
         },
       },
     },

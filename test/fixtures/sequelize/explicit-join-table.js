@@ -10,71 +10,71 @@ function dataType(name, values) {
 // 1-n edges to the junction.
 export const sequelize = {
   models: {
-    Department: {
-      name: "Department",
+    Post: {
+      name: "Post",
+      rawAttributes: {
+        id: { type: dataType("INTEGER"), primaryKey: true },
+        title: { type: dataType("STRING"), allowNull: false },
+      },
+      associations: {
+        tagLinks: {
+          associationType: "HasMany",
+          foreignKey: "postId",
+          target: { name: "PostTag" },
+          as: "tagLinks",
+        },
+        tags: {
+          associationType: "BelongsToMany",
+          foreignKey: "postId",
+          otherKey: "tagId",
+          target: { name: "Tag" },
+          as: "tags",
+          through: { model: { name: "PostTag" } },
+        },
+      },
+    },
+    Tag: {
+      name: "Tag",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
         name: { type: dataType("STRING"), allowNull: false },
       },
       associations: {
-        assignments: {
+        postLinks: {
           associationType: "HasMany",
-          foreignKey: "departmentId",
-          target: { name: "DepartmentGroup" },
-          as: "assignments",
+          foreignKey: "tagId",
+          target: { name: "PostTag" },
+          as: "postLinks",
         },
-        groups: {
+        posts: {
           associationType: "BelongsToMany",
-          foreignKey: "departmentId",
-          otherKey: "groupId",
-          target: { name: "Group" },
-          as: "groups",
-          through: { model: { name: "DepartmentGroup" } },
+          foreignKey: "tagId",
+          otherKey: "postId",
+          target: { name: "Post" },
+          as: "posts",
+          through: { model: { name: "PostTag" } },
         },
       },
     },
-    Group: {
-      name: "Group",
+    PostTag: {
+      name: "PostTag",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
-        name: { type: dataType("STRING"), allowNull: false },
+        postId: { type: dataType("INTEGER") },
+        tagId: { type: dataType("INTEGER") },
       },
       associations: {
-        assignments: {
-          associationType: "HasMany",
-          foreignKey: "groupId",
-          target: { name: "DepartmentGroup" },
-          as: "assignments",
-        },
-        departments: {
-          associationType: "BelongsToMany",
-          foreignKey: "groupId",
-          otherKey: "departmentId",
-          target: { name: "Department" },
-          as: "departments",
-          through: { model: { name: "DepartmentGroup" } },
-        },
-      },
-    },
-    DepartmentGroup: {
-      name: "DepartmentGroup",
-      rawAttributes: {
-        id: { type: dataType("INTEGER"), primaryKey: true },
-        departmentId: { type: dataType("INTEGER") },
-        groupId: { type: dataType("INTEGER") },
-      },
-      associations: {
-        department: {
+        post: {
           associationType: "BelongsTo",
-          foreignKey: "departmentId",
-          target: { name: "Department" },
-          as: "department",
+          foreignKey: "postId",
+          target: { name: "Post" },
+          as: "post",
         },
-        group: {
+        tag: {
           associationType: "BelongsTo",
-          foreignKey: "groupId",
-          target: { name: "Group" },
-          as: "group",
+          foreignKey: "tagId",
+          target: { name: "Tag" },
+          as: "tag",
         },
       },
     },

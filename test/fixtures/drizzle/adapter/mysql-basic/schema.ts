@@ -5,10 +5,10 @@ export const users = mysqlTable("users", {
   role: mysqlEnum("role", ["admin", "member"]).notNull().default("member"),
 });
 
-export const accounts = mysqlTable("accounts", {
+export const posts = mysqlTable("posts", {
   id: int("id").autoincrement().primaryKey(),
-  status: mysqlEnum("status", ["active", "suspended"]).notNull(),
-  userId: int("user_id")
+  status: mysqlEnum("status", ["draft", "published"]).notNull(),
+  authorId: int("author_id")
     .notNull()
     .references(() => users.id),
 });

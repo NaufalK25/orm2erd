@@ -8,8 +8,8 @@ function dataType(name, extra = {}) {
 // element type on `.type` rather than exposing it directly.
 export const sequelize = {
   models: {
-    Document: {
-      name: "Document",
+    Product: {
+      name: "Product",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
         // Verified against installed Sequelize v6: constructor.name

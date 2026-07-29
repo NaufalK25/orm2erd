@@ -49,10 +49,10 @@ describe("mermaidEmitter", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "Config",
+          name: "Profile",
           fields: [
             {
-              name: "monthlyOverride",
+              name: "preferences",
               type: "json",
               nativeType: "JSONB",
               defaultValue: '{"january":"","february":""}',
@@ -90,8 +90,8 @@ describe("mermaidEmitter", () => {
       entities: [],
       relations: [
         {
-          from: "Schedule",
-          to: "ScheduleCrmData",
+          from: "User",
+          to: "Profile",
           type: "1-1",
           isFromOptional: true,
         },
@@ -106,7 +106,7 @@ describe("mermaidEmitter", () => {
 
     const output = mermaidEmitter.emit(model, { typeMode: "canonical" });
 
-    expect(output).toContain('Schedule |o--o| ScheduleCrmData : ""');
+    expect(output).toContain('User |o--o| Profile : ""');
     expect(output).toContain('User |o--o{ Post : ""');
   });
 
@@ -196,12 +196,12 @@ describe("mermaidEmitter", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "Membership",
+          name: "PostTag",
           fields: [
-            { name: "orgId", type: "int", nativeType: "INTEGER" },
-            { name: "role", type: "string", nativeType: "STRING" },
+            { name: "tagId", type: "int", nativeType: "INTEGER" },
+            { name: "addedBy", type: "string", nativeType: "STRING" },
           ],
-          uniques: [["orgId", "role"]],
+          uniques: [["tagId", "addedBy"]],
         },
       ],
       relations: [],
@@ -209,7 +209,7 @@ describe("mermaidEmitter", () => {
 
     const output = mermaidEmitter.emit(model, { typeMode: "canonical" });
 
-    expect(output).toContain('int orgId UK "unique with: role"');
-    expect(output).toContain('string role UK "unique with: orgId"');
+    expect(output).toContain('int tagId UK "unique with: addedBy"');
+    expect(output).toContain('string addedBy UK "unique with: tagId"');
   });
 });

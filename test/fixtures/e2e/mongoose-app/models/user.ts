@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 
-const AuthorSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  // Reciprocal 1-n: Author has many Post, Post belongs to one Author.
+  // Reciprocal 1-n: User has many Post, Post belongs to one User.
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
 });
 
-export const Author = mongoose.model("Author", AuthorSchema);
+export const User = mongoose.model("User", UserSchema);

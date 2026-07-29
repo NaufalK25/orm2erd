@@ -61,7 +61,7 @@ describe("mongooseAdapter.extract — field mapping", () => {
   });
 
   it("registers exactly the one model defined in the fixture", () => {
-    expect(model.entities.map((e) => e.name)).toEqual(["Widget"]);
+    expect(model.entities.map((e) => e.name)).toEqual(["Product"]);
   });
 
   it("marks _id as the primary key, non-nullable, mapped to string", () => {
@@ -100,7 +100,7 @@ describe("mongooseAdapter.extract — field mapping", () => {
     expect(status.type).toBe("enum");
     expect(status.enumValues).toEqual(["draft", "published"]);
     expect(status.defaultValue).toBe("draft");
-    expect(status.nativeType).toBe("enum_Widget_status");
+    expect(status.nativeType).toBe("enum_Product_status");
   });
 
   it("appends () to a function-based default to signal it's computed, not literal", () => {
@@ -132,7 +132,7 @@ describe("mongooseAdapter.extract — relations", () => {
 
   it("collapses a reciprocal array+singular pair into one 1-n relation", () => {
     const rel = model.relations.filter(
-      (r) => r.from === "Author" && r.to === "Post",
+      (r) => r.from === "User" && r.to === "Post",
     );
     expect(rel).toHaveLength(1);
     expect(rel[0]).toMatchObject({
@@ -167,7 +167,7 @@ describe("mongooseAdapter.extract — relations", () => {
 
   it("treats a standalone unique singular ref as 1-1, referenced model as 'from'", () => {
     const rel = model.relations.find(
-      (r) => r.from === "Person" && r.to === "Account",
+      (r) => r.from === "Customer" && r.to === "Product",
     );
     expect(rel).toMatchObject({
       type: "1-1",
@@ -180,7 +180,7 @@ describe("mongooseAdapter.extract — relations", () => {
 
   it("treats a standalone non-unique singular ref as 1-n, ref'd model as 'from'", () => {
     const rel = model.relations.find(
-      (r) => r.from === "Person" && r.to === "Comment",
+      (r) => r.from === "User" && r.to === "Comment",
     );
     expect(rel).toMatchObject({
       type: "1-n",
@@ -192,9 +192,9 @@ describe("mongooseAdapter.extract — relations", () => {
 
   it("treats a standalone array-only ref as 1-n with no resolvable columns", () => {
     const rel = model.relations.find(
-      (r) => r.from === "Team" && r.to === "Person",
+      (r) => r.from === "Order" && r.to === "Customer",
     );
-    expect(rel).toMatchObject({ type: "1-n", fieldName: "members" });
+    expect(rel).toMatchObject({ type: "1-n", fieldName: "customers" });
     expect(rel!.fromColumn).toBeUndefined();
     expect(rel!.toColumn).toBeUndefined();
   });
@@ -212,11 +212,11 @@ describe("mongooseAdapter.extract — relations", () => {
 
   it("sets isFromOptional false for a standalone unique+required singular ref", () => {
     const rel = model.relations.find(
-      (r) => r.from === "Person" && r.to === "Asset",
+      (r) => r.from === "Customer" && r.to === "Transaction",
     );
     expect(rel).toMatchObject({
       type: "1-1",
-      fieldName: "custodian",
+      fieldName: "customer",
       isFromOptional: false,
     });
   });
@@ -283,24 +283,22 @@ describe("mongooseAdapter.extract — no models found", () => {
 describe("mongooseAdapter.extract — composite unique", () => {
   it("carries a compound unique index, ignoring single-field and non-unique indexes", async () => {
     const model = await extractFixture("composite-unique.ts");
-    const membership = model.entities.find((e) => e.name === "Membership")!;
+    const postTag = model.entities.find((e) => e.name === "PostTag")!;
 
-    expect(membership.uniques).toEqual([["orgId", "role"]]);
+    expect(postTag.uniques).toEqual([["tagId", "addedBy"]]);
     // Mongoose has no composite primary key — _id is always the single PK.
-    expect(membership.primaryKey).toBeUndefined();
+    expect(postTag.primaryKey).toBeUndefined();
     // The single-field `slug` unique stays on the field, not the group.
-    expect(membership.fields.find((f) => f.name === "slug")?.isUnique).toBe(
-      true,
-    );
+    expect(postTag.fields.find((f) => f.name === "slug")?.isUnique).toBe(true);
   });
 
   it("carries non-unique schema.index() declarations as plain indexes", async () => {
     const model = await extractFixture("composite-unique.ts");
-    const membership = model.entities.find((e) => e.name === "Membership")!;
+    const postTag = model.entities.find((e) => e.name === "PostTag")!;
 
-    expect(membership.indexes).toEqual([
-      { fields: ["userId", "role"], name: "user_role_idx" },
-      { fields: ["role"] },
+    expect(postTag.indexes).toEqual([
+      { fields: ["postId", "addedBy"], name: "post_addedby_idx" },
+      { fields: ["addedBy"] },
     ]);
   });
 });

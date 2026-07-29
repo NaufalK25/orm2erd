@@ -47,10 +47,10 @@ describe("dbmlEmitter", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "Config",
+          name: "Profile",
           fields: [
             {
-              name: "monthlyOverride",
+              name: "preferences",
               type: "json",
               nativeType: "JSONB",
               defaultValue: '{"january":"","february":""}',
@@ -107,7 +107,7 @@ describe("dbmlEmitter", () => {
           ],
         },
         {
-          name: "Admin",
+          name: "Profile",
           fields: [
             {
               name: "role",
@@ -181,13 +181,13 @@ describe("dbmlEmitter", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "Membership",
-          primaryKey: ["userId", "orgId"],
-          uniques: [["orgId", "role"]],
+          name: "PostTag",
+          primaryKey: ["postId", "tagId"],
+          uniques: [["tagId", "addedBy"]],
           fields: [
-            { name: "userId", type: "int", nativeType: "INTEGER" },
-            { name: "orgId", type: "int", nativeType: "INTEGER" },
-            { name: "role", type: "string", nativeType: "STRING" },
+            { name: "postId", type: "int", nativeType: "INTEGER" },
+            { name: "tagId", type: "int", nativeType: "INTEGER" },
+            { name: "addedBy", type: "string", nativeType: "STRING" },
           ],
         },
       ],
@@ -197,22 +197,22 @@ describe("dbmlEmitter", () => {
     const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
 
     expect(output).toContain("indexes {");
-    expect(output).toContain("(userId, orgId) [pk]");
-    expect(output).toContain("(orgId, role) [unique]");
+    expect(output).toContain("(postId, tagId) [pk]");
+    expect(output).toContain("(tagId, addedBy) [unique]");
   });
 
   it("renders plain (non-unique) indexes, single- and multi-column, in the indexes block", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "Membership",
+          name: "PostTag",
           indexes: [
-            { fields: ["role"] },
-            { fields: ["userId", "role"], name: "user_role_idx" },
+            { fields: ["addedBy"] },
+            { fields: ["postId", "addedBy"], name: "post_addedby_idx" },
           ],
           fields: [
-            { name: "userId", type: "int", nativeType: "INTEGER" },
-            { name: "role", type: "string", nativeType: "STRING" },
+            { name: "postId", type: "int", nativeType: "INTEGER" },
+            { name: "addedBy", type: "string", nativeType: "STRING" },
           ],
         },
       ],
@@ -222,29 +222,29 @@ describe("dbmlEmitter", () => {
     const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
 
     expect(output).toContain("indexes {");
-    expect(output).toContain("role");
-    expect(output).not.toContain("role [");
-    expect(output).toContain(`(userId, role) [name: "user_role_idx"]`);
+    expect(output).toContain("addedBy");
+    expect(output).not.toContain("addedBy [");
+    expect(output).toContain(`(postId, addedBy) [name: "post_addedby_idx"]`);
   });
 
   it("declares a composite PK only in the indexes block, not per-field (no double pk)", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "Membership",
-          primaryKey: ["userId", "orgId"],
+          name: "PostTag",
+          primaryKey: ["postId", "tagId"],
           fields: [
             // Members carry isPrimaryKey from the adapter, but DBML must not
             // also tag them [pk] or dbdiagram double-defines the primary key.
             {
-              name: "userId",
+              name: "postId",
               type: "int",
               nativeType: "INTEGER",
               isPrimaryKey: true,
               isNullable: false,
             },
             {
-              name: "orgId",
+              name: "tagId",
               type: "int",
               nativeType: "INTEGER",
               isPrimaryKey: true,
@@ -258,9 +258,9 @@ describe("dbmlEmitter", () => {
 
     const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
 
-    expect(output).toContain("userId int [not null]");
-    expect(output).not.toContain("userId int [pk");
-    expect(output).toContain("(userId, orgId) [pk]");
+    expect(output).toContain("postId int [not null]");
+    expect(output).not.toContain("postId int [pk");
+    expect(output).toContain("(postId, tagId) [pk]");
   });
 
   it("omits the indexes block when there are no composite keys", () => {

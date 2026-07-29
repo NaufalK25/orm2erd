@@ -17,8 +17,8 @@ function dataType(name, values) {
 //    uniqueness to decide 1-1 vs 1-n:
 //    - Invoice.customerId is not unique -> Customer 1-n Invoice.
 //    - Account.customerId is unique -> Customer 1-1 Account.
-//    - Customer<->Profile declares an explicit HasOne/BelongsTo pair, so it
-//      stays 1-1 (parent-on-left) even though the FK isn't unique.
+//    - Customer<->Transaction declares an explicit HasOne/BelongsTo pair, so
+//      it stays 1-1 (parent-on-left) even though the FK isn't unique.
 //
 // 3. Warehouse.hasMany(Shipment) has no reciprocal .belongsTo() anywhere —
 //    real Sequelize still writes `references` onto Shipment.warehouseId via
@@ -67,11 +67,11 @@ export const sequelize = {
         id: { type: dataType("INTEGER"), primaryKey: true },
       },
       associations: {
-        profile: {
+        transaction: {
           associationType: "HasOne",
           foreignKey: "customerId",
-          target: { name: "Profile" },
-          as: "profile",
+          target: { name: "Transaction" },
+          as: "transaction",
         },
       },
     },
@@ -112,8 +112,8 @@ export const sequelize = {
         },
       },
     },
-    Profile: {
-      name: "Profile",
+    Transaction: {
+      name: "Transaction",
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
         customerId: {

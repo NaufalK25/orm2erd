@@ -1,13 +1,6 @@
 erDiagram
 
   %% Entities
-  Author {
-    string name
-    string email UK
-    string[]? posts FK
-    string _id PK
-  }
-
   Post {
     string title UK "unique with: author"
     string? content
@@ -22,6 +15,13 @@ erDiagram
     string _id PK
   }
 
+  User {
+    string name
+    string email UK
+    string[]? posts FK
+    string _id PK
+  }
+
   %% Relationships
-  Author ||--o{ Post : "posts (author)"
+  User ||--o{ Post : "posts (author)"
   Post }o--o{ Tag : "tags"

@@ -147,7 +147,7 @@ describe("sequelizeAdapter.extract — field mapping", () => {
 describe("sequelizeAdapter.extract — native type mapping (#5a/#5b)", () => {
   it("reads the DataType's public key, not its internal constructor name (JSONTYPE -> JSON)", async () => {
     const model = await extractFixture("types.js");
-    const doc = model.entities.find((e) => e.name === "Document")!;
+    const doc = model.entities.find((e) => e.name === "Product")!;
     const metadata = doc.fields.find((f) => f.name === "metadata")!;
     expect(metadata.nativeType).toBe("JSON");
     expect(metadata.type).toBe("json");
@@ -155,7 +155,7 @@ describe("sequelizeAdapter.extract — native type mapping (#5a/#5b)", () => {
 
   it("maps JSONB and UUID to their canonical types", async () => {
     const model = await extractFixture("types.js");
-    const doc = model.entities.find((e) => e.name === "Document")!;
+    const doc = model.entities.find((e) => e.name === "Product")!;
     expect(doc.fields.find((f) => f.name === "settings")?.type).toBe("json");
     expect(doc.fields.find((f) => f.name === "externalRef")?.type).toBe(
       "string",
@@ -164,7 +164,7 @@ describe("sequelizeAdapter.extract — native type mapping (#5a/#5b)", () => {
 
   it("unwraps ARRAY(STRING) to its element type and sets isList", async () => {
     const model = await extractFixture("types.js");
-    const doc = model.entities.find((e) => e.name === "Document")!;
+    const doc = model.entities.find((e) => e.name === "Product")!;
     const tags = doc.fields.find((f) => f.name === "tags")!;
     expect(tags.type).toBe("string");
     expect(tags.nativeType).toBe("STRING");
@@ -173,17 +173,17 @@ describe("sequelizeAdapter.extract — native type mapping (#5a/#5b)", () => {
 
   it("unwraps ARRAY(ENUM), reusing the same enum_<model>_<field> naming path as a bare ENUM", async () => {
     const model = await extractFixture("types.js");
-    const doc = model.entities.find((e) => e.name === "Document")!;
+    const doc = model.entities.find((e) => e.name === "Product")!;
     const roles = doc.fields.find((f) => f.name === "roles")!;
     expect(roles.type).toBe("enum");
-    expect(roles.nativeType).toBe("enum_Document_roles");
+    expect(roles.nativeType).toBe("enum_Product_roles");
     expect(roles.enumValues).toEqual(["admin", "member"]);
     expect(roles.isList).toBe(true);
   });
 
   it("leaves isList false for non-array columns", async () => {
     const model = await extractFixture("types.js");
-    const doc = model.entities.find((e) => e.name === "Document")!;
+    const doc = model.entities.find((e) => e.name === "Product")!;
     expect(doc.fields.find((f) => f.name === "settings")?.isList).toBe(false);
   });
 });
@@ -216,12 +216,10 @@ describe("sequelizeAdapter.extract — relation dedup", () => {
   it("suppresses the derived n-n when the BelongsToMany's through table is itself an emitted entity", async () => {
     const model = await extractFixture("explicit-join-table.js");
     // The junction is rendered, and both sides link to it via 1-n; the
-    // derived Department<->Group crossing is redundant and dropped.
+    // derived Post<->Tag crossing is redundant and dropped.
     expect(model.relations.some((r) => r.type === "n-n")).toBe(false);
     expect(
-      model.relations.filter(
-        (r) => r.type === "1-n" && r.to === "DepartmentGroup",
-      ),
+      model.relations.filter((r) => r.type === "1-n" && r.to === "PostTag"),
     ).toHaveLength(2);
     expect(model.relations).toHaveLength(2);
   });
@@ -282,11 +280,13 @@ describe("sequelizeAdapter.extract — BelongsTo with no reciprocal HasMany/HasO
   it("keeps 1-1 parent-on-left for an explicit HasOne/BelongsTo pair even when the FK isn't unique", async () => {
     const model = await extractFixture("backwards-relations.js");
     const rel = model.relations.find(
-      (r) => r.from === "Customer" && r.to === "Profile",
+      (r) => r.from === "Customer" && r.to === "Transaction",
     )!;
     expect(rel.type).toBe("1-1");
     expect(
-      model.relations.some((r) => r.from === "Profile" && r.to === "Customer"),
+      model.relations.some(
+        (r) => r.from === "Transaction" && r.to === "Customer",
+      ),
     ).toBe(false);
   });
 });
@@ -312,16 +312,16 @@ describe("sequelizeAdapter.extract — relation actions", () => {
 describe("sequelizeAdapter.extract — composite keys", () => {
   it("carries composite PK and multi-column unique, ignoring single-column and non-unique indexes", async () => {
     const model = await extractFixture("composite-keys.js");
-    const membership = model.entities.find((e) => e.name === "Membership")!;
+    const postTag = model.entities.find((e) => e.name === "PostTag")!;
 
-    expect(membership.primaryKey).toEqual(["userId", "orgId"]);
+    expect(postTag.primaryKey).toEqual(["postId", "tagId"]);
     // Only the multi-column unique index; `slug` (single) and the non-unique
     // composite index are excluded.
-    expect(membership.uniques).toEqual([["orgId", "role"]]);
+    expect(postTag.uniques).toEqual([["tagId", "addedBy"]]);
     // Composite PK members still carry the per-field marker.
-    expect(
-      membership.fields.find((f) => f.name === "userId")?.isPrimaryKey,
-    ).toBe(true);
+    expect(postTag.fields.find((f) => f.name === "postId")?.isPrimaryKey).toBe(
+      true,
+    );
   });
 
   it("leaves primaryKey/uniques undefined for a single-PK model", async () => {
@@ -333,11 +333,11 @@ describe("sequelizeAdapter.extract — composite keys", () => {
 
   it("carries non-unique `options.indexes` entries as plain indexes", async () => {
     const model = await extractFixture("composite-keys.js");
-    const membership = model.entities.find((e) => e.name === "Membership")!;
+    const postTag = model.entities.find((e) => e.name === "PostTag")!;
 
-    expect(membership.indexes).toEqual([
-      { fields: ["userId", "role"], name: "user_role_idx" },
-      { fields: ["role"] },
+    expect(postTag.indexes).toEqual([
+      { fields: ["postId", "addedBy"], name: "post_addedby_idx" },
+      { fields: ["addedBy"] },
     ]);
   });
 
@@ -349,15 +349,17 @@ describe("sequelizeAdapter.extract — composite keys", () => {
 
   it("carries a composite unique declared via the unique: 'groupName' shorthand, mapping uniqueKeys' physical column names back to attribute names (#4b)", async () => {
     const model = await extractFixture("composite-keys.js");
-    const group = model.entities.find((e) => e.name === "UniqueGroup")!;
-    expect(group.uniques).toEqual([["a", "b"]]);
+    const comment = model.entities.find((e) => e.name === "Comment")!;
+    expect(comment.uniques).toEqual([["postId", "authorId"]]);
   });
 
   it("does not surface a uniqueKeys single-column group as a composite unique", async () => {
     const model = await extractFixture("composite-keys.js");
-    const group = model.entities.find((e) => e.name === "UniqueGroup")!;
-    expect(group.fields.find((f) => f.name === "c")?.isUnique).toBe(true);
-    expect(group.uniques?.some((g) => g.includes("c"))).toBe(false);
+    const comment = model.entities.find((e) => e.name === "Comment")!;
+    expect(comment.fields.find((f) => f.name === "permalink")?.isUnique).toBe(
+      true,
+    );
+    expect(comment.uniques?.some((g) => g.includes("permalink"))).toBe(false);
   });
 });
 
@@ -365,7 +367,7 @@ describe("sequelizeAdapter.extract — isFromOptional (#1)", () => {
   it("sets isFromOptional false for a HasMany-declared 1-n with a NOT NULL FK", async () => {
     const model = await extractFixture("optional-fk.js");
     const rel = model.relations.find(
-      (r) => r.from === "Company" && r.to === "Employee",
+      (r) => r.from === "Customer" && r.to === "Invoice",
     )!;
     expect(rel.isFromOptional).toBe(false);
   });
@@ -373,7 +375,7 @@ describe("sequelizeAdapter.extract — isFromOptional (#1)", () => {
   it("sets isFromOptional true for a HasMany-declared 1-n with a nullable FK", async () => {
     const model = await extractFixture("optional-fk.js");
     const rel = model.relations.find(
-      (r) => r.from === "Company" && r.to === "Contractor",
+      (r) => r.from === "Customer" && r.to === "Payment",
     )!;
     expect(rel.isFromOptional).toBe(true);
   });
@@ -381,7 +383,7 @@ describe("sequelizeAdapter.extract — isFromOptional (#1)", () => {
   it("sets isFromOptional false for a 1-1 with a NOT NULL FK", async () => {
     const model = await extractFixture("optional-fk.js");
     const rel = model.relations.find(
-      (r) => r.from === "HeadOffice" && r.to === "HeadquarterAddress",
+      (r) => r.from === "Product" && r.to === "Barcode",
     )!;
     expect(rel.type).toBe("1-1");
     expect(rel.isFromOptional).toBe(false);
@@ -390,7 +392,7 @@ describe("sequelizeAdapter.extract — isFromOptional (#1)", () => {
   it("sets isFromOptional true for a 1-1 with a nullable FK", async () => {
     const model = await extractFixture("optional-fk.js");
     const rel = model.relations.find(
-      (r) => r.from === "Branch" && r.to === "BranchAddress",
+      (r) => r.from === "Supplier" && r.to === "Contract",
     )!;
     expect(rel.type).toBe("1-1");
     expect(rel.isFromOptional).toBe(true);
@@ -399,7 +401,7 @@ describe("sequelizeAdapter.extract — isFromOptional (#1)", () => {
   it("treats a composite-PK FK column as NOT NULL even though rawAttributes never sets allowNull on it", async () => {
     const model = await extractFixture("optional-fk.js");
     const rel = model.relations.find(
-      (r) => r.from === "Project" && r.to === "ProjectAssignment",
+      (r) => r.from === "Order" && r.to === "OrderItem",
     )!;
     expect(rel.isFromOptional).toBe(false);
   });

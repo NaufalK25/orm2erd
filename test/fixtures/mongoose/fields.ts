@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const WidgetSchema = new mongoose.Schema({
+const ProductSchema = new mongoose.Schema({
   label: { type: String, required: true },
   weight: Number,
   isActive: { type: Boolean, default: true },
@@ -15,4 +15,4 @@ const WidgetSchema = new mongoose.Schema({
   labels: [String],
 });
 
-mongoose.model("Widget", WidgetSchema);
+mongoose.model("Product", ProductSchema);

@@ -168,14 +168,14 @@ describe("typeormAdapter.extract — plain .js entry (no tsc compile needed)", (
   it("passes an EntitySchema-defined entity straight through", async () => {
     const model = await extractFixture("entity-schema", "data-source.js");
     expect(model.entities).toHaveLength(1);
-    const widget = model.entities[0];
-    expect(widget.name).toBe("Widget");
-    expect(widget.fields.map((f) => f.name).toSorted()).toEqual([
+    const product = model.entities[0];
+    expect(product.name).toBe("Product");
+    expect(product.fields.map((f) => f.name).toSorted()).toEqual([
       "id",
-      "label",
       "quantity",
+      "sku",
     ]);
-    expect(widget.fields.find((f) => f.name === "label")!.isUnique).toBe(true);
+    expect(product.fields.find((f) => f.name === "sku")!.isUnique).toBe(true);
   });
 });
 
@@ -183,9 +183,11 @@ describe("typeormAdapter.extract — legacy ormconfig.json", () => {
   it("parses JSON connection options and resolves .ts glob entities via the same tsc-compiled mirror", async () => {
     const model = await extractFixture("legacy-ormconfig", "ormconfig.json");
     expect(model.entities).toHaveLength(1);
-    expect(model.entities[0].name).toBe("Gadget");
-    const serial = model.entities[0].fields.find((f) => f.name === "serial")!;
-    expect(serial.isUnique).toBe(true);
+    expect(model.entities[0].name).toBe("Transaction");
+    const reference = model.entities[0].fields.find(
+      (f) => f.name === "reference",
+    )!;
+    expect(reference.isUnique).toBe(true);
   });
 
   it("rejects a non-JSON legacy ormconfig with a clear, actionable error", async () => {
@@ -219,27 +221,25 @@ describe("typeormAdapter.extract — error cases", () => {
 describe("typeormAdapter.extract — composite keys", () => {
   it("carries composite PK and multi-column unique, keeping single-column unique on the field", async () => {
     const model = await extractFixture("composite", "data-source.ts");
-    const membership = model.entities.find((e) => e.name === "Membership")!;
+    const postTag = model.entities.find((e) => e.name === "PostTag")!;
 
-    expect(membership.primaryKey).toEqual(["userId", "orgId"]);
-    expect(membership.uniques).toEqual([["orgId", "role"]]);
+    expect(postTag.primaryKey).toEqual(["postId", "tagId"]);
+    expect(postTag.uniques).toEqual([["tagId", "addedBy"]]);
     // Composite PK members still carry the per-field marker.
-    expect(
-      membership.fields.find((f) => f.name === "userId")?.isPrimaryKey,
-    ).toBe(true);
-    // The single-column `slug` unique stays on the field, not the group.
-    expect(membership.fields.find((f) => f.name === "slug")?.isUnique).toBe(
+    expect(postTag.fields.find((f) => f.name === "postId")?.isPrimaryKey).toBe(
       true,
     );
+    // The single-column `slug` unique stays on the field, not the group.
+    expect(postTag.fields.find((f) => f.name === "slug")?.isUnique).toBe(true);
   });
 
   it("carries non-unique @Index() declarations as plain indexes", async () => {
     const model = await extractFixture("composite", "data-source.ts");
-    const membership = model.entities.find((e) => e.name === "Membership")!;
+    const postTag = model.entities.find((e) => e.name === "PostTag")!;
 
-    expect(membership.indexes).toEqual([
-      { fields: ["role"], name: expect.any(String) },
-      { fields: ["userId", "role"], name: "user_role_idx" },
+    expect(postTag.indexes).toEqual([
+      { fields: ["addedBy"], name: expect.any(String) },
+      { fields: ["postId", "addedBy"], name: "post_addedby_idx" },
     ]);
   });
 });

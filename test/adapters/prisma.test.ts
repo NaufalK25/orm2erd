@@ -112,24 +112,24 @@ describe("prismaAdapter.extract — composite keys", () => {
   it("carries composite PK and multi-column unique as IR arrays", async () => {
     const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
     const model = await prismaAdapter.extract(entry);
-    const membership = model.entities.find((e) => e.name === "Membership")!;
+    const postTag = model.entities.find((e) => e.name === "PostTag")!;
 
-    expect(membership.primaryKey).toEqual(["userId", "orgId"]);
-    expect(membership.uniques).toEqual([["orgId", "role"]]);
+    expect(postTag.primaryKey).toEqual(["postId", "tagId"]);
+    expect(postTag.uniques).toEqual([["tagId", "addedBy"]]);
     // Composite PK members still carry the per-field marker.
-    expect(
-      membership.fields.find((f) => f.name === "userId")?.isPrimaryKey,
-    ).toBe(true);
+    expect(postTag.fields.find((f) => f.name === "postId")?.isPrimaryKey).toBe(
+      true,
+    );
   });
 
   it("carries `@@index` declarations as plain (non-unique) indexes", async () => {
     const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
     const model = await prismaAdapter.extract(entry);
-    const membership = model.entities.find((e) => e.name === "Membership")!;
+    const postTag = model.entities.find((e) => e.name === "PostTag")!;
 
-    expect(membership.indexes).toEqual([
-      { fields: ["role"] },
-      { fields: ["userId", "role"], name: "user_role_idx" },
+    expect(postTag.indexes).toEqual([
+      { fields: ["addedBy"] },
+      { fields: ["postId", "addedBy"], name: "post_addedby_idx" },
     ]);
   });
 
@@ -198,9 +198,9 @@ describe("prismaAdapter.extract — descriptions", () => {
       fixturesDir,
     );
     const model = await prismaAdapter.extract(entry);
-    const membership = model.entities.find((e) => e.name === "Membership")!;
+    const postTag = model.entities.find((e) => e.name === "PostTag")!;
 
-    expect(membership.description).toBeUndefined();
+    expect(postTag.description).toBeUndefined();
   });
 });
 
@@ -240,10 +240,10 @@ describe("prismaAdapter.extract — 1-1 relations, FK on `to` (#1)", () => {
     );
     const model = await prismaAdapter.extract(entry);
     const rel = model.relations.find(
-      (r) => r.type === "1-1" && r.to === "Settings",
+      (r) => r.type === "1-1" && r.to === "Transaction",
     )!;
 
-    expect(rel.from).toBe("Account");
+    expect(rel.from).toBe("Customer");
     expect(rel.isFromOptional).toBe(true);
   });
 });

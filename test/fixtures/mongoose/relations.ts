@@ -1,13 +1,14 @@
 import mongoose from "mongoose";
 
-// Reciprocal 1-n: Author has many Post, Post belongs to one Author.
-const AuthorSchema = new mongoose.Schema({
+// Reciprocal 1-n: User has many Post, Post belongs to one User.
+const UserSchema = new mongoose.Schema({
   name: String,
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
+  profile: { type: mongoose.Schema.Types.ObjectId, ref: "Profile", unique: true },
 });
 const PostSchema = new mongoose.Schema({
   title: String,
-  author: { type: mongoose.Schema.Types.ObjectId, ref: "Author" },
+  author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag" }],
 });
 
@@ -22,49 +23,40 @@ const ProfileSchema = new mongoose.Schema({
   bio: String,
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", unique: true },
 });
-const UserSchema = new mongoose.Schema({
+
+// Standalone unique singular ref, no reciprocal field on Customer.
+const ProductSchema = new mongoose.Schema({
   name: String,
-  profile: { type: mongoose.Schema.Types.ObjectId, ref: "Profile", unique: true },
+  owner: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", unique: true },
 });
 
-// Standalone unique singular ref, no reciprocal field on Person.
-const AccountSchema = new mongoose.Schema({
-  name: String,
-  owner: { type: mongoose.Schema.Types.ObjectId, ref: "Person", unique: true },
-});
-
-// Standalone unique + required singular ref, no reciprocal field on Person
-// — required: true means isFromOptional should be false, unlike Account's
+// Standalone unique + required singular ref, no reciprocal field on Customer
+// — required: true means isFromOptional should be false, unlike Product's
 // owner above.
-const AssetSchema = new mongoose.Schema({
+const TransactionSchema = new mongoose.Schema({
   name: String,
-  custodian: {
+  customer: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Person",
+    ref: "Customer",
     unique: true,
     required: true,
   },
 });
 
-// Referenced by Account, Comment, and Team, but declares nothing back.
-const PersonSchema = new mongoose.Schema({
+// Referenced by Product, Transaction, and Order, but declares nothing back.
+const CustomerSchema = new mongoose.Schema({
   name: String,
 });
 
-// Standalone non-unique singular ref, no reciprocal field on Person.
+// Standalone non-unique singular ref, no reciprocal field on User.
 const CommentSchema = new mongoose.Schema({
   text: String,
-  author: { type: mongoose.Schema.Types.ObjectId, ref: "Person" },
-});
-
-// Standalone array-only ref, no reciprocal field on Person.
-const TeamSchema = new mongoose.Schema({
-  name: String,
-  members: [{ type: mongoose.Schema.Types.ObjectId, ref: "Person" }],
+  author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 });
 
 // Two distinct refs from Order to Warehouse — ambiguous, must NOT be merged
-// into one relation even though they share the same model pair.
+// into one relation even though they share the same model pair. `customers`
+// is a standalone array-only ref, no reciprocal field on Customer.
 const WarehouseSchema = new mongoose.Schema({
   name: String,
 });
@@ -72,17 +64,16 @@ const OrderSchema = new mongoose.Schema({
   number: String,
   originWarehouse: { type: mongoose.Schema.Types.ObjectId, ref: "Warehouse" },
   destinationWarehouse: { type: mongoose.Schema.Types.ObjectId, ref: "Warehouse" },
+  customers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Customer" }],
 });
 
-mongoose.model("Author", AuthorSchema);
+mongoose.model("User", UserSchema);
 mongoose.model("Post", PostSchema);
 mongoose.model("Tag", TagSchema);
 mongoose.model("Profile", ProfileSchema);
-mongoose.model("User", UserSchema);
-mongoose.model("Account", AccountSchema);
-mongoose.model("Asset", AssetSchema);
-mongoose.model("Person", PersonSchema);
+mongoose.model("Product", ProductSchema);
+mongoose.model("Transaction", TransactionSchema);
+mongoose.model("Customer", CustomerSchema);
 mongoose.model("Comment", CommentSchema);
-mongoose.model("Team", TeamSchema);
 mongoose.model("Warehouse", WarehouseSchema);
 mongoose.model("Order", OrderSchema);

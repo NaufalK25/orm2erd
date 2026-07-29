@@ -296,12 +296,12 @@ describe("graphvizdotEmitter", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "Membership",
+          name: "PostTag",
           fields: [
-            { name: "orgId", type: "int", nativeType: "INTEGER" },
-            { name: "role", type: "string", nativeType: "STRING" },
+            { name: "tagId", type: "int", nativeType: "INTEGER" },
+            { name: "addedBy", type: "string", nativeType: "STRING" },
           ],
-          uniques: [["orgId", "role"]],
+          uniques: [["tagId", "addedBy"]],
         },
       ],
       relations: [],
@@ -309,9 +309,11 @@ describe("graphvizdotEmitter", () => {
 
     const output = graphvizdotEmitter.emit(model, { typeMode: "canonical" });
 
-    expect(output).toContain('<td align="left">UNIQUE, unique with: role</td>');
     expect(output).toContain(
-      '<td align="left">UNIQUE, unique with: orgId</td>',
+      '<td align="left">UNIQUE, unique with: addedBy</td>',
+    );
+    expect(output).toContain(
+      '<td align="left">UNIQUE, unique with: tagId</td>',
     );
   });
 });

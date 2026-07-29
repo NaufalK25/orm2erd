@@ -1,14 +1,14 @@
 import { integer, pgTable, serial, text } from "drizzle-orm/pg-core";
 
-export const teams = pgTable("teams", {
+export const posts = pgTable("posts", {
   id: serial().primaryKey(),
-  teamName: text().notNull(),
+  postTitle: text().notNull(),
 });
 
-export const teamMembers = pgTable("team_members", {
+export const comments = pgTable("comments", {
   id: serial().primaryKey(),
-  fullName: text().notNull(),
-  teamId: integer()
+  commentBody: text().notNull(),
+  postId: integer()
     .notNull()
-    .references(() => teams.id),
+    .references(() => posts.id),
 });

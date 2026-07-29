@@ -1,14 +1,14 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-export const authors = sqliteTable("authors", {
+export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
 });
 
-export const books = sqliteTable("books", {
+export const posts = sqliteTable("posts", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   title: text("title").notNull(),
   authorId: integer("author_id")
     .notNull()
-    .references(() => authors.id),
+    .references(() => users.id),
 });

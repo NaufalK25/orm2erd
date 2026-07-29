@@ -56,8 +56,8 @@ describe("nomnomlEmitter", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "Config",
-          fields: [{ name: "key", type: "string", nativeType: "STRING" }],
+          name: "Tag",
+          fields: [{ name: "name", type: "string", nativeType: "STRING" }],
         },
       ],
       relations: [],
@@ -65,14 +65,14 @@ describe("nomnomlEmitter", () => {
 
     const output = nomnomlEmitter.emit(model, { typeMode: "canonical" });
 
-    expect(output).toContain("  key | string NN");
+    expect(output).toContain("  name | string NN");
   });
 
   it("only emits the || row divider between fields, never after the last one", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "Order",
+          name: "Post",
           fields: [
             {
               name: "id",
@@ -85,11 +85,11 @@ describe("nomnomlEmitter", () => {
               name: "status",
               type: "enum",
               nativeType: "ENUM",
-              enumValues: ["pending", "paid"],
+              enumValues: ["draft", "published"],
               isNullable: true,
             },
             {
-              name: "total",
+              name: "score",
               type: "decimal",
               nativeType: "DECIMAL",
               defaultValue: "0.00",
@@ -102,7 +102,7 @@ describe("nomnomlEmitter", () => {
     };
 
     const output = nomnomlEmitter.emit(model, { typeMode: "canonical" });
-    const entityBlock = output.split("[<table> Order|")[1].split("]")[0];
+    const entityBlock = output.split("[<table> Post|")[1].split("]")[0];
     const fieldLines = entityBlock
       .split("\n")
       .map((line) => line.trim())
@@ -112,7 +112,7 @@ describe("nomnomlEmitter", () => {
     expect(fieldLines[0].endsWith("||")).toBe(true);
     expect(fieldLines[1].endsWith("||")).toBe(true);
     expect(fieldLines[2].endsWith("||")).toBe(false);
-    expect(fieldLines[2]).toBe("total | decimal NN = 0.00");
+    expect(fieldLines[2]).toBe("score | decimal NN = 0.00");
   });
 
   it("always uses the native type for enum fields, even in canonical mode", () => {
@@ -142,10 +142,10 @@ describe("nomnomlEmitter", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "Config",
+          name: "Profile",
           fields: [
             {
-              name: "monthlyOverride",
+              name: "preferences",
               type: "json",
               nativeType: "JSONB",
               defaultValue: '{"january":"","february":""}',
@@ -208,8 +208,8 @@ describe("nomnomlEmitter", () => {
       entities: [],
       relations: [
         {
-          from: "Schedule",
-          to: "ScheduleCrmData",
+          from: "User",
+          to: "Profile",
           type: "1-1",
           isFromOptional: true,
         },
@@ -219,7 +219,7 @@ describe("nomnomlEmitter", () => {
 
     const output = nomnomlEmitter.emit(model, { typeMode: "canonical" });
 
-    expect(output).toContain("[Schedule] 0..1 -- 0..1 [ScheduleCrmData]");
+    expect(output).toContain("[User] 0..1 -- 0..1 [Profile]");
     expect(output).toContain("[User] 0..1 -- * [Post]");
   });
 });

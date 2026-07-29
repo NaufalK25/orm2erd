@@ -67,24 +67,24 @@ describe("plantumlEmitter", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "OrderItem",
+          name: "PostTag",
           fields: [
             {
-              name: "orderId",
+              name: "postId",
               type: "int",
               nativeType: "INTEGER",
               isPrimaryKey: true,
               isForeignKey: true,
             },
             {
-              name: "productId",
+              name: "tagId",
               type: "int",
               nativeType: "INTEGER",
               isPrimaryKey: true,
               isForeignKey: true,
             },
             {
-              name: "qty",
+              name: "priority",
               type: "int",
               nativeType: "INTEGER",
             },
@@ -95,10 +95,10 @@ describe("plantumlEmitter", () => {
     };
 
     const output = plantumlEmitter.emit(model, { typeMode: "canonical" });
-    const entityBlock = output.split("entity OrderItem {")[1].split("}")[0];
+    const entityBlock = output.split("entity PostTag {")[1].split("}")[0];
 
-    expect(entityBlock).toContain("* orderId : int <<FK>>");
-    expect(entityBlock).toContain("* productId : int <<FK>>");
+    expect(entityBlock).toContain("* postId : int <<FK>>");
+    expect(entityBlock).toContain("* tagId : int <<FK>>");
     expect((entityBlock.match(/--/g) ?? []).length).toBe(1);
   });
 
@@ -106,8 +106,8 @@ describe("plantumlEmitter", () => {
     const noPk: ERDModel = {
       entities: [
         {
-          name: "Log",
-          fields: [{ name: "message", type: "string", nativeType: "STRING" }],
+          name: "Comment",
+          fields: [{ name: "body", type: "string", nativeType: "STRING" }],
         },
       ],
       relations: [],
@@ -115,7 +115,7 @@ describe("plantumlEmitter", () => {
     const onlyPk: ERDModel = {
       entities: [
         {
-          name: "Flag",
+          name: "Post",
           fields: [
             {
               name: "id",
@@ -186,8 +186,8 @@ describe("plantumlEmitter", () => {
       entities: [],
       relations: [
         {
-          from: "Schedule",
-          to: "ScheduleCrmData",
+          from: "User",
+          to: "Profile",
           type: "1-1",
           isFromOptional: true,
         },
@@ -197,7 +197,7 @@ describe("plantumlEmitter", () => {
 
     const output = plantumlEmitter.emit(model, { typeMode: "canonical" });
 
-    expect(output).toContain('Schedule |o--o| ScheduleCrmData : ""');
+    expect(output).toContain('User |o--o| Profile : ""');
     expect(output).toContain('User |o--o{ Post : ""');
   });
 
@@ -271,12 +271,12 @@ describe("plantumlEmitter", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "Membership",
+          name: "PostTag",
           fields: [
-            { name: "orgId", type: "int", nativeType: "INTEGER" },
-            { name: "role", type: "string", nativeType: "STRING" },
+            { name: "tagId", type: "int", nativeType: "INTEGER" },
+            { name: "addedBy", type: "string", nativeType: "STRING" },
           ],
-          uniques: [["orgId", "role"]],
+          uniques: [["tagId", "addedBy"]],
         },
       ],
       relations: [],
@@ -284,7 +284,9 @@ describe("plantumlEmitter", () => {
 
     const output = plantumlEmitter.emit(model, { typeMode: "canonical" });
 
-    expect(output).toContain("orgId : int <<unique>>, -- unique with: role");
-    expect(output).toContain("role : string <<unique>>, -- unique with: orgId");
+    expect(output).toContain("tagId : int <<unique>>, -- unique with: addedBy");
+    expect(output).toContain(
+      "addedBy : string <<unique>>, -- unique with: tagId",
+    );
   });
 });

@@ -2,13 +2,13 @@ datasource db {
   provider = "postgresql"
 }
 
-model Membership {
-  userId Int
-  orgId  Int
-  role   String
+model PostTag {
+  postId  Int
+  tagId   Int
+  addedBy String
 
-  @@id([userId, orgId])
-  @@unique([orgId, role])
-  @@index([role])
-  @@index([userId, role], name: "user_role_idx")
+  @@id([postId, tagId])
+  @@unique([tagId, addedBy])
+  @@index([addedBy])
+  @@index([postId, addedBy], name: "post_addedby_idx")
 }

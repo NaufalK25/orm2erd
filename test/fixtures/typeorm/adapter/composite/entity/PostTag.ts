@@ -3,18 +3,18 @@ import { Entity, PrimaryColumn, Column, Unique, Index } from "typeorm";
 // Composite primary key (two @PrimaryColumn) + a multi-column @Unique.
 // The single-column `slug` unique stays on the field, not the group.
 @Entity()
-@Unique(["orgId", "role"])
-@Index("user_role_idx", ["userId", "role"])
-@Index(["role"])
-export class Membership {
+@Unique(["tagId", "addedBy"])
+@Index("post_addedby_idx", ["postId", "addedBy"])
+@Index(["addedBy"])
+export class PostTag {
   @PrimaryColumn()
-  userId: number;
+  postId: number;
 
   @PrimaryColumn()
-  orgId: number;
+  tagId: number;
 
   @Column()
-  role: string;
+  addedBy: string;
 
   @Column({ unique: true })
   slug: string;

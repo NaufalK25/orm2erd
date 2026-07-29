@@ -74,10 +74,10 @@ describe("d2Emitter", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "Config",
+          name: "Profile",
           fields: [
             {
-              name: "monthlyOverride",
+              name: "preferences",
               type: "json",
               nativeType: "JSONB",
               defaultValue: '{"january":"","february":""}',
@@ -173,11 +173,11 @@ describe("d2Emitter", () => {
       entities: [],
       relations: [
         {
-          from: "Schedule",
-          to: "ScheduleCrmData",
+          from: "Profile",
+          to: "User",
           type: "1-1",
-          fromColumn: "id",
-          toColumn: "scheduleId",
+          fromColumn: "userId",
+          toColumn: "id",
           isFromOptional: true,
         },
         {
@@ -194,7 +194,7 @@ describe("d2Emitter", () => {
     const output = d2Emitter.emit(model, { typeMode: "canonical" });
 
     const oneToOne = output.split(
-      '"Schedule"."id" <-> "ScheduleCrmData"."scheduleId": scheduleId {',
+      '"Profile"."userId" <-> "User"."id": id {',
     )[1];
     expect(oneToOne).toContain("source-arrowhead.shape: cf-one\n");
 
@@ -262,12 +262,12 @@ describe("d2Emitter", () => {
     const model: ERDModel = {
       entities: [
         {
-          name: "Membership",
+          name: "PostTag",
           fields: [
-            { name: "orgId", type: "int", nativeType: "INTEGER" },
-            { name: "role", type: "string", nativeType: "STRING" },
+            { name: "tagId", type: "int", nativeType: "INTEGER" },
+            { name: "addedBy", type: "string", nativeType: "STRING" },
           ],
-          uniques: [["orgId", "role"]],
+          uniques: [["tagId", "addedBy"]],
         },
       ],
       relations: [],
@@ -276,10 +276,10 @@ describe("d2Emitter", () => {
     const output = d2Emitter.emit(model, { typeMode: "canonical" });
 
     expect(output).toContain(
-      '  "orgId":  "int NOT NULL unique with: role" {constraint:unique}',
+      '  "tagId":  "int NOT NULL unique with: addedBy" {constraint:unique}',
     );
     expect(output).toContain(
-      '  "role":  "string NOT NULL unique with: orgId" {constraint:unique}',
+      '  "addedBy":  "string NOT NULL unique with: tagId" {constraint:unique}',
     );
   });
 });

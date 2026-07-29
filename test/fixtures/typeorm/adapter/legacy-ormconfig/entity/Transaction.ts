@@ -1,12 +1,12 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity()
-export class Gadget {
+export class Transaction {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ unique: true })
-  serial: string;
+  reference: string;
 
   @Column({ nullable: true })
   notes?: string;

@@ -1,11 +1,11 @@
 import "reflect-metadata";
 import { DataSource, EntitySchema } from "typeorm";
 
-const Widget = new EntitySchema({
-  name: "Widget",
+const Product = new EntitySchema({
+  name: "Product",
   columns: {
     id: { type: "int", primary: true, generated: true },
-    label: { type: "varchar", unique: true },
+    sku: { type: "varchar", unique: true },
     quantity: { type: "int", nullable: true },
   },
 });
@@ -13,5 +13,5 @@ const Widget = new EntitySchema({
 export const AppDataSource = new DataSource({
   type: "sqljs",
   synchronize: false,
-  entities: [Widget],
+  entities: [Product],
 });

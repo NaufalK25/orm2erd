@@ -159,25 +159,23 @@ describe("drizzleAdapter.extract — postgres dialect", () => {
 describe("drizzleAdapter.extract — composite keys and plain indexes", () => {
   it("carries composite PK and multi-column unique, keeping single-column unique on the field", async () => {
     const model = await extractFixture("composite");
-    const memberships = model.entities.find((e) => e.name === "memberships")!;
+    const postTags = model.entities.find((e) => e.name === "post_tags")!;
 
-    expect(memberships.primaryKey?.toSorted()).toEqual(
-      ["user_id", "org_id"].toSorted(),
+    expect(postTags.primaryKey?.toSorted()).toEqual(
+      ["post_id", "tag_id"].toSorted(),
     );
-    expect(memberships.uniques).toEqual([["org_id", "role"]]);
+    expect(postTags.uniques).toEqual([["tag_id", "added_by"]]);
     expect(
-      memberships.fields.find((f) => f.name === "user_id")?.isPrimaryKey,
+      postTags.fields.find((f) => f.name === "post_id")?.isPrimaryKey,
     ).toBe(true);
-    expect(memberships.fields.find((f) => f.name === "slug")?.isUnique).toBe(
-      true,
-    );
+    expect(postTags.fields.find((f) => f.name === "slug")?.isUnique).toBe(true);
   });
 
   it("carries a non-unique index() declaration as a plain index", async () => {
     const model = await extractFixture("composite");
-    const memberships = model.entities.find((e) => e.name === "memberships")!;
-    expect(memberships.indexes).toEqual([
-      { fields: ["role"], name: "role_idx" },
+    const postTags = model.entities.find((e) => e.name === "post_tags")!;
+    expect(postTags.indexes).toEqual([
+      { fields: ["added_by"], name: "addedby_idx" },
     ]);
   });
 });
@@ -190,7 +188,7 @@ describe("drizzleAdapter.extract — singlestore dialect", () => {
   // "tableConfig.foreignKeys is not iterable" before this was fixed.
   it("extracts a table with no foreign keys without crashing", async () => {
     const model = await extractFixture("singlestore-basic");
-    expect(model.entities.map((e) => e.name)).toEqual(["widgets"]);
+    expect(model.entities.map((e) => e.name)).toEqual(["tags"]);
     expect(model.relations).toEqual([]);
     const name = model.entities[0].fields.find((f) => f.name === "name")!;
     expect(name.isUnique).toBe(true);
@@ -201,11 +199,11 @@ describe("drizzleAdapter.extract — sqlite dialect", () => {
   it("extracts entities and a 1-n relation the same way as postgres", async () => {
     const model = await extractFixture("sqlite-basic");
     expect(model.entities.map((e) => e.name).toSorted()).toEqual([
-      "authors",
-      "books",
+      "posts",
+      "users",
     ]);
     const rel = model.relations.find(
-      (r) => r.from === "authors" && r.to === "books",
+      (r) => r.from === "users" && r.to === "posts",
     )!;
     expect(rel.type).toBe("1-n");
     expect(rel.toColumn).toBe("author_id");
@@ -220,14 +218,14 @@ describe("drizzleAdapter.extract — turso dialect", () => {
   it("extracts entities and a 1-n relation via the shared sqlite-core path", async () => {
     const model = await extractFixture("turso");
     expect(model.entities.map((e) => e.name).toSorted()).toEqual([
-      "notes",
-      "tags",
+      "comments",
+      "posts",
     ]);
     const rel = model.relations.find(
-      (r) => r.from === "notes" && r.to === "tags",
+      (r) => r.from === "posts" && r.to === "comments",
     )!;
     expect(rel.type).toBe("1-n");
-    expect(rel.toColumn).toBe("note_id");
+    expect(rel.toColumn).toBe("post_id");
   });
 });
 
@@ -235,14 +233,14 @@ describe("drizzleAdapter.extract — mysql dialect", () => {
   it("extracts entities and a 1-n relation the same way as postgres", async () => {
     const model = await extractFixture("mysql-basic");
     expect(model.entities.map((e) => e.name).toSorted()).toEqual([
-      "accounts",
+      "posts",
       "users",
     ]);
     const rel = model.relations.find(
-      (r) => r.from === "users" && r.to === "accounts",
+      (r) => r.from === "users" && r.to === "posts",
     )!;
     expect(rel.type).toBe("1-n");
-    expect(rel.toColumn).toBe("user_id");
+    expect(rel.toColumn).toBe("author_id");
   });
 
   // MySQL enums are inline/anonymous — `getSQLType()` returns the full
@@ -255,9 +253,9 @@ describe("drizzleAdapter.extract — mysql dialect", () => {
   it("synthesizes a distinct nativeType per enum column instead of the raw inline definition", async () => {
     const model = await extractFixture("mysql-basic");
     const users = model.entities.find((e) => e.name === "users")!;
-    const accounts = model.entities.find((e) => e.name === "accounts")!;
+    const posts = model.entities.find((e) => e.name === "posts")!;
     const role = users.fields.find((f) => f.name === "role")!;
-    const status = accounts.fields.find((f) => f.name === "status")!;
+    const status = posts.fields.find((f) => f.name === "status")!;
 
     expect(role.type).toBe("enum");
     expect(status.type).toBe("enum");
@@ -270,18 +268,18 @@ describe("drizzleAdapter.extract — mysql dialect", () => {
 describe("drizzleAdapter.extract — casing strategy", () => {
   it("converts camelCase JS keys to snake_case DB names for un-named columns", async () => {
     const model = await extractFixture("casing");
-    const teamMembers = model.entities.find((e) => e.name === "team_members")!;
-    expect(teamMembers.fields.map((f) => f.name).toSorted()).toEqual(
-      ["id", "full_name", "team_id"].toSorted(),
+    const comments = model.entities.find((e) => e.name === "comments")!;
+    expect(comments.fields.map((f) => f.name).toSorted()).toEqual(
+      ["id", "comment_body", "post_id"].toSorted(),
     );
   });
 
   it("resolves the FK column name through the same casing strategy", async () => {
     const model = await extractFixture("casing");
     const rel = model.relations.find(
-      (r) => r.from === "teams" && r.to === "team_members",
+      (r) => r.from === "posts" && r.to === "comments",
     )!;
-    expect(rel.toColumn).toBe("team_id");
+    expect(rel.toColumn).toBe("post_id");
   });
 });
 
@@ -289,11 +287,11 @@ describe("drizzleAdapter.extract — multi-file schema glob", () => {
   it("merges tables exported across every glob-matched file and resolves cross-file FKs", async () => {
     const model = await extractFixture("multi-file-schema");
     expect(model.entities.map((e) => e.name).toSorted()).toEqual([
-      "authors",
       "posts",
+      "users",
     ]);
     const rel = model.relations.find(
-      (r) => r.from === "authors" && r.to === "posts",
+      (r) => r.from === "users" && r.to === "posts",
     )!;
     expect(rel.toColumn).toBe("author_id");
   });
