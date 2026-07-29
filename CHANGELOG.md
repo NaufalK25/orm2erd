@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🏷️ [1.8.0] - 2026-07-29
+
+### 🚀 Added
+
+- **Per-phase progress during generation.** The CLI's spinner now updates its label through
+  `Resolving entry…` → `Parsing schema…` → `Generating diagram(s)…` → `Writing output…` instead of
+  sitting on a single generic `Generating...` for the whole run — useful feedback on larger schemas
+  where parsing alone can take a few seconds. Non-interactive mode prints each phase as its own log
+  line instead. Output-suppression during `extract()` is bypassed for the spinner's own writes
+  specifically, and each phase yields briefly before starting so its label has a chance to paint
+  before a long synchronous phase (e.g. importing the target's models) starves the spinner's redraw
+  interval.
+
+### 💊 Fixed
+
+- Sequelize: an FK column declared only via `HasMany`/`HasOne`/`BelongsToMany` (i.e. every
+  association type other than `BelongsTo`) was missed by `isForeignKey`, since 1.7.0's fix matched
+  FK-ness against `BelongsTo` associations specifically. Reading the attribute's own resolved
+  `references` (set by `addForeignKeyConstraints` regardless of which side declared the
+  association) is accurate for all of them instead of reconstructing FK-ness from association
+  direction.
+- Sequelize/Drizzle/TypeORM: array columns lost their element type. Sequelize's `DataTypes.ARRAY`
+  wraps its element type rather than exposing it directly, so an array column fell through to
+  `unknown` with no list marker; Drizzle's `.array()` columns (e.g. pg-core's `PgArray`) wrap
+  theirs on `.baseColumn` the same way; TypeORM's `@Column("text", { array: true })` sets
+  `ColumnMetadata.isArray`, which wasn't read at all. All three now unwrap to the element for
+  canonical type, native type, and `enumValues`, and set `Field.isList` so emitters render the
+  `[]` suffix. Also fixed, in the same pass: Sequelize's `DataTypes.JSON` rendered as `JSONTYPE`
+  (its internal class name) instead of `JSON` (its public type key, now preferred when present),
+  and canonical-type coverage was extended to several previously-unmapped Sequelize types
+  (`UUID`, `MEDIUMINT`, `DOUBLE PRECISION`, `TIME`, `VIRTUAL`, `RANGE`, `GEOMETRY`, `GEOGRAPHY`,
+  `HSTORE`, `INET`, `CIDR`, `MACADDR`).
+- Sequelize: a composite unique declared via the `unique: 'groupName'` shorthand on individual
+  attributes was silently dropped, since that grouping only ever surfaces on `model.uniqueKeys` —
+  never on `model.options.indexes`, which the adapter read exclusively. Both sources are now read
+  and merged (deduped by sorted field list, in case the same group is redundantly declared through
+  both). Mermaid, D2, GraphViz DOT, and PlantUML now also mark a field `UK` and annotate its
+  composite-unique group members ("unique with: ...") when it's unique only by virtue of
+  multi-column membership, not its own `isUnique` flag.
+
 ## 🏷️ [1.7.0] - 2026-07-27
 
 ### 🚀 Added
