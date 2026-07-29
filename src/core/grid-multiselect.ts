@@ -37,12 +37,12 @@ const CHECKBOX_WIDTH = S_CHECKBOX_INACTIVE.length;
 const COLUMN_GAP = 2;
 const MAX_AUTO_COLUMNS = 3;
 
-function plainCellLength(option: GridOption<unknown>): number {
+export function plainCellLength(option: GridOption<unknown>): number {
   const hint = option.hint ? ` (${option.hint})` : "";
   return CHECKBOX_WIDTH + 1 + option.label.length + hint.length;
 }
 
-function computeColumns(
+export function computeColumns(
   options: GridOption<unknown>[],
   termWidth: number,
 ): number {
@@ -52,7 +52,7 @@ function computeColumns(
   return Math.max(1, Math.min(MAX_AUTO_COLUMNS, byWidth, options.length));
 }
 
-function formatCell<Value>(
+export function formatCell<Value>(
   option: GridOption<Value>,
   isActive: boolean,
   isSelected: boolean,
@@ -77,6 +77,55 @@ function formatCell<Value>(
   return { plain, styled: `${styledCheckbox} ${styledLabel}${styledHint}` };
 }
 
+// The last row is often shorter than `columns` (e.g. 7 options in 3 columns
+// leaves a single-item last row), so up/down/left/right all need to clamp
+// against each row's actual length rather than wrapping through the flat
+// option array, which would land on the wrong item whenever the target row
+// is ragged.
+export function moveCursor(
+  cursor: number,
+  dir: "up" | "down" | "left" | "right",
+  columns: number,
+  total: number,
+): number {
+  const rowCount = Math.ceil(total / columns);
+  const rowLength = (row: number) =>
+    row === rowCount - 1 ? total - columns * (rowCount - 1) : columns;
+  const row = Math.floor(cursor / columns);
+  const col = cursor - row * columns;
+
+  switch (dir) {
+    case "up": {
+      // Skip past any row that doesn't reach this column (a ragged last
+      // row) instead of clamping into it, so every row that does have this
+      // column stays reachable by column, wrapping fully around before
+      // giving up and staying put.
+      let targetRow = row;
+      do {
+        targetRow = targetRow === 0 ? rowCount - 1 : targetRow - 1;
+      } while (targetRow !== row && col >= rowLength(targetRow));
+      return targetRow * columns + col;
+    }
+    case "down": {
+      let targetRow = row;
+      do {
+        targetRow = targetRow === rowCount - 1 ? 0 : targetRow + 1;
+      } while (targetRow !== row && col >= rowLength(targetRow));
+      return targetRow * columns + col;
+    }
+    case "left": {
+      const len = rowLength(row);
+      const targetCol = col === 0 ? len - 1 : col - 1;
+      return row * columns + targetCol;
+    }
+    case "right": {
+      const len = rowLength(row);
+      const targetCol = col === len - 1 ? 0 : col + 1;
+      return row * columns + targetCol;
+    }
+  }
+}
+
 interface InternalOptions<Value> extends PromptOptions<
   Value[],
   GridMultiSelectPrompt<Value>
@@ -98,61 +147,19 @@ class GridMultiSelectPrompt<Value> extends Prompt<Value[]> {
     this.value = [...(opts.initialValues ?? [])];
 
     const total = this.options.length;
-    const rowCount = Math.ceil(total / this.columns);
-    // The last row is often shorter than `columns` (e.g. 7 options in 3
-    // columns leaves a single-item last row), so up/down/left/right all
-    // need to clamp against each row's actual length rather than wrapping
-    // through the flat option array, which would land on the wrong item
-    // whenever the target row is ragged.
-    const rowLength = (row: number) =>
-      row === rowCount - 1
-        ? total - this.columns * (rowCount - 1)
-        : this.columns;
 
-    this.on("cursor", (dir) => {
-      const row = Math.floor(this.cursor / this.columns);
-      const col = this.cursor - row * this.columns;
-      switch (dir) {
-        case "up": {
-          // Skip past any row that doesn't reach this column (a ragged
-          // last row) instead of clamping into it, so every row that does
-          // have this column stays reachable by column, wrapping fully
-          // around before giving up and staying put.
-          let targetRow = row;
-          do {
-            targetRow = targetRow === 0 ? rowCount - 1 : targetRow - 1;
-          } while (targetRow !== row && col >= rowLength(targetRow));
-          this.cursor = targetRow * this.columns + col;
-          break;
-        }
-        case "down": {
-          let targetRow = row;
-          do {
-            targetRow = targetRow === rowCount - 1 ? 0 : targetRow + 1;
-          } while (targetRow !== row && col >= rowLength(targetRow));
-          this.cursor = targetRow * this.columns + col;
-          break;
-        }
-        case "left": {
-          const len = rowLength(row);
-          const targetCol = col === 0 ? len - 1 : col - 1;
-          this.cursor = row * this.columns + targetCol;
-          break;
-        }
-        case "right": {
-          const len = rowLength(row);
-          const targetCol = col === len - 1 ? 0 : col + 1;
-          this.cursor = row * this.columns + targetCol;
-          break;
-        }
-        case "space":
-          this.toggleValue();
-          break;
+    this.on("cursor", (key) => {
+      if (key === "space") {
+        this.toggleValue();
+        return;
+      }
+      if (key === "up" || key === "down" || key === "left" || key === "right") {
+        this.cursor = moveCursor(this.cursor, key, this.columns, total);
       }
     });
 
-    this.on("key", (char) => {
-      if (char === "a") this.toggleAll();
+    this.on("key", (key) => {
+      if (key === "a") this.toggleAll();
     });
   }
 
