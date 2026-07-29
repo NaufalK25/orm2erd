@@ -1,4 +1,5 @@
 import type { Emitter } from "./types";
+import { compositeUniqueMates } from "./uniques";
 
 // Text interpolated into an HTML-like label (`label=<...>`) must be
 // HTML-escaped — an unescaped `&`, `<`, or `>` from a field name, type,
@@ -47,10 +48,14 @@ export const graphvizdotEmitter: Emitter = {
           displayType = `enum(${field.enumValues?.join(", ")})`;
         }
         const typeLabel = `${displayType}${field.isList ? "[]" : ""}`;
+        const uniqueMates = compositeUniqueMates(entity, field);
         const constraints = [
           field.isPrimaryKey && "PK",
           field.isForeignKey && "FK",
-          field.isUnique && "UNIQUE",
+          (field.isUnique || uniqueMates) && "UNIQUE",
+          uniqueMates &&
+            uniqueMates.length > 0 &&
+            `unique with: ${uniqueMates.join(", ")}`,
           field.isNullable && "nullable",
           field.defaultValue && `= ${field.defaultValue}`,
         ].filter((c): c is string => Boolean(c));

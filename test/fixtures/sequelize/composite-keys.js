@@ -34,6 +34,30 @@ export const sequelize = {
       },
       associations: {},
     },
+    // The `unique: 'groupName'` shorthand — real Sequelize's Model.init()
+    // groups these into `model.uniqueKeys`, never `options.indexes` (#4b).
+    // `uniqueKeys` is keyed by physical column name (`a_col`/`b_col`), which
+    // differs from the attribute name here to also exercise the
+    // column->attribute mapping.
+    UniqueGroup: {
+      name: "UniqueGroup",
+      primaryKeyAttributes: ["id"],
+      uniqueKeys: {
+        grp: { fields: ["a_col", "b_col"], name: "grp" },
+        // A single-column group (the plain `unique: true` shorthand also
+        // lands here in real Sequelize) — must stay off `entity.uniques`
+        // and only set the field's own `isUnique`.
+        unique_group_c_unique: { fields: ["c"], name: "unique_group_c_unique" },
+      },
+      options: {},
+      rawAttributes: {
+        id: { type: dataType("INTEGER"), primaryKey: true },
+        a: { type: dataType("STRING"), unique: "grp", field: "a_col" },
+        b: { type: dataType("STRING"), unique: "grp", field: "b_col" },
+        c: { type: dataType("STRING"), unique: true },
+      },
+      associations: {},
+    },
   },
   define: () => {},
 };

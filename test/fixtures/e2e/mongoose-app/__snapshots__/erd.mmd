@@ -9,9 +9,9 @@ erDiagram
   }
 
   Post {
-    string title
+    string title UK "unique with: author"
     string? content
-    string author FK
+    string author FK, UK "unique with: title"
     string[]? tags FK
     string _id PK
   }

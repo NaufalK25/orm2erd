@@ -9,9 +9,9 @@ erDiagram
 
   Post {
     int id PK "default: autoincrement()"
-    string title
+    string title UK "unique with: authorId"
     string? content
-    int authorId FK
+    int authorId FK, UK "unique with: title"
   }
 
   Tag {

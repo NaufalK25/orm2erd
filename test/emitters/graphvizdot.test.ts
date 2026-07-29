@@ -258,4 +258,27 @@ describe("graphvizdotEmitter", () => {
     expect(output).not.toContain('"Tag"');
     expect(output).toContain('"User":"id" -> "Post":"authorId"');
   });
+
+  it("marks composite-unique members UNIQUE and notes their group mates (#4a)", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "Membership",
+          fields: [
+            { name: "orgId", type: "int", nativeType: "INTEGER" },
+            { name: "role", type: "string", nativeType: "STRING" },
+          ],
+          uniques: [["orgId", "role"]],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = graphvizdotEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain('<td align="left">UNIQUE, unique with: role</td>');
+    expect(output).toContain(
+      '<td align="left">UNIQUE, unique with: orgId</td>',
+    );
+  });
 });

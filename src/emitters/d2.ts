@@ -1,4 +1,5 @@
 import type { Emitter } from "./types";
+import { compositeUniqueMates } from "./uniques";
 
 // D2 has reserved top-level keywords (shape, classes, near, constraint,
 // style, vars, layers, ...) that break parsing if used unquoted as a map
@@ -27,15 +28,19 @@ export const d2Emitter: Emitter = {
         const defaultValueDisplay = field.defaultValue
           ? field.defaultValue.replaceAll('"', "'")
           : undefined;
+        const uniqueMates = compositeUniqueMates(entity, field);
         const comments = [
           typeLabel,
           !field.isNullable && "NOT NULL",
           field.defaultValue && `DEFAULT ${defaultValueDisplay}`,
+          uniqueMates &&
+            uniqueMates.length > 0 &&
+            `unique with: ${uniqueMates.join(", ")}`,
         ].filter((c): c is string => Boolean(c));
         const constraints = [
           field.isPrimaryKey && "pk",
           field.isForeignKey && "fk",
-          field.isUnique && "unique",
+          (field.isUnique || uniqueMates) && "unique",
         ].filter((c): c is string => Boolean(c));
         lines.push(
           `  ${quoteIdent(field.name)}: ${comments.length > 0 ? ' "' + comments.join(" ") + '"' : ""}${constraints.length > 0 ? " {constraint:" + (constraints.length > 1 ? "[" + constraints.join(",") + "]" : constraints.join(", ")) + "}" : ""}`,

@@ -32,6 +32,7 @@ Table PostTag {
 
   indexes {
     (postId, tagId) [pk]
+    (postId, tagId) [unique]
   }
 }
 

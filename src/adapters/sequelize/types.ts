@@ -25,6 +25,10 @@ export interface SequelizeAttribute {
   unique?: boolean;
   defaultValue?: unknown;
   comment?: string;
+  // The physical column name — defaults to the attribute name (or its
+  // underscored form) when not set explicitly. `Model.uniqueKeys` groups
+  // reference this, not the attribute name, so it's needed to map back.
+  field?: string;
   // Only present on a foreign-key attribute — Association#_injectAttributes
   // (belongs-to.js/has-many.js/belongs-to-many.js) always resolves and
   // writes these onto the FK attribute via addForeignKeyConstraints, once
@@ -65,15 +69,27 @@ export interface SequelizeIndex {
   name?: string;
 }
 
+// Mirrors `Model.uniqueKeys`, built internally by `Model.init()` from each
+// attribute's `unique: true | string | { name }` option (lib/model.js) —
+// unlike `options.indexes`, this is the only place the `unique: 'groupName'`
+// shorthand's column grouping ends up, and it's keyed by physical column
+// name (`definition.field`), not attribute name.
+export interface SequelizeUniqueKey {
+  fields: string[];
+  name?: string;
+}
+
 // Mirrors the static `Model.rawAttributes`/`Model.associations` members in
-// `sequelize/types/model.d.ts`. `primaryKeyAttributes` and `options.indexes`
-// carry the multi-column key/unique groupings a per-attribute flag can't.
+// `sequelize/types/model.d.ts`. `primaryKeyAttributes`, `options.indexes`,
+// and `uniqueKeys` carry the multi-column key/unique groupings a per-attribute
+// flag can't.
 export interface SequelizeModel {
   name: string;
   rawAttributes: Record<string, SequelizeAttribute>;
   associations: Record<string, SequelizeAssociation>;
   primaryKeyAttributes?: string[];
   options?: { indexes?: SequelizeIndex[]; comment?: string };
+  uniqueKeys?: Record<string, SequelizeUniqueKey>;
   associate?: (models: Record<string, SequelizeModel>) => void;
 }
 

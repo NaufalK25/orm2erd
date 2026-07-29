@@ -1,4 +1,5 @@
 import type { Emitter } from "./types";
+import { compositeUniqueMates } from "./uniques";
 
 export const mermaidEmitter: Emitter = {
   format: "mermaid",
@@ -17,15 +18,19 @@ export const mermaidEmitter: Emitter = {
         const displayType =
           typeMode === "native" ? field.nativeType : field.type;
         const typeLabel = `${displayType}${field.isList ? "[]" : ""}${field.isNullable ? "?" : ""}`;
+        const uniqueMates = compositeUniqueMates(entity, field);
         const constraints = [
           field.isPrimaryKey && "PK",
           field.isForeignKey && "FK",
-          field.isUnique && "UK",
+          (field.isUnique || uniqueMates) && "UK",
         ].filter((c): c is string => Boolean(c));
         const comments = [
           field.enumValues && "enum: " + field.enumValues.join(", "),
           field.defaultValue &&
             "default: " + field.defaultValue.replaceAll('"', "'"),
+          uniqueMates &&
+            uniqueMates.length > 0 &&
+            "unique with: " + uniqueMates.join(", "),
           field.description && field.description.replaceAll('"', "'"),
         ].filter((c): c is string => Boolean(c));
         lines.push(

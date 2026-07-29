@@ -346,4 +346,17 @@ describe("sequelizeAdapter.extract — composite keys", () => {
     const user = model.entities.find((e) => e.name === "User")!;
     expect(user.indexes).toBeUndefined();
   });
+
+  it("carries a composite unique declared via the unique: 'groupName' shorthand, mapping uniqueKeys' physical column names back to attribute names (#4b)", async () => {
+    const model = await extractFixture("composite-keys.js");
+    const group = model.entities.find((e) => e.name === "UniqueGroup")!;
+    expect(group.uniques).toEqual([["a", "b"]]);
+  });
+
+  it("does not surface a uniqueKeys single-column group as a composite unique", async () => {
+    const model = await extractFixture("composite-keys.js");
+    const group = model.entities.find((e) => e.name === "UniqueGroup")!;
+    expect(group.fields.find((f) => f.name === "c")?.isUnique).toBe(true);
+    expect(group.uniques?.some((g) => g.includes("c"))).toBe(false);
+  });
 });

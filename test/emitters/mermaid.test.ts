@@ -139,4 +139,25 @@ describe("mermaidEmitter", () => {
     expect(output).toContain("%% Registered application users.");
     expect(output).toContain(`string name "The user's display name."`);
   });
+
+  it("marks composite-unique members UK and notes their group mates (#4a)", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "Membership",
+          fields: [
+            { name: "orgId", type: "int", nativeType: "INTEGER" },
+            { name: "role", type: "string", nativeType: "STRING" },
+          ],
+          uniques: [["orgId", "role"]],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = mermaidEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain('int orgId UK "unique with: role"');
+    expect(output).toContain('string role UK "unique with: orgId"');
+  });
 });

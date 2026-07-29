@@ -184,4 +184,29 @@ describe("d2Emitter", () => {
     expect(output).not.toContain('"Post" <-> "Tag"');
     expect(output).toContain('"User"."id" <-> "Post"."authorId" {');
   });
+
+  it("marks composite-unique members {constraint:unique} and notes their group mates (#4a)", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "Membership",
+          fields: [
+            { name: "orgId", type: "int", nativeType: "INTEGER" },
+            { name: "role", type: "string", nativeType: "STRING" },
+          ],
+          uniques: [["orgId", "role"]],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = d2Emitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain(
+      '  "orgId":  "int NOT NULL unique with: role" {constraint:unique}',
+    );
+    expect(output).toContain(
+      '  "role":  "string NOT NULL unique with: orgId" {constraint:unique}',
+    );
+  });
 });

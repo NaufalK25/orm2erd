@@ -206,17 +206,49 @@ function findForeignKeyActions(
 
 // Multi-column key/unique groupings a per-attribute flag can't express.
 // Single-column PK/unique stay on the field's isPrimaryKey/isUnique.
+//
+// Composite uniques can reach a model two different ways, and both need
+// reading: the idiomatic `unique: 'groupName'` shorthand on the attribute
+// itself only ever surfaces via `model.uniqueKeys` (never `options.indexes`,
+// which stays empty for that declaration style), while an explicit
+// `options.indexes: [{ unique: true, fields: [...] }]` only ever surfaces
+// there. Merge both, deduping by sorted field list in case the same group
+// is (redundantly) declared through both mechanisms.
 function extractCompositeKeys(model: SequelizeModel): {
   primaryKey?: string[];
   uniques?: string[][];
 } {
   const pkAttrs = model.primaryKeyAttributes ?? [];
-  const uniques = (model.options?.indexes ?? [])
+
+  // uniqueKeys' `fields` are physical column names (`definition.field`),
+  // unlike options.indexes' `fields`, which are whatever the caller wrote
+  // (attribute names) — map back so both sources agree with the field
+  // identifiers used everywhere else in the IR.
+  const columnToAttrName = new Map(
+    Object.entries(model.rawAttributes).map(([attrName, attr]) => [
+      attr.field ?? attrName,
+      attrName,
+    ]),
+  );
+
+  const fromUniqueKeys = Object.values(model.uniqueKeys ?? {}).map((uk) =>
+    uk.fields.map((f) => columnToAttrName.get(f) ?? f),
+  );
+  const fromIndexes = (model.options?.indexes ?? [])
     .filter((idx) => idx.unique)
     .map((idx) =>
       (idx.fields ?? []).map((f) => (typeof f === "string" ? f : f.name)),
-    )
-    .filter((fields) => fields.length > 1);
+    );
+
+  const seen = new Set<string>();
+  const uniques: string[][] = [];
+  for (const fields of [...fromUniqueKeys, ...fromIndexes]) {
+    if (fields.length <= 1) continue;
+    const dedupeKey = fields.toSorted().join(",");
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+    uniques.push(fields);
+  }
 
   return {
     primaryKey: pkAttrs.length > 1 ? [...pkAttrs] : undefined,

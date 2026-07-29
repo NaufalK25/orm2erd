@@ -27,8 +27,8 @@ erDiagram
   }
 
   PostTag {
-    int postId PK, FK, UK
-    int tagId PK, FK, UK
+    int postId PK, FK, UK "unique with: tagId"
+    int tagId PK, FK, UK "unique with: postId"
     datetime createdAt
     datetime updatedAt
   }

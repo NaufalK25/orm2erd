@@ -219,4 +219,25 @@ describe("plantumlEmitter", () => {
     expect(output).not.toContain(" as ");
     expect(output).toContain("User ||--o{ Post");
   });
+
+  it("marks composite-unique members <<unique>> and notes their group mates (#4a)", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "Membership",
+          fields: [
+            { name: "orgId", type: "int", nativeType: "INTEGER" },
+            { name: "role", type: "string", nativeType: "STRING" },
+          ],
+          uniques: [["orgId", "role"]],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = plantumlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain("orgId : int <<unique>>, -- unique with: role");
+    expect(output).toContain("role : string <<unique>>, -- unique with: orgId");
+  });
 });

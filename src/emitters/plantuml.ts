@@ -1,4 +1,5 @@
 import type { Emitter } from "./types";
+import { compositeUniqueMates } from "./uniques";
 
 export const plantumlEmitter: Emitter = {
   format: "plantuml",
@@ -23,13 +24,17 @@ export const plantumlEmitter: Emitter = {
           displayType = `enum(${field.enumValues?.join(", ")})`;
         }
         const typeLabel = `${displayType}${field.isList ? "[]" : ""}`;
+        const uniqueMates = compositeUniqueMates(entity, field);
         const constraints = [
           field.isForeignKey && "FK",
-          field.isUnique && "unique",
+          (field.isUnique || uniqueMates) && "unique",
         ].filter((c): c is string => Boolean(c));
         const extras = [
           constraints.length > 0 && `<<${constraints.join(", ")}>>`,
           field.defaultValue && ` = ${field.defaultValue}`,
+          uniqueMates &&
+            uniqueMates.length > 0 &&
+            `-- unique with: ${uniqueMates.join(", ")}`,
           field.description && `-- ${field.description}`,
         ].filter((c): c is string => Boolean(c));
         const marker = field.isPrimaryKey || !field.isNullable ? "* " : "";
