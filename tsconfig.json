@@ -16,10 +16,5 @@
   // here — see each fixture's own tsconfig.json instead). They're compiled
   // separately by the TypeORM adapter itself (runTargetTsc, index.ts), not
   // by this project's own typecheck/build.
-  "exclude": [
-    "test/fixtures/typeorm/adapter/basic",
-    "test/fixtures/typeorm/adapter/composite",
-    "test/fixtures/typeorm/adapter/legacy-ormconfig",
-    "test/fixtures/typeorm/adapter/names"
-  ]
+  "exclude": ["test/fixtures/typeorm/**", "test/fixtures/e2e/typeorm-app"]
 }
