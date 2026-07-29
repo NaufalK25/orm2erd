@@ -152,16 +152,50 @@ describe("d2Emitter", () => {
     expect(output).toContain('"Post"."id" <-> "Tag"."id" {');
 
     const oneToOne = output.split('"Profile"."userId" <-> "User"."id" {')[1];
-    expect(oneToOne).toContain("source-arrowhead.shape: cf-one");
-    expect(oneToOne).toContain("target-arrowhead.shape: cf-one");
+    expect(oneToOne).toContain("source-arrowhead.shape: cf-one-required\n");
+    expect(oneToOne).toContain("target-arrowhead.shape: cf-one\n");
 
     const oneToMany = output.split('"User"."id" <-> "Post"."authorId" {')[1];
-    expect(oneToMany).toContain("source-arrowhead.shape: cf-one");
-    expect(oneToMany).toContain("target-arrowhead.shape: cf-many");
+    expect(oneToMany).toContain("source-arrowhead.shape: cf-one-required\n");
+    expect(oneToMany).toContain("target-arrowhead.shape: cf-many\n");
 
     const manyToMany = output.split('"Post"."id" <-> "Tag"."id" {')[1];
-    expect(manyToMany).toContain("source-arrowhead.shape: cf-many");
-    expect(manyToMany).toContain("target-arrowhead.shape: cf-many");
+    expect(manyToMany).toContain("source-arrowhead.shape: cf-many\n");
+    expect(manyToMany).toContain("target-arrowhead.shape: cf-many\n");
+  });
+
+  it("downgrades source-arrowhead to plain cf-one when isFromOptional is set", () => {
+    const model: ERDModel = {
+      entities: [],
+      relations: [
+        {
+          from: "Schedule",
+          to: "ScheduleCrmData",
+          type: "1-1",
+          fromColumn: "id",
+          toColumn: "scheduleId",
+          isFromOptional: true,
+        },
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fromColumn: "id",
+          toColumn: "authorId",
+          isFromOptional: true,
+        },
+      ],
+    };
+
+    const output = d2Emitter.emit(model, { typeMode: "canonical" });
+
+    const oneToOne = output.split(
+      '"Schedule"."id" <-> "ScheduleCrmData"."scheduleId" {',
+    )[1];
+    expect(oneToOne).toContain("source-arrowhead.shape: cf-one\n");
+
+    const oneToMany = output.split('"User"."id" <-> "Post"."authorId" {')[1];
+    expect(oneToMany).toContain("source-arrowhead.shape: cf-one\n");
   });
 
   it("skips a relation missing a column on either side instead of emitting a bare table-to-table connection", () => {

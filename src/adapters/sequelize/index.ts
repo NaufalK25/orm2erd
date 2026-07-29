@@ -176,6 +176,12 @@ function findPrimaryKeyField(model: SequelizeModel): string | undefined {
   )?.[0];
 }
 
+// rawAttributes doesn't set allowNull on primary keys, even though they're
+// always NOT NULL — same quirk as the field-level isNullable above.
+function isFkAttrNullable(attr: SequelizeAttribute | undefined): boolean {
+  return !attr?.primaryKey && attr?.allowNull !== false;
+}
+
 const SEQUELIZE_ACTION_TO_CANONICAL: Record<string, RelationAction> = {
   CASCADE: "cascade",
   RESTRICT: "restrict",
@@ -422,6 +428,10 @@ export const sequelizeAdapter: ORMAdapter = {
         if (hasMany) {
           // HasMany's foreignKey column lives on the target (`to`), not the
           // declaring (`from`) model — it references `from`'s primary key.
+          const hasManyFkAttr =
+            sequelize.models[hasMany.relatedModel]?.rawAttributes[
+              hasMany.foreignKey
+            ];
           return [
             {
               from: hasMany.modelName,
@@ -432,6 +442,7 @@ export const sequelizeAdapter: ORMAdapter = {
                 sequelize.models[hasMany.modelName],
               ),
               toColumn: hasMany.foreignKey,
+              isFromOptional: isFkAttrNullable(hasManyFkAttr),
               ...findForeignKeyActions(
                 sequelize.models,
                 hasMany.relatedModel,
@@ -468,6 +479,7 @@ export const sequelizeAdapter: ORMAdapter = {
             fieldName: (hasOne ?? belongsTo ?? sides[0]).fieldName,
             fromColumn: findPrimaryKeyField(sequelize.models[parentModel]),
             toColumn: foreignKey,
+            isFromOptional: isFkAttrNullable(fkAttr),
             ...findForeignKeyActions(sequelize.models, childModel, foreignKey),
           },
         ];

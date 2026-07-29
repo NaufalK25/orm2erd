@@ -177,6 +177,7 @@ export const prismaAdapter: ORMAdapter = {
           hasFK: Boolean(f.relationFromFields?.length),
           fkColumn: f.relationFromFields?.[0],
           refColumn: f.relationToFields?.[0],
+          isRequired: f.isRequired,
           onDelete: f.relationOnDelete,
           onUpdate: f.relationOnUpdate,
         });
@@ -187,15 +188,28 @@ export const prismaAdapter: ORMAdapter = {
     const relations = Array.from(sidesByRelationName.values()).map((sides) => {
       if (sides.length < 2) {
         const [only] = sides;
+        // A list field never carries relationFromFields, so hasFK is only
+        // ever true here for a singular (1-1) field — in which case `only`
+        // itself holds the FK. Swap it into `to`, matching the "FK always
+        // lives on `to`" convention every other relation shape uses.
+        if (only.hasFK) {
+          return {
+            from: only.relatedModel,
+            to: only.modelName,
+            type: "1-1" as const,
+            fieldName: only.fieldName,
+            fromColumn: only.refColumn,
+            toColumn: only.fkColumn,
+            isFromOptional: !only.isRequired,
+            onDelete: toRelationAction(only.onDelete),
+            onUpdate: toRelationAction(only.onUpdate),
+          };
+        }
         return {
           from: only.modelName,
           to: only.relatedModel,
           type: (only.isList ? "1-n" : "1-1") as "1-1" | "1-n" | "n-n",
           fieldName: only.fieldName,
-          fromColumn: only.hasFK ? only.fkColumn : undefined,
-          toColumn: only.hasFK ? only.refColumn : undefined,
-          onDelete: only.hasFK ? toRelationAction(only.onDelete) : undefined,
-          onUpdate: only.hasFK ? toRelationAction(only.onUpdate) : undefined,
         };
       }
 
@@ -221,19 +235,25 @@ export const prismaAdapter: ORMAdapter = {
           fieldName: oneSide.fieldName,
           fromColumn: manySide.refColumn,
           toColumn: manySide.fkColumn,
+          isFromOptional: !manySide.isRequired,
           onDelete: toRelationAction(manySide.onDelete),
           onUpdate: toRelationAction(manySide.onUpdate),
         };
       }
-      // 1-1: use the side that actually holds the FK column as "from".
+      // 1-1: the side holding the FK column becomes `to`, matching the
+      // "FK always lives on `to`" convention every other relation shape
+      // uses — `owner`'s own field's isRequired mirrors its FK column's
+      // nullability.
       const owner = a.hasFK ? a : b;
+      const referenced = owner === a ? b : a;
       return {
-        from: owner.modelName,
-        to: owner.relatedModel,
+        from: referenced.modelName,
+        to: owner.modelName,
         type: "1-1" as const,
         fieldName: owner.fieldName,
-        fromColumn: owner.fkColumn,
-        toColumn: owner.refColumn,
+        fromColumn: owner.refColumn,
+        toColumn: owner.fkColumn,
+        isFromOptional: !owner.isRequired,
         onDelete: toRelationAction(owner.onDelete),
         onUpdate: toRelationAction(owner.onUpdate),
       };

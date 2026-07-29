@@ -1,0 +1,27 @@
+datasource db {
+  provider = "postgresql"
+}
+
+// Required 1-1: Profile owns the FK, and it's NOT NULL -> isFromOptional: false.
+model User {
+  id      Int      @id @default(autoincrement())
+  profile Profile?
+}
+
+model Profile {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
+}
+
+// Optional 1-1: Settings owns the FK, and it's nullable -> isFromOptional: true.
+model Account {
+  id       Int       @id @default(autoincrement())
+  settings Settings?
+}
+
+model Settings {
+  id        Int      @id @default(autoincrement())
+  accountId Int?     @unique
+  account   Account? @relation(fields: [accountId], references: [id])
+}

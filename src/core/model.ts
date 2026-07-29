@@ -76,6 +76,13 @@ export interface Relation {
   // Sequelize, defaults) one. Only meaningful alongside fromColumn/toColumn.
   onDelete?: RelationAction;
   onUpdate?: RelationAction;
+  // Whether the `from` (referenced/parent) end is optional — i.e. the FK
+  // column on the `to` (child) side is nullable, so a child row may exist
+  // without a parent. The child end itself is always optional regardless of
+  // this flag (nothing in a FK model can force a parent to have a child).
+  // Omitted when the adapter can't determine nullability (e.g. n-n
+  // relations never set this).
+  isFromOptional?: boolean;
 }
 
 /** The normalized IR: the sole contract between adapters (producers) and emitters (consumers). */

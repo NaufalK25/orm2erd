@@ -198,8 +198,28 @@ describe("nomnomlEmitter", () => {
 
     const output = nomnomlEmitter.emit(model, { typeMode: "canonical" });
 
-    expect(output).toContain("[User] 1 -- 1 [Profile]");
+    expect(output).toContain("[User] 1 -- 0..1 [Profile]");
     expect(output).toContain("[User] 1 -- * [Post]");
     expect(output).toContain("[Post] * -- * [Tag]");
+  });
+
+  it("downgrades the `from` marker to 0..1 when isFromOptional is set", () => {
+    const model: ERDModel = {
+      entities: [],
+      relations: [
+        {
+          from: "Schedule",
+          to: "ScheduleCrmData",
+          type: "1-1",
+          isFromOptional: true,
+        },
+        { from: "User", to: "Post", type: "1-n", isFromOptional: true },
+      ],
+    };
+
+    const output = nomnomlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain("[Schedule] 0..1 -- 0..1 [ScheduleCrmData]");
+    expect(output).toContain("[User] 0..1 -- * [Post]");
   });
 });

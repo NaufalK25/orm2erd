@@ -203,3 +203,47 @@ describe("prismaAdapter.extract — descriptions", () => {
     expect(membership.description).toBeUndefined();
   });
 });
+
+describe("prismaAdapter.extract — 1-1 relations, FK on `to` (#1)", () => {
+  it("puts the FK-holding side on `to` and the referenced side on `from`", async () => {
+    const entry = await prismaAdapter.resolveEntry(
+      join(fixturesDir, "one-to-one/schema.prisma"),
+      fixturesDir,
+    );
+    const model = await prismaAdapter.extract(entry);
+    const rel = model.relations.find(
+      (r) => r.type === "1-1" && r.to === "Profile",
+    )!;
+
+    expect(rel.from).toBe("User");
+    expect(rel.fromColumn).toBe("id");
+    expect(rel.toColumn).toBe("userId");
+  });
+
+  it("sets isFromOptional false when the owning side's relation field is required", async () => {
+    const entry = await prismaAdapter.resolveEntry(
+      join(fixturesDir, "one-to-one/schema.prisma"),
+      fixturesDir,
+    );
+    const model = await prismaAdapter.extract(entry);
+    const rel = model.relations.find(
+      (r) => r.type === "1-1" && r.to === "Profile",
+    )!;
+
+    expect(rel.isFromOptional).toBe(false);
+  });
+
+  it("sets isFromOptional true when the owning side's relation field is optional", async () => {
+    const entry = await prismaAdapter.resolveEntry(
+      join(fixturesDir, "one-to-one/schema.prisma"),
+      fixturesDir,
+    );
+    const model = await prismaAdapter.extract(entry);
+    const rel = model.relations.find(
+      (r) => r.type === "1-1" && r.to === "Settings",
+    )!;
+
+    expect(rel.from).toBe("Account");
+    expect(rel.isFromOptional).toBe(true);
+  });
+});

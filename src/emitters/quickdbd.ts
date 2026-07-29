@@ -8,23 +8,21 @@ interface InlineFk {
 }
 
 // QuickDBD has no separate relationship section — the FK marker sits
-// inline on whichever field physically holds the FK column. Which side
-// that is flips by relation type (see Relation in core/model.ts): the
-// "many" side for 1-n, the adapter-chosen "owner" side for 1-1. n-n
-// relations never get fromColumn/toColumn resolved, so they're skipped
-// same as dbml/d2 do for their Ref sections.
+// inline on whichever field physically holds the FK column. The FK
+// always lives on `to` (see Relation in core/model.ts). n-n relations
+// never get fromColumn/toColumn resolved, so they're skipped same as
+// dbml/d2 do for their Ref sections.
 function buildInlineFkMap(relations: Relation[]): Map<string, InlineFk> {
   const map = new Map<string, InlineFk>();
   for (const rel of relations) {
     if (!rel.fromColumn || !rel.toColumn) continue;
 
-    const [fkEntity, fkColumn, refEntity, refColumn] =
-      rel.type === "1-n"
-        ? [rel.to, rel.toColumn, rel.from, rel.fromColumn]
-        : [rel.from, rel.fromColumn, rel.to, rel.toColumn];
-
     const symbol = rel.type === "1-n" ? ">-" : "-";
-    map.set(`${fkEntity}.${fkColumn}`, { symbol, refEntity, refColumn });
+    map.set(`${rel.to}.${rel.toColumn}`, {
+      symbol,
+      refEntity: rel.from,
+      refColumn: rel.fromColumn,
+    });
   }
   return map;
 }

@@ -60,4 +60,5 @@ export interface RefSide {
   fieldName: string;
   isList: boolean;
   isUnique: boolean;
+  isRequired: boolean;
 }

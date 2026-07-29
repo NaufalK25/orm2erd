@@ -88,14 +88,20 @@ describe("typeormAdapter.extract — raw .ts DataSource (compiled via the target
     );
     expect(userToPost).toHaveLength(1);
     expect(userToPost[0].toColumn).toBe("author");
+    // The fixture's @ManyToOne() doesn't set `nullable: false`, so TypeORM
+    // defaults the join column to nullable.
+    expect(userToPost[0].isFromOptional).toBe(true);
   });
 
-  it("builds a 1-1 relation from the owning @OneToOne/@JoinColumn side", async () => {
+  it("builds a 1-1 relation from the owning @OneToOne/@JoinColumn side, FK on 'to'", async () => {
     const model = await extractFixture("basic", "data-source.ts");
     const profileToUser = model.relations.filter(
-      (r) => r.type === "1-1" && r.from === "Profile" && r.to === "User",
+      (r) => r.type === "1-1" && r.from === "User" && r.to === "Profile",
     );
     expect(profileToUser).toHaveLength(1);
+    // TypeORM defaults relation columns to nullable unless `nullable: false`
+    // is set explicitly — the fixture's @JoinColumn() doesn't set it.
+    expect(profileToUser[0].isFromOptional).toBe(true);
   });
 
   it("carries onDelete/onUpdate from the owning @ManyToOne side of a 1-n relation", async () => {
@@ -110,7 +116,7 @@ describe("typeormAdapter.extract — raw .ts DataSource (compiled via the target
   it("carries onDelete from the owning @OneToOne side, leaving unset onUpdate undefined", async () => {
     const model = await extractFixture("basic", "data-source.ts");
     const profileToUser = model.relations.find(
-      (r) => r.type === "1-1" && r.from === "Profile" && r.to === "User",
+      (r) => r.type === "1-1" && r.from === "User" && r.to === "Profile",
     )!;
     expect(profileToUser.onDelete).toBe("set null");
     expect(profileToUser.onUpdate).toBeUndefined();

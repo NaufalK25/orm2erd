@@ -38,14 +38,19 @@ export const nomnomlEmitter: Emitter = {
 
     lines.push("// Relationships");
     for (const rel of model.relations) {
-      // nomnoml's notation: 1 -- * = one-to-many, * -- * =
-      // many-to-many, 1 -- 1 = one-to-one.
+      // nomnoml's notation: 1 -- * = one-to-many, * -- * = many-to-many,
+      // 1 -- 0..1 = one-to-one. The `to` end is always 0..1/* (optional)
+      // — nothing in a FK model forces a parent row to have a matching
+      // row on the FK-holding side — while the `from` end downgrades
+      // from `1` to `0..1` when isFromOptional says the FK column is
+      // nullable.
+      const fromMarker = rel.isFromOptional ? "0..1" : "1";
       const symbol =
         rel.type === "1-n"
-          ? "1 -- *"
+          ? `${fromMarker} -- *`
           : rel.type === "n-n"
             ? "* -- *"
-            : "1 -- 1";
+            : `${fromMarker} -- 0..1`;
       lines.push(`[${rel.from}] ${symbol} [${rel.to}]`);
     }
 

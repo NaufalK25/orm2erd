@@ -548,6 +548,9 @@ export const drizzleAdapter: ORMAdapter = {
             drizzleOrm.getTableName(reference.foreignTable);
           const toColumns = reference.columns.map(getColumnName);
           const fromColumns = reference.foreignColumns.map(getColumnName);
+          // Drizzle doesn't set notNull on primary keys, even though
+          // they're implicitly NOT NULL (same quirk as isNullable above).
+          const fkColumn = reference.columns[0];
 
           return {
             from: parentName,
@@ -557,6 +560,9 @@ export const drizzleAdapter: ORMAdapter = {
               : "1-n",
             fromColumn: fromColumns[0],
             toColumn: toColumns[0],
+            isFromOptional: fkColumn
+              ? !fkColumn.primary && !fkColumn.notNull
+              : undefined,
             onDelete: fk.onDelete as RelationAction | undefined,
             onUpdate: fk.onUpdate as RelationAction | undefined,
           };

@@ -227,13 +227,46 @@ describe("graphvizdotEmitter", () => {
     const output = graphvizdotEmitter.emit(model, { typeMode: "canonical" });
 
     expect(output).toContain(
-      '"Profile":"userId" -> "User":"id" [arrowhead=teetee, arrowtail=teetee, dir=both, label="1-1"];',
+      '"Profile":"userId" -> "User":"id" [arrowhead=teeodot, arrowtail=tee, dir=both, label="1-1"];',
     );
     expect(output).toContain(
-      '"User":"id" -> "Post":"authorId" [arrowhead=crow, arrowtail=tee, dir=both, label="1-n"];',
+      '"User":"id" -> "Post":"authorId" [arrowhead=crowodot, arrowtail=tee, dir=both, label="1-n"];',
     );
     expect(output).toContain(
       '"Post":"id" -> "Tag":"id" [arrowhead=none, arrowtail=crow, dir=both];',
+    );
+  });
+
+  it("downgrades arrowtail to optional when isFromOptional is set", () => {
+    const model: ERDModel = {
+      entities: [],
+      relations: [
+        {
+          from: "Profile",
+          to: "User",
+          type: "1-1",
+          fromColumn: "userId",
+          toColumn: "id",
+          isFromOptional: true,
+        },
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fromColumn: "id",
+          toColumn: "authorId",
+          isFromOptional: true,
+        },
+      ],
+    };
+
+    const output = graphvizdotEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain(
+      '"Profile":"userId" -> "User":"id" [arrowhead=teeodot, arrowtail=teeodot, dir=both, label="1-1"];',
+    );
+    expect(output).toContain(
+      '"User":"id" -> "Post":"authorId" [arrowhead=crowodot, arrowtail=teeodot, dir=both, label="1-n"];',
     );
   });
 

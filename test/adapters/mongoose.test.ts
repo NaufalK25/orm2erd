@@ -165,15 +165,16 @@ describe("mongooseAdapter.extract — relations", () => {
     expect(rel).toHaveLength(1);
   });
 
-  it("treats a standalone unique singular ref as 1-1, declaring model as 'from'", () => {
+  it("treats a standalone unique singular ref as 1-1, referenced model as 'from'", () => {
     const rel = model.relations.find(
-      (r) => r.from === "Account" && r.to === "Person",
+      (r) => r.from === "Person" && r.to === "Account",
     );
     expect(rel).toMatchObject({
       type: "1-1",
       fieldName: "owner",
-      fromColumn: "owner",
-      toColumn: "_id",
+      fromColumn: "_id",
+      toColumn: "owner",
+      isFromOptional: true,
     });
   });
 
@@ -209,8 +210,19 @@ describe("mongooseAdapter.extract — relations", () => {
     ]);
   });
 
+  it("sets isFromOptional false for a standalone unique+required singular ref", () => {
+    const rel = model.relations.find(
+      (r) => r.from === "Person" && r.to === "Asset",
+    );
+    expect(rel).toMatchObject({
+      type: "1-1",
+      fieldName: "custodian",
+      isFromOptional: false,
+    });
+  });
+
   it("produces exactly one relation per real relationship, not one per side", () => {
-    expect(model.relations).toHaveLength(8);
+    expect(model.relations).toHaveLength(9);
   });
 });
 

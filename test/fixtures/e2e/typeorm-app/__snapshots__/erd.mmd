@@ -29,5 +29,5 @@ erDiagram
 
   %% Relationships
   Post }o--o{ Tag : "tags"
-  Profile ||--|| User : "user"
-  User ||--o{ Post : "posts"
+  User |o--o| Profile : "user"
+  User |o--o{ Post : "posts"

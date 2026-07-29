@@ -44,13 +44,18 @@ export const mermaidEmitter: Emitter = {
     lines.push("  %% Relationships");
     for (const rel of model.relations) {
       // Mermaid's crow's-foot notation: ||--o{ = one-to-many, }o--o{ =
-      // many-to-many, ||--|| = one-to-one.
+      // many-to-many, ||--o| = one-to-one. The `to` end is always
+      // optional (`o`) — nothing in a FK model forces a parent row to
+      // have a matching row on the FK-holding side. The `from` end's
+      // marker varies: `||` (exactly one) unless isFromOptional says the
+      // FK column is nullable, in which case it downgrades to `|o`.
+      const fromMarker = rel.isFromOptional ? "|o" : "||";
       const symbol =
         rel.type === "1-n"
-          ? "||--o{"
+          ? `${fromMarker}--o{`
           : rel.type === "n-n"
             ? "}o--o{"
-            : "||--||";
+            : `${fromMarker}--o|`;
       lines.push(
         `  ${rel.from} ${symbol} ${rel.to} : "${rel.fieldName ?? ""}"`,
       );

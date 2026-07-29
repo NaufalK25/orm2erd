@@ -271,6 +271,7 @@ function collectRefSides(models: Record<string, MongooseModel>): RefSide[] {
         fieldName,
         isList,
         isUnique: Boolean(path.options?.unique),
+        isRequired: Boolean(path.isRequired),
       });
     }
   }
@@ -295,6 +296,7 @@ function buildPairedRelation(a: RefSide, b: RefSide): Relation {
       fieldName: listSide.fieldName,
       fromColumn: "_id",
       toColumn: singularSide.fieldName,
+      isFromOptional: !singularSide.isRequired,
     };
   }
 
@@ -313,13 +315,18 @@ function buildPairedRelation(a: RefSide, b: RefSide): Relation {
     };
   }
 
+  // Swapped so the FK-like ref field lands on `to`, matching the "FK
+  // always lives on `to`" convention every other relation shape uses
+  // (both sides here physically store a pointer, so `from`/`to` is an
+  // arbitrary tie-break either way — swapping costs nothing).
   return {
-    from: from.modelName,
-    to: to.modelName,
+    from: to.modelName,
+    to: from.modelName,
     type: "1-1",
     fieldName: from.fieldName,
-    fromColumn: from.fieldName,
-    toColumn: "_id",
+    fromColumn: "_id",
+    toColumn: from.fieldName,
+    isFromOptional: !from.isRequired,
   };
 }
 
@@ -336,13 +343,16 @@ function buildStandaloneRelation(side: RefSide): Relation {
   }
 
   if (side.isUnique) {
+    // Swapped so the FK-like ref field lands on `to`, matching the "FK
+    // always lives on `to`" convention every other relation shape uses.
     return {
-      from: side.modelName,
-      to: side.relatedModel,
+      from: side.relatedModel,
+      to: side.modelName,
       type: "1-1",
       fieldName: side.fieldName,
-      fromColumn: side.fieldName,
-      toColumn: "_id",
+      fromColumn: "_id",
+      toColumn: side.fieldName,
+      isFromOptional: !side.isRequired,
     };
   }
 
@@ -356,6 +366,7 @@ function buildStandaloneRelation(side: RefSide): Relation {
     fieldName: side.fieldName,
     fromColumn: "_id",
     toColumn: side.fieldName,
+    isFromOptional: !side.isRequired,
   };
 }
 

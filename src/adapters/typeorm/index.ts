@@ -494,6 +494,7 @@ function buildRelation(
         fieldName: relation.propertyName,
         fromColumn: entityMetadata.primaryColumns[0]?.propertyName,
         toColumn: owningSide?.joinColumns[0]?.propertyName,
+        isFromOptional: owningSide?.joinColumns[0]?.isNullable,
         onDelete: toRelationAction(owningSide?.onDelete),
         onUpdate: toRelationAction(owningSide?.onUpdate),
       };
@@ -509,22 +510,28 @@ function buildRelation(
         fromColumn:
           relation.inverseEntityMetadata.primaryColumns[0]?.propertyName,
         toColumn: relation.joinColumns[0]?.propertyName,
+        isFromOptional: relation.joinColumns[0]?.isNullable,
         onDelete: toRelationAction(relation.onDelete),
         onUpdate: toRelationAction(relation.onUpdate),
       };
     }
     case "one-to-one": {
-      // Owning side carries @JoinColumn — same "owner = FK-holding side"
-      // convention as the Sequelize adapter.
+      // Owning side carries @JoinColumn. Swapped into `to` here so the FK
+      // always lives on `to`, matching the 1-n cases above and the
+      // Sequelize/Drizzle adapters' 1-1 convention — the emitters rely on
+      // this to know which end's cardinality marker is fixed-optional
+      // (the FK holder) vs which one varies with FK nullability (the
+      // referenced side).
       if (!relation.isOwning) return undefined;
       return {
-        from: entityMetadata.name,
-        to: relatedName,
+        from: relatedName,
+        to: entityMetadata.name,
         type: "1-1",
         fieldName: relation.propertyName,
-        fromColumn: relation.joinColumns[0]?.propertyName,
-        toColumn:
+        fromColumn:
           relation.inverseEntityMetadata.primaryColumns[0]?.propertyName,
+        toColumn: relation.joinColumns[0]?.propertyName,
+        isFromOptional: relation.joinColumns[0]?.isNullable,
         onDelete: toRelationAction(relation.onDelete),
         onUpdate: toRelationAction(relation.onUpdate),
       };

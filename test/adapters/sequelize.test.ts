@@ -360,3 +360,47 @@ describe("sequelizeAdapter.extract — composite keys", () => {
     expect(group.uniques?.some((g) => g.includes("c"))).toBe(false);
   });
 });
+
+describe("sequelizeAdapter.extract — isFromOptional (#1)", () => {
+  it("sets isFromOptional false for a HasMany-declared 1-n with a NOT NULL FK", async () => {
+    const model = await extractFixture("optional-fk.js");
+    const rel = model.relations.find(
+      (r) => r.from === "Company" && r.to === "Employee",
+    )!;
+    expect(rel.isFromOptional).toBe(false);
+  });
+
+  it("sets isFromOptional true for a HasMany-declared 1-n with a nullable FK", async () => {
+    const model = await extractFixture("optional-fk.js");
+    const rel = model.relations.find(
+      (r) => r.from === "Company" && r.to === "Contractor",
+    )!;
+    expect(rel.isFromOptional).toBe(true);
+  });
+
+  it("sets isFromOptional false for a 1-1 with a NOT NULL FK", async () => {
+    const model = await extractFixture("optional-fk.js");
+    const rel = model.relations.find(
+      (r) => r.from === "HeadOffice" && r.to === "HeadquarterAddress",
+    )!;
+    expect(rel.type).toBe("1-1");
+    expect(rel.isFromOptional).toBe(false);
+  });
+
+  it("sets isFromOptional true for a 1-1 with a nullable FK", async () => {
+    const model = await extractFixture("optional-fk.js");
+    const rel = model.relations.find(
+      (r) => r.from === "Branch" && r.to === "BranchAddress",
+    )!;
+    expect(rel.type).toBe("1-1");
+    expect(rel.isFromOptional).toBe(true);
+  });
+
+  it("treats a composite-PK FK column as NOT NULL even though rawAttributes never sets allowNull on it", async () => {
+    const model = await extractFixture("optional-fk.js");
+    const rel = model.relations.find(
+      (r) => r.from === "Project" && r.to === "ProjectAssignment",
+    )!;
+    expect(rel.isFromOptional).toBe(false);
+  });
+});

@@ -161,11 +161,11 @@ describe("quickdbdEmitter", () => {
       ],
       relations: [
         {
-          from: "Profile",
-          to: "User",
+          from: "User",
+          to: "Profile",
           type: "1-1",
-          fromColumn: "userId",
-          toColumn: "id",
+          fromColumn: "id",
+          toColumn: "userId",
         },
         {
           from: "User",

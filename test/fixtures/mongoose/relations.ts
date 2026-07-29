@@ -33,6 +33,19 @@ const AccountSchema = new mongoose.Schema({
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "Person", unique: true },
 });
 
+// Standalone unique + required singular ref, no reciprocal field on Person
+// — required: true means isFromOptional should be false, unlike Account's
+// owner above.
+const AssetSchema = new mongoose.Schema({
+  name: String,
+  custodian: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Person",
+    unique: true,
+    required: true,
+  },
+});
+
 // Referenced by Account, Comment, and Team, but declares nothing back.
 const PersonSchema = new mongoose.Schema({
   name: String,
@@ -67,6 +80,7 @@ mongoose.model("Tag", TagSchema);
 mongoose.model("Profile", ProfileSchema);
 mongoose.model("User", UserSchema);
 mongoose.model("Account", AccountSchema);
+mongoose.model("Asset", AssetSchema);
 mongoose.model("Person", PersonSchema);
 mongoose.model("Comment", CommentSchema);
 mongoose.model("Team", TeamSchema);

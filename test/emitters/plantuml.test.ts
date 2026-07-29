@@ -149,9 +149,29 @@ describe("plantumlEmitter", () => {
 
     const output = plantumlEmitter.emit(model, { typeMode: "canonical" });
 
-    expect(output).toContain('User ||--|| Profile : "profile"');
+    expect(output).toContain('User ||--o| Profile : "profile"');
     expect(output).toContain('User ||--o{ Post : "posts"');
     expect(output).toContain('Post }o--o{ Tag : "tags"');
+  });
+
+  it("downgrades the `from` marker to optional when isFromOptional is set", () => {
+    const model: ERDModel = {
+      entities: [],
+      relations: [
+        {
+          from: "Schedule",
+          to: "ScheduleCrmData",
+          type: "1-1",
+          isFromOptional: true,
+        },
+        { from: "User", to: "Post", type: "1-n", isFromOptional: true },
+      ],
+    };
+
+    const output = plantumlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain('Schedule |o--o| ScheduleCrmData : ""');
+    expect(output).toContain('User |o--o{ Post : ""');
   });
 
   it("marks list fields with a [] suffix", () => {

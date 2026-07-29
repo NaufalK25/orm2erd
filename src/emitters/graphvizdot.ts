@@ -81,13 +81,19 @@ export const graphvizdotEmitter: Emitter = {
       // Graphviz has no inline cardinality symbol like Mermaid/DBML —
       // crow's-foot notation is set via arrowhead/arrowtail shapes on the
       // edge. `from` is the "one" side and `to` is the "many"/FK-holding
-      // side (see Relation.type in core/model.ts).
+      // side (see Relation.type in core/model.ts). `arrowhead` (at `to`)
+      // stays the plain "odot" (optional) form unconditionally — nothing
+      // in a FK model forces a parent row to have a matching row on the
+      // FK-holding side — while `arrowtail` (at `from`) varies with
+      // isFromOptional: "tee" (required) unless the FK column is
+      // nullable, in which case it downgrades to "teeodot" (optional).
+      const arrowtail = rel.isFromOptional ? "teeodot" : "tee";
       const relationDetails =
         rel.type === "1-n"
-          ? '[arrowhead=crow, arrowtail=tee, dir=both, label="1-n"]'
+          ? `[arrowhead=crowodot, arrowtail=${arrowtail}, dir=both, label="1-n"]`
           : rel.type === "n-n"
             ? "[arrowhead=none, arrowtail=crow, dir=both]"
-            : '[arrowhead=teetee, arrowtail=teetee, dir=both, label="1-1"]';
+            : `[arrowhead=teeodot, arrowtail=${arrowtail}, dir=both, label="1-1"]`;
       lines.push(
         `  ${quoteId(rel.from)}:${quoteId(rel.fromColumn)} -> ${quoteId(rel.to)}:${quoteId(rel.toColumn)} ${relationDetails};`,
       );

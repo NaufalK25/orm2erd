@@ -133,6 +133,8 @@ describe("drizzleAdapter.extract — postgres dialect", () => {
     expect(userToPost[0].fromColumn).toBe("id");
     expect(userToPost[0].onDelete).toBe("cascade");
     expect(userToPost[0].onUpdate).toBe("cascade");
+    // The fixture's author_id has no `.notNull()`.
+    expect(userToPost[0].isFromOptional).toBe(true);
   });
 
   it("builds a 1-1 relation when the FK column is also unique", async () => {
@@ -142,6 +144,8 @@ describe("drizzleAdapter.extract — postgres dialect", () => {
     );
     expect(userToProfile).toHaveLength(1);
     expect(userToProfile[0].onDelete).toBe("cascade");
+    // The fixture's user_id is `.notNull()`.
+    expect(userToProfile[0].isFromOptional).toBe(false);
   });
 
   it("leaves an implicit many-to-many junction table's two FKs as separate 1-n relations", async () => {

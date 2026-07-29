@@ -61,8 +61,17 @@ export const d2Emitter: Emitter = {
       // D2 has no inline cardinality symbol like Mermaid/DBML — crow's-foot
       // notation is set via arrowhead shapes on the connection. `from` is
       // the "one" side and `to` is the "many"/FK-holding side (see
-      // Relation.type in core/model.ts).
-      const sourceShape = rel.type === "n-n" ? "cf-many" : "cf-one";
+      // Relation.type in core/model.ts). D2's `cf-one` already means
+      // zero-or-one; the required form is `cf-one-required`. `to` stays
+      // plain `cf-one`/`cf-many` unconditionally — nothing in a FK model
+      // forces a parent row to have a matching row on the FK-holding
+      // side — while `from`'s shape varies with isFromOptional.
+      const sourceShape =
+        rel.type === "n-n"
+          ? "cf-many"
+          : rel.isFromOptional
+            ? "cf-one"
+            : "cf-one-required";
       const targetShape = rel.type === "1-1" ? "cf-one" : "cf-many";
       const label = rel.fieldName ? `: ${rel.fieldName}` : "";
       const source = `${quoteIdent(rel.from)}.${quoteIdent(rel.fromColumn)}`;
