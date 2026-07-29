@@ -67,9 +67,7 @@ jobs:
 
       - name: Extract changelog section
         if: steps.release.outputs.should_release == 'true'
-        run: |
-          VERSION="${{ steps.release.outputs.version }}"
-          awk "/^## .*\[$VERSION\]/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md > release-notes.md
+        run: node scripts/extract-release-notes.mjs "${{ steps.release.outputs.version }}"
 
       - name: Create GitHub Release
         if: steps.release.outputs.should_release == 'true'
