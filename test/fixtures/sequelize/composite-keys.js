@@ -39,6 +39,28 @@ export const sequelize = {
     // `uniqueKeys` is keyed by physical column name (`post_ref`/`author_ref`),
     // which differs from the attribute name here to also exercise the
     // column->attribute mapping.
+    // Same composite unique declared redundantly through both mechanisms —
+    // must be deduped down to a single entry, not doubled up.
+    Tag: {
+      name: "Tag",
+      primaryKeyAttributes: ["id"],
+      uniqueKeys: {
+        grp: { fields: ["workspace_id", "slug"], name: "grp" },
+      },
+      options: {
+        indexes: [{ unique: true, fields: ["workspaceId", "slug"] }],
+      },
+      rawAttributes: {
+        id: { type: dataType("INTEGER"), primaryKey: true },
+        workspaceId: {
+          type: dataType("INTEGER"),
+          unique: "grp",
+          field: "workspace_id",
+        },
+        slug: { type: dataType("STRING"), unique: "grp" },
+      },
+      associations: {},
+    },
     Comment: {
       name: "Comment",
       primaryKeyAttributes: ["id"],

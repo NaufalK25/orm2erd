@@ -1,4 +1,7 @@
 import { describe, it, expect } from "vitest";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { sequelizeAdapter } from "../../src/adapters/sequelize";
@@ -32,6 +35,34 @@ describe("sequelizeAdapter.resolveEntry", () => {
     );
     expect(entry.path).toBe(fixturesDir);
   });
+
+  it("wraps a nonexistent path in a friendlier error pointing at --entry", async () => {
+    await expect(
+      sequelizeAdapter.resolveEntry("does-not-exist.js", fixturesDir),
+    ).rejects.toThrow(
+      /Failed to load Sequelize entry from "does-not-exist\.js"/,
+    );
+  });
+
+  it("rejects a path that's neither a file nor a directory (e.g. a FIFO)", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "orm2erd-sequelize-test-"));
+    const fifoPath = join(dir, "not-a-file-or-dir");
+    try {
+      execFileSync("mkfifo", [fifoPath]);
+    } catch {
+      // mkfifo isn't available on every platform this suite might run on
+      // (e.g. Windows CI) — skip rather than fail the whole run over it.
+      rmSync(dir, { recursive: true, force: true });
+      return;
+    }
+    try {
+      await expect(
+        sequelizeAdapter.resolveEntry(fifoPath, dir),
+      ).rejects.toThrow(/is neither a file nor a directory/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("sequelizeAdapter.extract — directory without an aggregator", () => {
@@ -42,6 +73,14 @@ describe("sequelizeAdapter.extract — directory without an aggregator", () => {
     );
     await expect(sequelizeAdapter.extract(entry)).rejects.toThrow(
       /isn't supported yet/,
+    );
+  });
+});
+
+describe("sequelizeAdapter.extract — no Sequelize instance found", () => {
+  it("throws a clear error instead of crashing, once the search depth cap gives up", async () => {
+    await expect(extractFixture("no-instance-found.js")).rejects.toThrow(
+      /Could not find a Sequelize instance exported from/,
     );
   });
 });
@@ -141,6 +180,40 @@ describe("sequelizeAdapter.extract — field mapping", () => {
     const model = await extractFixture("named-export.js");
     const post = model.entities.find((e) => e.name === "Post")!;
     expect(post.description).toBeUndefined();
+  });
+});
+
+describe("sequelizeAdapter.extract — default values (function/object/array)", () => {
+  it("resolves a named function default to its function name", async () => {
+    const model = await extractFixture("default-values.js");
+    const user = model.entities.find((e) => e.name === "User")!;
+    expect(user.fields.find((f) => f.name === "username")?.defaultValue).toBe(
+      "generateUsername",
+    );
+  });
+
+  it("falls back to '(function)' for an anonymous function default", async () => {
+    const model = await extractFixture("default-values.js");
+    const user = model.entities.find((e) => e.name === "User")!;
+    expect(
+      user.fields.find((f) => f.name === "referralCode")?.defaultValue,
+    ).toBe("(function)");
+  });
+
+  it("JSON-stringifies a plain object default", async () => {
+    const model = await extractFixture("default-values.js");
+    const user = model.entities.find((e) => e.name === "User")!;
+    expect(user.fields.find((f) => f.name === "settings")?.defaultValue).toBe(
+      '{"theme":"dark"}',
+    );
+  });
+
+  it("JSON-stringifies an array default", async () => {
+    const model = await extractFixture("default-values.js");
+    const user = model.entities.find((e) => e.name === "User")!;
+    expect(user.fields.find((f) => f.name === "roles")?.defaultValue).toBe(
+      '["member"]',
+    );
   });
 });
 
@@ -351,6 +424,12 @@ describe("sequelizeAdapter.extract — composite keys", () => {
     const model = await extractFixture("composite-keys.js");
     const comment = model.entities.find((e) => e.name === "Comment")!;
     expect(comment.uniques).toEqual([["postId", "authorId"]]);
+  });
+
+  it("dedupes a composite unique declared through both uniqueKeys and options.indexes", async () => {
+    const model = await extractFixture("composite-keys.js");
+    const tag = model.entities.find((e) => e.name === "Tag")!;
+    expect(tag.uniques).toEqual([["workspaceId", "slug"]]);
   });
 
   it("does not surface a uniqueKeys single-column group as a composite unique", async () => {

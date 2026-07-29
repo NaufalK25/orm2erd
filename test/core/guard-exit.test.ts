@@ -10,6 +10,14 @@ describe("withGuardedExit", () => {
     ).rejects.toThrow(/process\.exit\(1\)/);
   });
 
+  it("defaults the reported code to 0 when process.exit() is called with no argument", async () => {
+    await expect(
+      withGuardedExit(async () => {
+        process.exit();
+      }),
+    ).rejects.toThrow(/process\.exit\(0\)/);
+  });
+
   it("restores the original process.exit afterwards, even on success", async () => {
     const originalExit = process.exit;
     await withGuardedExit(async () => "ok");

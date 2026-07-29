@@ -36,6 +36,12 @@ describe("nomnomlEmitter", () => {
               defaultValue: "true",
               isNullable: false,
             },
+            {
+              name: "managerId",
+              type: "int",
+              nativeType: "INTEGER",
+              isForeignKey: true,
+            },
           ],
         },
       ],
@@ -50,6 +56,23 @@ describe("nomnomlEmitter", () => {
     expect(output).toContain("  email | string unique, NN ||");
     expect(output).toContain("  bio | string ||");
     expect(output).toContain("  isActive | boolean NN = true");
+    expect(output).toContain("  managerId | int FK, NN");
+  });
+
+  it("uses the ORM-native type name when typeMode is 'native'", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          fields: [{ name: "id", type: "int", nativeType: "INTEGER" }],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = nomnomlEmitter.emit(model, { typeMode: "native" });
+
+    expect(output).toContain("  id | INTEGER");
   });
 
   it("marks a field with no explicit isNullable as NOT NULL, same as an explicit false", () => {

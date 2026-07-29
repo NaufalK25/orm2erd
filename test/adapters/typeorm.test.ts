@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -38,6 +38,7 @@ describe("typeormAdapter.extract — raw .ts DataSource (compiled via the target
   it("extracts every declared entity, excluding the synthesized many-to-many junction table", async () => {
     const model = await extractFixture("basic", "data-source.ts");
     expect(model.entities.map((e) => e.name).toSorted()).toEqual([
+      "Comment",
       "Post",
       "Profile",
       "Tag",
@@ -57,6 +58,37 @@ describe("typeormAdapter.extract — raw .ts DataSource (compiled via the target
     expect(title.type).toBe("string");
     expect(published.type).toBe("boolean");
     expect(published.defaultValue).toBe("false");
+  });
+
+  it("infers a column's canonical type from reflect-metadata design:type when no explicit `type` is set", async () => {
+    const model = await extractFixture("basic", "data-source.ts");
+    const user = model.entities.find((e) => e.name === "User")!;
+    expect(user.fields.find((f) => f.name === "createdAt")?.type).toBe(
+      "datetime",
+    );
+    // `metadata: object` has no matching implicit-type case.
+    expect(user.fields.find((f) => f.name === "metadata")?.type).toBe(
+      "unknown",
+    );
+  });
+
+  it("appends () to a function-valued default to signal it's computed, not literal", async () => {
+    const model = await extractFixture("basic", "data-source.ts");
+    const user = model.entities.find((e) => e.name === "User")!;
+    // JS's name-inference for a function expression assigned directly as an
+    // object property's value (`{ default: () => "now()" }`) names it after
+    // that property key ("default"), not its own purpose.
+    expect(user.fields.find((f) => f.name === "lastSeenAt")?.defaultValue).toBe(
+      "default()",
+    );
+  });
+
+  it("JSON-stringifies a plain-object default", async () => {
+    const model = await extractFixture("basic", "data-source.ts");
+    const user = model.entities.find((e) => e.name === "User")!;
+    expect(
+      user.fields.find((f) => f.name === "preferences")?.defaultValue,
+    ).toBe('{"role":"member"}');
   });
 
   it('sets isList for a @Column("text", { array: true }) column, without losing the element type (#5a)', async () => {
@@ -104,6 +136,15 @@ describe("typeormAdapter.extract — raw .ts DataSource (compiled via the target
     expect(profileToUser[0].isFromOptional).toBe(true);
   });
 
+  it("builds a standalone 1-n relation from a lone @ManyToOne with no reciprocal @OneToMany", async () => {
+    const model = await extractFixture("basic", "data-source.ts");
+    const postToComment = model.relations.filter(
+      (r) => r.type === "1-n" && r.from === "Post" && r.to === "Comment",
+    );
+    expect(postToComment).toHaveLength(1);
+    expect(postToComment[0].toColumn).toBe("post");
+  });
+
   it("carries onDelete/onUpdate from the owning @ManyToOne side of a 1-n relation", async () => {
     const model = await extractFixture("basic", "data-source.ts");
     const userToPost = model.relations.find(
@@ -141,8 +182,11 @@ describe("typeormAdapter.extract — raw .ts DataSource (compiled via the target
   });
 
   it("produces exactly one relation per real relationship, not one per declared side", async () => {
+    // User<->Post (1-n), User<->Profile (1-1), Post<->Tag (n-n), and
+    // Post<->Comment (the standalone lone-@ManyToOne 1-n) — four real
+    // relationships from what TypeORM records as more RelationMetadata sides.
     const model = await extractFixture("basic", "data-source.ts");
-    expect(model.relations).toHaveLength(3);
+    expect(model.relations).toHaveLength(4);
   });
 
   it("carries @Entity/@Column `comment` as entity and field descriptions", async () => {
@@ -197,6 +241,76 @@ describe("typeormAdapter.extract — legacy ormconfig.json", () => {
       /isn't supported yet/,
     );
   });
+
+  it("rejects an ormconfig.json that doesn't define any connection options", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "orm2erd-typeorm-ormconfig-bad-"));
+    writeFileSync(join(cwd, "ormconfig.json"), "null");
+    await expect(extractFixture(cwd, "ormconfig.json")).rejects.toThrow(
+      /doesn't define any connection options/,
+    );
+  });
+
+  it('throws a clear error when the installed "typeorm" exports neither DataSource nor Connection', async () => {
+    // entities: [] so no tsc build is ever needed — isolates this to just
+    // createUnconnectedInstance's own constructor lookup.
+    const cwd = mkdtempSync(join(tmpdir(), "orm2erd-typeorm-no-ctor-"));
+    writeFileSync(
+      join(cwd, "ormconfig.json"),
+      JSON.stringify({ type: "sqljs", entities: [] }),
+    );
+    const fakeTypeormDir = join(cwd, "node_modules", "typeorm");
+    mkdirSync(fakeTypeormDir, { recursive: true });
+    writeFileSync(
+      join(fakeTypeormDir, "package.json"),
+      JSON.stringify({ name: "typeorm", type: "commonjs", main: "index.js" }),
+    );
+    writeFileSync(join(fakeTypeormDir, "index.js"), "module.exports = {};\n");
+
+    await expect(extractFixture(cwd, "ormconfig.json")).rejects.toThrow(
+      /Could not find a DataSource or Connection constructor/,
+    );
+  });
+
+  it('throws a clear error when the installed "typeorm" is missing its internal ConnectionMetadataBuilder', async () => {
+    // A fake "typeorm" whose DataSource instances satisfy
+    // looksLikeTypeOrmDataSource (an `options` object + a `driver`), so
+    // findDataSourceInstance succeeds — but with no
+    // connection/ConnectionMetadataBuilder.js file at all, as if targeting
+    // an incompatible typeorm version.
+    const cwd = mkdtempSync(join(tmpdir(), "orm2erd-typeorm-no-builder-"));
+    const fakeTypeormDir = join(cwd, "node_modules", "typeorm");
+    mkdirSync(fakeTypeormDir, { recursive: true });
+    writeFileSync(
+      join(fakeTypeormDir, "package.json"),
+      JSON.stringify({ name: "typeorm", type: "commonjs", main: "index.js" }),
+    );
+    writeFileSync(
+      join(fakeTypeormDir, "index.js"),
+      [
+        "class DataSource {",
+        "  constructor(options) {",
+        "    this.options = options;",
+        "    this.driver = {};",
+        "  }",
+        "}",
+        "module.exports = { DataSource };",
+        "",
+      ].join("\n"),
+    );
+
+    writeFileSync(
+      join(cwd, "data-source.js"),
+      [
+        'import { DataSource } from "typeorm";',
+        "export const AppDataSource = new DataSource({ entities: [] });",
+        "",
+      ].join("\n"),
+    );
+
+    await expect(extractFixture(cwd, "data-source.js")).rejects.toThrow(
+      /Could not find TypeORM's internal ConnectionMetadataBuilder/,
+    );
+  });
 });
 
 describe("typeormAdapter.extract — error cases", () => {
@@ -211,10 +325,29 @@ describe("typeormAdapter.extract — error cases", () => {
     );
   });
 
+  it("throws a clear error when \"typescript\" can't be resolved from the entry file's location", async () => {
+    // A tsconfig.json is found (so findNearestTsconfig succeeds), but this
+    // dir lives outside any node_modules chain reaching a real "typescript"
+    // — unlike every other .ts-entry test, which run from inside this
+    // project's own tree and so always find *our* typescript.
+    const cwd = mkdtempSync(join(tmpdir(), "orm2erd-typeorm-no-typescript-"));
+    writeFileSync(join(cwd, "tsconfig.json"), "{}");
+    writeFileSync(join(cwd, "data-source.ts"), "export {};\n");
+    await expect(extractFixture(cwd, "data-source.ts")).rejects.toThrow(
+      /Could not resolve "typescript" from/,
+    );
+  });
+
   it("throws a clear error when no DataSource is exported", async () => {
     await expect(extractFixture("no-datasource", "empty.ts")).rejects.toThrow(
       /Could not find a TypeORM DataSource/,
     );
+  });
+
+  it("throws a clear error when the DataSource has no entities", async () => {
+    await expect(
+      extractFixture("no-entities", "data-source.ts"),
+    ).rejects.toThrow(/No entities were found via/);
   });
 });
 
@@ -271,5 +404,18 @@ describe("typeormAdapter.extract — composite keys", () => {
       { fields: ["addedBy"], name: expect.any(String) },
       { fields: ["postId", "addedBy"], name: "post_addedby_idx" },
     ]);
+  });
+});
+
+describe("typeormAdapter.extract — entity glob outside the project root", () => {
+  it("leaves an out-of-root glob entry unrewritten instead of pointing it at the compiled mirror", async () => {
+    // The DataSource's own class-reference entity (User) is what actually
+    // proves extraction still succeeds — the sibling glob resolves outside
+    // tsconfig's directory and matches nothing, but must not crash the rest.
+    const model = await extractFixture(
+      "glob-outside-root/project",
+      "data-source.ts",
+    );
+    expect(model.entities.map((e) => e.name)).toEqual(["User"]);
   });
 });

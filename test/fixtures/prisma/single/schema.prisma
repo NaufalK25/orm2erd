@@ -14,7 +14,7 @@ model User {
   name     String
   email    String  @unique
   isActive Boolean @default(true)
-  roles    String[]
+  roles    String[] @default(["member"])
 
   posts Post[]
 }

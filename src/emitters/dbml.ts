@@ -96,10 +96,10 @@ export const dbmlEmitter: Emitter = {
     }
 
     if (enumsByName.size > 0) {
-      if (lines[lines.length - 1] !== "") {
-        lines.push("");
-      }
-      lines.push("// Enums");
+      // The relations loop above always pushes "// Relationships" as a
+      // header first (even with zero relations), so the last line here is
+      // never already blank.
+      lines.push("", "// Enums");
     }
 
     for (const [name, values] of enumsByName) {

@@ -45,6 +45,22 @@ describe("mermaidEmitter", () => {
     );
   });
 
+  it("uses the ORM-native type name when typeMode is 'native'", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          fields: [{ name: "id", type: "int", nativeType: "INTEGER" }],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = mermaidEmitter.emit(model, { typeMode: "native" });
+
+    expect(output).toContain("INTEGER id");
+  });
+
   it("escapes embedded double quotes in a default value instead of breaking the quoted comment", () => {
     const model: ERDModel = {
       entities: [

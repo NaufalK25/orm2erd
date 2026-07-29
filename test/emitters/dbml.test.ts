@@ -177,6 +177,25 @@ describe("dbmlEmitter", () => {
     expect(output).toContain("Ref: User.id > Post.authorId");
   });
 
+  it("uses <> for a many-to-many relation that does carry resolvable columns", () => {
+    const model: ERDModel = {
+      entities: [],
+      relations: [
+        {
+          from: "Post",
+          to: "Tag",
+          type: "n-n",
+          fromColumn: "postId",
+          toColumn: "tagId",
+        },
+      ],
+    };
+
+    const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain("Ref: Post.postId <> Tag.tagId");
+  });
+
   it("renders composite PK and multi-column unique in an indexes block", () => {
     const model: ERDModel = {
       entities: [
@@ -225,6 +244,23 @@ describe("dbmlEmitter", () => {
     expect(output).toContain("addedBy");
     expect(output).not.toContain("addedBy [");
     expect(output).toContain(`(postId, addedBy) [name: "post_addedby_idx"]`);
+  });
+
+  it("tags an index carrying isUnique with [unique] (defensive — adapters normally route unique constraints through entity.uniques instead)", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "PostTag",
+          indexes: [{ fields: ["addedBy"], isUnique: true }],
+          fields: [{ name: "addedBy", type: "string", nativeType: "STRING" }],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain("addedBy [unique]");
   });
 
   it("declares a composite PK only in the indexes block, not per-field (no double pk)", () => {

@@ -44,6 +44,22 @@ describe("quickdbdEmitter", () => {
     expect(output).toContain("isActive boolean # default: true");
   });
 
+  it("uses the ORM-native type name when typeMode is 'native'", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          fields: [{ name: "id", type: "int", nativeType: "INTEGER" }],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = quickdbdEmitter.emit(model, { typeMode: "native" });
+
+    expect(output).toContain("id INTEGER");
+  });
+
   it("marks nullable fields with NULL", () => {
     const model: ERDModel = {
       entities: [

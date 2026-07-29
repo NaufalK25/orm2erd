@@ -34,9 +34,7 @@ export const mongooseDetector: Detector = {
       return { found: false, candidates, confidence: 0 };
     }
 
-    if (candidates.length === 0) {
-      candidates.push(...findFallbackModelDirs(cwd));
-    }
+    candidates.push(...findFallbackModelDirs(cwd));
 
     // No naming convention hit — fall back to scanning file contents for
     // actual mongoose.model()/Schema() calls and use the directories those

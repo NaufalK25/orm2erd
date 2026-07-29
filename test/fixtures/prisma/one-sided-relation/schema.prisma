@@ -1,0 +1,29 @@
+datasource db {
+  provider = "postgresql"
+}
+
+// @ignore removes a relation field from DMMF entirely (not just flags it),
+// so a relationName can end up with only one side present.
+
+// Scenario 1: the list side is @ignore'd away, leaving only the FK side
+// (Post.user) — the swap-into-`to` branch fires.
+model User {
+  id    Int    @id @default(autoincrement())
+  posts Post[] @ignore
+}
+
+model Post {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  // Scenario 2: the FK side is @ignore'd away, leaving only the list side
+  // (Tag.posts) — no FK column to attach.
+  tagId Int
+  tag   Tag  @relation(fields: [tagId], references: [id]) @ignore
+}
+
+model Tag {
+  id    Int    @id @default(autoincrement())
+  posts Post[]
+}

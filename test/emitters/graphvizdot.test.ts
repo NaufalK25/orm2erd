@@ -35,6 +35,12 @@ describe("graphvizdotEmitter", () => {
               defaultValue: "true",
               isNullable: false,
             },
+            {
+              name: "managerId",
+              type: "int",
+              nativeType: "INTEGER",
+              isForeignKey: true,
+            },
           ],
         },
       ],
@@ -61,6 +67,9 @@ describe("graphvizdotEmitter", () => {
     );
     expect(output).toContain(
       '<tr><td align="left" port="isActive"><b>isActive</b>  <i>boolean</i></td><td align="left">= true</td></tr>',
+    );
+    expect(output).toContain(
+      '<tr><td align="left" port="managerId"><b>managerId</b>  <i>int</i></td><td align="left">FK</td></tr>',
     );
   });
 

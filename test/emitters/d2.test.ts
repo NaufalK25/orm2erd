@@ -46,6 +46,69 @@ describe("d2Emitter", () => {
     expect(output).toContain('  "isActive":  "boolean NOT NULL DEFAULT true"');
   });
 
+  it("uses the ORM-native type name when typeMode is 'native'", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          fields: [{ name: "id", type: "int", nativeType: "INTEGER" }],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = d2Emitter.emit(model, { typeMode: "native" });
+
+    expect(output).toContain('"id":  "INTEGER NOT NULL"');
+  });
+
+  it("appends [] to a list field's type label", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "Post",
+          fields: [
+            {
+              name: "labels",
+              type: "string",
+              nativeType: "TEXT",
+              isList: true,
+            },
+          ],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = d2Emitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain("string[]");
+  });
+
+  it("marks a foreign-key field {constraint:fk}, and combines multiple constraints into a bracketed list", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "Post",
+          fields: [
+            {
+              name: "authorId",
+              type: "int",
+              nativeType: "INTEGER",
+              isForeignKey: true,
+              isUnique: true,
+            },
+          ],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = d2Emitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain("{constraint:[fk,unique]}");
+  });
+
   it("quotes identifiers that collide with D2 reserved keywords", () => {
     const model: ERDModel = {
       entities: [

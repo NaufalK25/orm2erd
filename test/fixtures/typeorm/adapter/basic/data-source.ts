@@ -4,9 +4,10 @@ import { User } from "./entity/User";
 import { Profile } from "./entity/Profile";
 import { Post } from "./entity/Post";
 import { Tag } from "./entity/Tag";
+import { Comment } from "./entity/Comment";
 
 export const AppDataSource = new DataSource({
   type: "sqljs",
   synchronize: false,
-  entities: [User, Profile, Post, Tag],
+  entities: [User, Profile, Post, Tag, Comment],
 });

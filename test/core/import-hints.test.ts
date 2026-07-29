@@ -29,6 +29,12 @@ describe("friendlyImportHint", () => {
     expect(friendlyImportHint(err)).toMatch(/CommonJS\/ESM mismatch/);
   });
 
+  it("still matches against the message alone when the error has no stack", () => {
+    const err = new Error("Cannot find module 'pg'");
+    err.stack = undefined;
+    expect(friendlyImportHint(err)).toMatch(/Missing dependency "pg"/);
+  });
+
   it("returns undefined for an error that matches no known pattern", () => {
     const err = new Error("Something entirely unrelated went wrong");
     expect(friendlyImportHint(err)).toBeUndefined();

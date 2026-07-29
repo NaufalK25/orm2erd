@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -148,6 +154,16 @@ describe("drizzleAdapter.extract — postgres dialect", () => {
     expect(userToProfile[0].isFromOptional).toBe(false);
   });
 
+  it("builds a 1-1 relation when a composite FK is covered by a composite unique constraint", async () => {
+    const model = await extractFixture("composite-fk-unique");
+    const rel = model.relations.find(
+      (r) => r.from === "users" && r.to === "posts",
+    )!;
+    expect(rel.type).toBe("1-1");
+    expect(rel.fromColumn).toBe("tenant_id");
+    expect(rel.toColumn).toBe("author_tenant_id");
+  });
+
   it("leaves an implicit many-to-many junction table's two FKs as separate 1-n relations", async () => {
     const model = await extractFixture("postgres-basic");
     const toJunction = model.relations.filter((r) => r.to === "post_tags");
@@ -177,6 +193,53 @@ describe("drizzleAdapter.extract — composite keys and plain indexes", () => {
     expect(postTags.indexes).toEqual([
       { fields: ["added_by"], name: "addedby_idx" },
     ]);
+  });
+});
+
+describe("drizzleAdapter.extract — canonical type mapping and default values", () => {
+  it("maps json/jsonb, bigint, numeric, and float-family dataTypes to their canonical types", async () => {
+    const model = await extractFixture("type-mapping");
+    const users = model.entities.find((e) => e.name === "users")!;
+    const byName = Object.fromEntries(users.fields.map((f) => [f.name, f]));
+
+    expect(byName.settings.type).toBe("json");
+    expect(byName.preferences.type).toBe("json");
+    expect(byName.external_id.type).toBe("bigint");
+    expect(byName.balance.type).toBe("decimal");
+    expect(byName.score.type).toBe("float");
+    expect(byName.rating.type).toBe("float");
+  });
+
+  it("falls back to 'unknown' for a dataType with no canonical mapping (e.g. a customType)", async () => {
+    const model = await extractFixture("type-mapping");
+    const users = model.entities.find((e) => e.name === "users")!;
+    expect(users.fields.find((f) => f.name === "embedding")?.type).toBe(
+      "unknown",
+    );
+  });
+
+  it("resolves a Date-instance default to an ISO string", async () => {
+    const model = await extractFixture("type-mapping");
+    const users = model.entities.find((e) => e.name === "users")!;
+    expect(
+      users.fields.find((f) => f.name === "activated_at")?.defaultValue,
+    ).toBe("2024-01-01T00:00:00.000Z");
+  });
+
+  it("JSON-stringifies a plain-object default", async () => {
+    const model = await extractFixture("type-mapping");
+    const users = model.entities.find((e) => e.name === "users")!;
+    expect(users.fields.find((f) => f.name === "profile")?.defaultValue).toBe(
+      '{"theme":"dark"}',
+    );
+  });
+
+  it("marks a table-level single-column unique() the same as a column-level .unique()", async () => {
+    const model = await extractFixture("type-mapping");
+    const users = model.entities.find((e) => e.name === "users")!;
+    expect(users.fields.find((f) => f.name === "email")?.isUnique).toBe(true);
+    // Single-column — must not also appear as a composite unique group.
+    expect(users.uniques).toBeUndefined();
   });
 });
 
@@ -222,6 +285,12 @@ describe("drizzleAdapter.extract — sqlite dialect", () => {
     )!;
     expect(rel.type).toBe("1-n");
     expect(rel.toColumn).toBe("author_id");
+  });
+
+  it("maps a blob(mode: 'buffer') column to canonical bytes", async () => {
+    const model = await extractFixture("sqlite-basic");
+    const users = model.entities.find((e) => e.name === "users")!;
+    expect(users.fields.find((f) => f.name === "avatar")?.type).toBe("bytes");
   });
 });
 
@@ -357,5 +426,101 @@ describe("drizzleAdapter.extract — error cases", () => {
     await expect(extractFixture("no-tables-exported")).rejects.toThrow(
       /No postgresql tables were exported/,
     );
+  });
+
+  it("throws a clear error when \"drizzle-orm\" can't be resolved from the config file's location", async () => {
+    // The config lives in a bare temp dir with no node_modules chain to a
+    // real drizzle-orm — but its schema field points (by absolute path) at
+    // a real committed fixture schema, which imports drizzle-orm/pg-core
+    // fine via its OWN location. So schema loading succeeds; it's
+    // requireFromTarget's own later resolution (using the config file's
+    // location, not the schema's) that must fail.
+    const cwd = mkdtempSync(join(tmpdir(), "orm2erd-drizzle-unresolvable-"));
+    writeFileSync(join(cwd, "package.json"), '{"type":"module"}');
+    const realSchema = join(fixturesDir, "postgres-basic", "schema.ts");
+    writeFileSync(
+      join(cwd, "drizzle.config.ts"),
+      `export default { dialect: "postgresql", schema: ${JSON.stringify(realSchema)} };\n`,
+    );
+    await expect(extractFixture(cwd)).rejects.toThrow(
+      /Could not resolve "drizzle-orm" from/,
+    );
+  });
+
+  it("throws a clear error when the resolved dialect module doesn't export the expected Table/Dialect classes", async () => {
+    // A fake "drizzle-orm" resolvable from the config file's location, but
+    // missing PgTable/PgDialect from its pg-core subpath entirely (as if
+    // targeting an unsupported drizzle-orm version).
+    const cwd = mkdtempSync(join(tmpdir(), "orm2erd-drizzle-wrong-shape-"));
+    writeFileSync(join(cwd, "package.json"), '{"type":"module"}');
+    const realSchema = join(fixturesDir, "postgres-basic", "schema.ts");
+    writeFileSync(
+      join(cwd, "drizzle.config.ts"),
+      `export default { dialect: "postgresql", schema: ${JSON.stringify(realSchema)} };\n`,
+    );
+
+    const fakeOrmDir = join(cwd, "node_modules", "drizzle-orm");
+    mkdirSync(fakeOrmDir, { recursive: true });
+    writeFileSync(
+      join(fakeOrmDir, "package.json"),
+      JSON.stringify({
+        name: "drizzle-orm",
+        type: "commonjs",
+        main: "index.js",
+      }),
+    );
+    writeFileSync(join(fakeOrmDir, "index.js"), "module.exports = {};\n");
+    writeFileSync(join(fakeOrmDir, "casing.js"), "module.exports = {};\n");
+    writeFileSync(join(fakeOrmDir, "pg-core.js"), "module.exports = {};\n");
+
+    await expect(extractFixture(cwd)).rejects.toThrow(
+      /Could not find "PgTable"\/"PgDialect" exported from "drizzle-orm\/pg-core"/,
+    );
+  });
+});
+
+describe("drizzleAdapter.extract — schema resolution", () => {
+  it("loads a .json drizzle-kit config file", async () => {
+    const model = await extractFixture("json-config", "drizzle.config.json");
+    expect(model.entities.map((e) => e.name)).toEqual(["users"]);
+  });
+
+  it("expands a directory schema field to its immediate importable files, ignoring non-source files", async () => {
+    const model = await extractFixture("directory-schema");
+    expect(model.entities.map((e) => e.name).toSorted()).toEqual([
+      "posts",
+      "users",
+    ]);
+  });
+
+  it("skips a glob match that doesn't actually exist (e.g. a broken symlink)", async () => {
+    // Lives under fixturesDir (not the OS tmpdir) so the real schema file's
+    // own drizzle-orm/pg-core import resolves via the project's node_modules.
+    const cwd = mkdtempSync(join(fixturesDir, ".broken-symlink-test-"));
+    try {
+      writeFileSync(join(cwd, "package.json"), '{"type":"module"}');
+      writeFileSync(
+        join(cwd, "users.ts"),
+        [
+          'import { pgTable, serial, text } from "drizzle-orm/pg-core";',
+          "",
+          'export const users = pgTable("users", {',
+          '  id: serial("id").primaryKey(),',
+          '  name: text("name").notNull(),',
+          "});",
+          "",
+        ].join("\n"),
+      );
+      symlinkSync(join(cwd, "does-not-exist.ts"), join(cwd, "ghost.ts"));
+      writeFileSync(
+        join(cwd, "drizzle.config.ts"),
+        'export default { dialect: "postgresql", schema: "./*.ts" };\n',
+      );
+
+      const model = await extractFixture(cwd);
+      expect(model.entities.map((e) => e.name)).toEqual(["users"]);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
   });
 });

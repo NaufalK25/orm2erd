@@ -1,0 +1,6 @@
+{
+  "dialect": "postgresql",
+  "schema": "./schema.ts",
+  "out": "./drizzle",
+  "dbCredentials": { "url": "postgres://localhost:5432/fixture" }
+}

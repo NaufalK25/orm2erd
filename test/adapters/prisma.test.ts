@@ -104,6 +104,54 @@ describe("prismaAdapter.extract — scalar list fields (#5a reference — DMMF a
     expect(roles.isList).toBe(true);
     expect(roles.type).toBe("string");
   });
+
+  it("joins a list-typed default value into a single string", async () => {
+    const schemaPath = join(fixturesDir, "single/schema.prisma");
+    const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
+    const model = await prismaAdapter.extract(entry);
+    const user = model.entities.find((e) => e.name === "User")!;
+    const roles = user.fields.find((f) => f.name === "roles")!;
+    expect(roles.defaultValue).toBe("member");
+  });
+});
+
+describe("prismaAdapter.extract — one-sided relations (@ignore removes the opposite field from DMMF)", () => {
+  const schemaPath = join(fixturesDir, "one-sided-relation/schema.prisma");
+
+  it("still resolves the FK side even when the list side is @ignore'd away", async () => {
+    const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
+    const model = await prismaAdapter.extract(entry);
+    const relation = model.relations.find(
+      (r) => r.from === "User" && r.to === "Post",
+    )!;
+    expect(relation).toBeDefined();
+    expect(relation.type).toBe("1-1");
+    expect(relation.toColumn).toBe("userId");
+  });
+
+  it("falls back to a columnless relation when the FK side itself is @ignore'd away", async () => {
+    const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
+    const model = await prismaAdapter.extract(entry);
+    const relation = model.relations.find(
+      (r) => r.from === "Tag" && r.to === "Post",
+    )!;
+    expect(relation).toBeDefined();
+    expect(relation.type).toBe("1-n");
+    expect(relation.fromColumn).toBeUndefined();
+    expect(relation.toColumn).toBeUndefined();
+  });
+});
+
+describe("prismaAdapter.extract — schema load failure", () => {
+  it("wraps a load failure in a friendlier error pointing at --entry", async () => {
+    await expect(
+      prismaAdapter.extract({
+        path: join(fixturesDir, "does-not-exist.prisma"),
+      }),
+    ).rejects.toThrow(
+      /Failed to load Prisma schema from ".*does-not-exist\.prisma"/,
+    );
+  });
 });
 
 describe("prismaAdapter.extract — composite keys", () => {

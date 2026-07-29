@@ -4,10 +4,19 @@ import {
   expect,
   beforeAll,
   afterAll,
+  afterEach,
   vi,
   type MockInstance,
 } from "vitest";
-import { mkdtempSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -43,6 +52,76 @@ describe("mongooseAdapter.resolveEntry", () => {
     await expect(
       mongooseAdapter.resolveEntry("does-not-exist.ts", fixturesDir),
     ).rejects.toThrow(/Failed to load Mongoose entry/);
+  });
+
+  it("rejects a path that's neither a file nor a directory (e.g. a FIFO)", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "orm2erd-mongoose-test-"));
+    const fifoPath = join(dir, "not-a-file-or-dir");
+    try {
+      execFileSync("mkfifo", [fifoPath]);
+    } catch {
+      rmSync(dir, { recursive: true, force: true });
+      return;
+    }
+    try {
+      await expect(mongooseAdapter.resolveEntry(fifoPath, dir)).rejects.toThrow(
+        /is neither a file nor a directory/,
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("mongooseAdapter.extract — target mongoose module resolution", () => {
+  const dirs: string[] = [];
+
+  function makeTmpDir(): string {
+    const dir = mkdtempSync(join(tmpdir(), "orm2erd-mongoose-resolve-"));
+    dirs.push(dir);
+    return dir;
+  }
+
+  afterEach(() => {
+    for (const dir of dirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("throws a clear error when \"mongoose\" can't be resolved from the entry file's location", async () => {
+    // A bare temp dir with no node_modules chain leading to a "mongoose"
+    // package — createRequire(...).resolve("mongoose") must fail here.
+    const dir = makeTmpDir();
+    const entryFile = join(dir, "entry.ts");
+    writeFileSync(entryFile, "export {};\n");
+
+    const entry = await mongooseAdapter.resolveEntry(entryFile, dir);
+    await expect(mongooseAdapter.extract(entry)).rejects.toThrow(
+      /Could not resolve "mongoose" from/,
+    );
+  });
+
+  it('throws a clear error when the resolved "mongoose" doesn\'t look like the real module', async () => {
+    // A fake "mongoose" package resolvable from the entry file, but whose
+    // shape doesn't match looksLikeMongooseModule (no .set()/.models).
+    const dir = makeTmpDir();
+    const fakeMongooseDir = join(dir, "node_modules", "mongoose");
+    mkdirSync(fakeMongooseDir, { recursive: true });
+    writeFileSync(
+      join(fakeMongooseDir, "package.json"),
+      JSON.stringify({ name: "mongoose", main: "index.js", type: "module" }),
+    );
+    writeFileSync(
+      join(fakeMongooseDir, "index.js"),
+      "export default { notMongoose: true };\n",
+    );
+    const entryFile = join(dir, "entry.ts");
+    writeFileSync(entryFile, "export {};\n");
+
+    const entry = await mongooseAdapter.resolveEntry(entryFile, dir);
+    await expect(mongooseAdapter.extract(entry)).rejects.toThrow(
+      /doesn't look like the mongoose module/,
+    );
   });
 });
 
@@ -119,6 +198,24 @@ describe("mongooseAdapter.extract — field mapping", () => {
     const labels = model.entities[0].fields.find((f) => f.name === "labels")!;
     expect(labels.isList).toBe(true);
     expect(labels.type).toBe("string");
+  });
+
+  it("JSON-stringifies a plain-object default", () => {
+    const metadata = model.entities[0].fields.find(
+      (f) => f.name === "metadata",
+    )!;
+    expect(metadata.defaultValue).toBe('{"source":"import"}');
+  });
+
+  it("falls back to '(function)' for an anonymous function default", () => {
+    const slug = model.entities[0].fields.find((f) => f.name === "slug")!;
+    expect(slug.defaultValue).toBe("(function)()");
+  });
+
+  it("maps a custom SchemaType with no known instance mapping to 'unknown'", () => {
+    const weird = model.entities[0].fields.find((f) => f.name === "weird")!;
+    expect(weird.type).toBe("unknown");
+    expect(weird.nativeType).toBe("CustomType");
   });
 });
 
@@ -240,6 +337,13 @@ describe("mongooseAdapter.extract — physical collection names (#3a)", () => {
     const product = model.entities.find((e) => e.name === "Product")!;
     expect(product.tableName).toBe("products");
   });
+
+  it("leaves tableName unset when the explicit collection name equals the model name", async () => {
+    mongoose.deleteModel(/.*/);
+    const model = await extractFixture("names.ts");
+    const tag = model.entities.find((e) => e.name === "Tag")!;
+    expect(tag.tableName).toBeUndefined();
+  });
 });
 
 describe("mongooseAdapter.extract — directory import", () => {
@@ -276,6 +380,84 @@ describe("mongooseAdapter.extract — directory import", () => {
       ),
     );
     expect(leaked).toBe(false);
+  });
+});
+
+describe("mongooseAdapter.extract — directory scan exclusions & error tolerance", () => {
+  const dirs: string[] = [];
+
+  function makeTmpDir(): string {
+    // Under fixturesDir (inside the project tree), not the OS tmpdir — the
+    // adapter needs to resolve a real "mongoose" package from here via
+    // node's normal upward node_modules search, same as any real project.
+    const dir = mkdtempSync(join(fixturesDir, ".scan-test-"));
+    dirs.push(dir);
+    return dir;
+  }
+
+  afterEach(() => {
+    for (const dir of dirs.splice(0)) {
+      chmodSync(dir, 0o700);
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("skips node_modules/hidden dirs, .d.ts/test files, and oversized files, and tolerates unreadable entries", async () => {
+    const dir = makeTmpDir();
+
+    const goodContent = [
+      'import mongoose from "mongoose";',
+      "const ScanGoodSchema = new mongoose.Schema({ name: String });",
+      'mongoose.model("ScanGood", ScanGoodSchema);',
+      "",
+    ].join("\n");
+    // Every "trap" file below has a real mongoose signature and would
+    // register its own model if the exclusion it's testing didn't hold —
+    // so a leaked import shows up as an extra entity, not silently.
+    const trapContent = [
+      'import mongoose from "mongoose";',
+      "const ScanTrapSchema = new mongoose.Schema({ name: String });",
+      'mongoose.model("ScanTrap", ScanTrapSchema);',
+      "",
+    ].join("\n");
+
+    writeFileSync(join(dir, "good.ts"), goodContent);
+    writeFileSync(join(dir, "types.d.ts"), trapContent);
+    writeFileSync(join(dir, "broken.test.ts"), trapContent);
+    writeFileSync(
+      join(dir, "huge.ts"),
+      `// ${"x".repeat(1_000_010)}\n${trapContent}`,
+    );
+
+    mkdirSync(join(dir, "node_modules"));
+    writeFileSync(join(dir, "node_modules", "trap.ts"), trapContent);
+
+    mkdirSync(join(dir, ".hidden"));
+    writeFileSync(join(dir, ".hidden", "trap.ts"), trapContent);
+
+    const unreadableDir = join(dir, "unreadable-dir");
+    mkdirSync(unreadableDir);
+    writeFileSync(join(unreadableDir, "trap.ts"), trapContent);
+    chmodSync(unreadableDir, 0o000);
+
+    const secretFile = join(dir, "secret.ts");
+    writeFileSync(secretFile, trapContent);
+    chmodSync(secretFile, 0o000);
+
+    // A symlink is neither isDirectory() nor isFile() (lstat semantics) —
+    // must be skipped outright, not followed. Points nowhere, so there's no
+    // real target file that would independently register its own model.
+    symlinkSync(join(dir, "does-not-exist.ts"), join(dir, "link.ts"));
+
+    mongoose.deleteModel(/.*/);
+    try {
+      const entry = await mongooseAdapter.resolveEntry(dir, dir);
+      const model = await mongooseAdapter.extract(entry);
+      expect(model.entities.map((e) => e.name)).toEqual(["ScanGood"]);
+    } finally {
+      chmodSync(unreadableDir, 0o700);
+      chmodSync(secretFile, 0o644);
+    }
   });
 });
 
