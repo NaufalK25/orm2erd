@@ -218,6 +218,36 @@ describe("typeormAdapter.extract — error cases", () => {
   });
 });
 
+describe("typeormAdapter.extract — physical table/column names (#3a)", () => {
+  it('sets entity.tableName from @Entity("...") when it differs from the class name', async () => {
+    const model = await extractFixture("names", "data-source.ts");
+    const archive = model.entities.find((e) => e.name === "CustomerArchive")!;
+    expect(archive.tableName).toBe("tbl_customer");
+  });
+
+  it("sets field.columnName from @Column({ name: ... }) when it differs from the property name", async () => {
+    const model = await extractFixture("names", "data-source.ts");
+    const archive = model.entities.find((e) => e.name === "CustomerArchive")!;
+    expect(archive.fields.find((f) => f.name === "fullName")?.columnName).toBe(
+      "full_name",
+    );
+  });
+
+  it("leaves columnName undefined when no explicit column name is set", async () => {
+    const model = await extractFixture("names", "data-source.ts");
+    const archive = model.entities.find((e) => e.name === "CustomerArchive")!;
+    expect(
+      archive.fields.find((f) => f.name === "email")?.columnName,
+    ).toBeUndefined();
+  });
+
+  it("still surfaces TypeORM's default naming-strategy table name (lowercased class name) even with no explicit @Entity name", async () => {
+    const model = await extractFixture("basic", "data-source.ts");
+    const user = model.entities.find((e) => e.name === "User")!;
+    expect(user.tableName).toBe("user");
+  });
+});
+
 describe("typeormAdapter.extract — composite keys", () => {
   it("carries composite PK and multi-column unique, keeping single-column unique on the field", async () => {
     const model = await extractFixture("composite", "data-source.ts");

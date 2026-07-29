@@ -408,6 +408,10 @@ function buildField(
 ): Field {
   return {
     name: column.propertyName,
+    columnName:
+      column.databaseName !== column.propertyName
+        ? column.databaseName
+        : undefined,
     type: toCanonicalType(column.type),
     nativeType: nativeTypeName(column.type),
     isList: column.isArray,
@@ -460,6 +464,10 @@ function buildEntity(entityMetadata: TypeOrmEntityMetadata): Entity {
   const uniqueColumnNames = collectUniqueColumnNames(entityMetadata);
   return {
     name: entityMetadata.name,
+    tableName:
+      entityMetadata.tableName !== entityMetadata.name
+        ? entityMetadata.tableName
+        : undefined,
     ...extractCompositeKeys(entityMetadata),
     indexes: extractIndexes(entityMetadata),
     description: entityMetadata.comment,

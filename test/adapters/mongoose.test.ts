@@ -226,6 +226,22 @@ describe("mongooseAdapter.extract — relations", () => {
   });
 });
 
+describe("mongooseAdapter.extract — physical collection names (#3a)", () => {
+  it("sets entity.tableName from an explicit `collection` schema option", async () => {
+    mongoose.deleteModel(/.*/);
+    const model = await extractFixture("names.ts");
+    const archive = model.entities.find((e) => e.name === "CustomerArchive")!;
+    expect(archive.tableName).toBe("tbl_customer");
+  });
+
+  it("still surfaces mongoose's default pluralised+lowercased collection name with no explicit override", async () => {
+    mongoose.deleteModel(/.*/);
+    const model = await extractFixture("fields.ts");
+    const product = model.entities.find((e) => e.name === "Product")!;
+    expect(product.tableName).toBe("products");
+  });
+});
+
 describe("mongooseAdapter.extract — directory import", () => {
   let model: ERDModel;
   let consoleLogSpy: MockInstance<typeof console.log>;

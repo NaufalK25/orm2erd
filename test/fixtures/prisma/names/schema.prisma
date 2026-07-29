@@ -1,0 +1,16 @@
+datasource db {
+  provider = "postgresql"
+}
+
+model CustomerArchive {
+  id       Int    @id @default(autoincrement())
+  fullName String @map("full_name")
+  email    String
+
+  @@map("tbl_customer")
+}
+
+model Tag {
+  id   Int    @id @default(autoincrement())
+  name String
+}

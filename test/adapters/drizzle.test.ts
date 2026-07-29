@@ -180,6 +180,21 @@ describe("drizzleAdapter.extract — composite keys and plain indexes", () => {
   });
 });
 
+describe("drizzleAdapter.extract — physical table/column names (#3a)", () => {
+  // Drizzle has no separate ORM-level model name the way Sequelize/Prisma/
+  // TypeORM do — `entity.name`/`field.name` are already the physical SQL
+  // table/column name (e.g. "post_tags"/"post_id" above), so tableName/
+  // columnName would always equal `name` and stay unset.
+  it("leaves tableName/columnName unset since name is already the physical name", async () => {
+    const model = await extractFixture("postgres-basic");
+    const posts = model.entities.find((e) => e.name === "posts")!;
+    expect(posts.tableName).toBeUndefined();
+    expect(posts.fields.find((f) => f.name === "author_id")?.columnName).toBe(
+      undefined,
+    );
+  });
+});
+
 describe("drizzleAdapter.extract — singlestore dialect", () => {
   // SingleStore (a distributed DB) has no FK constraint concept at all, so
   // `getTableConfig()` omits `foreignKeys` entirely rather than returning an

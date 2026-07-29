@@ -244,6 +244,8 @@ function extractIndexes(schema: MongooseModel["schema"]): Index[] | undefined {
 function buildEntity(name: string, model: MongooseModel): Entity {
   return {
     name,
+    tableName:
+      model.collection.name !== name ? model.collection.name : undefined,
     uniques: extractCompositeUniques(model.schema),
     indexes: extractIndexes(model.schema),
     fields: Object.entries(model.schema.paths)

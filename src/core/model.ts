@@ -14,6 +14,8 @@ export type CanonicalType =
 /** A single column/attribute on an `Entity`. */
 export interface Field {
   name: string;
+  /** Physical column name, only set when it differs from `name`. */
+  columnName?: string;
   type: CanonicalType;
   /** The ORM's own type name. */
   nativeType: string;
@@ -41,6 +43,8 @@ export type RelationAction =
 /** A table/collection in the schema. */
 export interface Entity {
   name: string;
+  /** Physical table/collection name, only set when it differs from `name`. */
+  tableName?: string;
   fields: Field[];
   /** Free-text doc comment, e.g. Prisma's `///`, Sequelize's `comment`, TypeORM's `@Entity({ comment })`. */
   description?: string;

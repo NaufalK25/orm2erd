@@ -137,6 +137,11 @@ export const prismaAdapter: ORMAdapter = {
 
       return {
         name: model.name,
+        // `@@map("...")` — DMMF's `dbName` is null unless set explicitly.
+        tableName:
+          model.dbName && model.dbName !== model.name
+            ? model.dbName
+            : undefined,
         primaryKey,
         uniques: uniques.length > 0 ? uniques : undefined,
         indexes,
@@ -145,6 +150,8 @@ export const prismaAdapter: ORMAdapter = {
           .filter((f) => f.kind !== "object")
           .map((f) => ({
             name: f.name,
+            // `@map("...")` — same null-unless-explicit convention as dbName above.
+            columnName: f.dbName && f.dbName !== f.name ? f.dbName : undefined,
             type: toCanonicalType(f.kind, f.type),
             nativeType: f.nativeType?.[0] ?? f.type,
             isList: f.isList,

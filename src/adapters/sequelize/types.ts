@@ -85,6 +85,9 @@ export interface SequelizeUniqueKey {
 // flag can't.
 export interface SequelizeModel {
   name: string;
+  // The physical table name — pluralised from `name` by default, or the
+  // exact string when `tableName` is set explicitly in Model.init options.
+  tableName?: string;
   rawAttributes: Record<string, SequelizeAttribute>;
   associations: Record<string, SequelizeAssociation>;
   primaryKeyAttributes?: string[];

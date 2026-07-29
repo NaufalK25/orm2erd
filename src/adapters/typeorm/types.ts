@@ -28,6 +28,10 @@ export interface TypeOrmConnectionMetadataBuilderCtor {
 // Mirrors `metadata/ColumnMetadata.ts`.
 export interface TypeOrmColumnMetadata {
   propertyName: string;
+  // The physical column name after the naming strategy runs — equal to
+  // `propertyName` unless an explicit `@Column({ name: "..." })` or a
+  // custom naming strategy (e.g. snake_case) transforms it.
+  databaseName: string;
   type: string | Function;
   isPrimary: boolean;
   isNullable: boolean;
@@ -73,6 +77,10 @@ export interface TypeOrmRelationMetadata {
 // as their own Entity since the Relation they back already implies them.
 export interface TypeOrmEntityMetadata {
   name: string;
+  // The physical table name after the naming strategy runs — equal to
+  // `name` unless an explicit `@Entity("...")`/`@Entity({ name: "..." })`
+  // or a custom naming strategy transforms it.
+  tableName: string;
   tableType:
     | "regular"
     | "view"

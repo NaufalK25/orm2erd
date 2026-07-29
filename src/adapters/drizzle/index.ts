@@ -372,6 +372,10 @@ function extractIndexes(
   return indexes.length > 0 ? indexes : undefined;
 }
 
+// `name`/`getColumnName` below already resolve the physical SQL table/column
+// name (Drizzle has no separate ORM-level model name the way
+// Sequelize/Prisma/TypeORM do), so `Entity.tableName`/`Field.columnName`
+// would always equal `name` here and stay unset — nothing to plumb through.
 function buildEntity(
   name: string,
   tableConfig: DrizzleTableConfig,

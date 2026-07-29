@@ -337,6 +337,10 @@ export const sequelizeAdapter: ORMAdapter = {
 
     const entities = Object.entries(sequelize.models).map(([name, model]) => ({
       name,
+      tableName:
+        model.tableName && model.tableName !== name
+          ? model.tableName
+          : undefined,
       ...extractCompositeKeys(model),
       indexes: extractIndexes(model),
       description: model.options?.comment,
@@ -344,6 +348,8 @@ export const sequelizeAdapter: ORMAdapter = {
         const { key: typeName, isList, values } = resolveAttributeType(attr);
         return {
           name: fieldName,
+          columnName:
+            attr.field && attr.field !== fieldName ? attr.field : undefined,
           type: toCanonicalType(typeName),
           nativeType:
             typeName === "ENUM" ? `enum_${name}_${fieldName}` : typeName,

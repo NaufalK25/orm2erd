@@ -204,6 +204,41 @@ describe("prismaAdapter.extract — descriptions", () => {
   });
 });
 
+describe("prismaAdapter.extract — physical table/column names (#3a)", () => {
+  const schemaPath = join(fixturesDir, "names/schema.prisma");
+
+  it("sets entity.tableName from @@map when it differs from the model name", async () => {
+    const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
+    const model = await prismaAdapter.extract(entry);
+    const archive = model.entities.find((e) => e.name === "CustomerArchive")!;
+    expect(archive.tableName).toBe("tbl_customer");
+  });
+
+  it("sets field.columnName from @map when it differs from the field name", async () => {
+    const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
+    const model = await prismaAdapter.extract(entry);
+    const archive = model.entities.find((e) => e.name === "CustomerArchive")!;
+    expect(archive.fields.find((f) => f.name === "fullName")?.columnName).toBe(
+      "full_name",
+    );
+  });
+
+  it("leaves tableName/columnName undefined when no @@map/@map is declared", async () => {
+    const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
+    const model = await prismaAdapter.extract(entry);
+    const tag = model.entities.find((e) => e.name === "Tag")!;
+    expect(tag.tableName).toBeUndefined();
+    expect(
+      tag.fields.find((f) => f.name === "name")?.columnName,
+    ).toBeUndefined();
+
+    const archive = model.entities.find((e) => e.name === "CustomerArchive")!;
+    expect(
+      archive.fields.find((f) => f.name === "email")?.columnName,
+    ).toBeUndefined();
+  });
+});
+
 describe("prismaAdapter.extract — 1-1 relations, FK on `to` (#1)", () => {
   it("puts the FK-holding side on `to` and the referenced side on `from`", async () => {
     const entry = await prismaAdapter.resolveEntry(

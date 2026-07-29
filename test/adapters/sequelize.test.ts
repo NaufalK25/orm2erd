@@ -363,6 +363,36 @@ describe("sequelizeAdapter.extract — composite keys", () => {
   });
 });
 
+describe("sequelizeAdapter.extract — physical table/column names (#3a)", () => {
+  it("sets entity.tableName when it differs from the model name", async () => {
+    const model = await extractFixture("names.js");
+    const archive = model.entities.find((e) => e.name === "CustomerArchive")!;
+    expect(archive.tableName).toBe("tbl_customer");
+  });
+
+  it("sets field.columnName from attr.field when it differs from the attribute name", async () => {
+    const model = await extractFixture("names.js");
+    const archive = model.entities.find((e) => e.name === "CustomerArchive")!;
+    expect(archive.fields.find((f) => f.name === "fullName")?.columnName).toBe(
+      "full_name",
+    );
+  });
+
+  it("leaves columnName undefined when no explicit `field` is set", async () => {
+    const model = await extractFixture("names.js");
+    const archive = model.entities.find((e) => e.name === "CustomerArchive")!;
+    expect(
+      archive.fields.find((f) => f.name === "email")?.columnName,
+    ).toBeUndefined();
+  });
+
+  it("leaves tableName undefined when no fixture-declared tableName exists", async () => {
+    const model = await extractFixture("named-export.js");
+    const user = model.entities.find((e) => e.name === "User")!;
+    expect(user.tableName).toBeUndefined();
+  });
+});
+
 describe("sequelizeAdapter.extract — isFromOptional (#1)", () => {
   it("sets isFromOptional false for a HasMany-declared 1-n with a NOT NULL FK", async () => {
     const model = await extractFixture("optional-fk.js");

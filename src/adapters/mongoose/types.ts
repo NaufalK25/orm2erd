@@ -41,6 +41,10 @@ export type MongooseIndex = [
 // `mongoose/types/models.d.ts` (~lines 625, 1218).
 export interface MongooseModel {
   modelName: string;
+  // The physical collection name — pluralised+lowercased from `modelName` by
+  // default, or the exact string when set explicitly (schema `collection`
+  // option, or mongoose.model()'s third argument).
+  collection: { name: string };
   schema: {
     paths: Record<string, MongooseSchemaType>;
     indexes(): MongooseIndex[];
