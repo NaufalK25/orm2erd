@@ -1,4 +1,5 @@
 import type { Emitter } from "./types";
+import { relationLabel } from "./label";
 import { compositeUniqueMates } from "./uniques";
 
 // D2 has reserved top-level keywords (shape, classes, near, constraint,
@@ -73,7 +74,7 @@ export const d2Emitter: Emitter = {
             ? "cf-one"
             : "cf-one-required";
       const targetShape = rel.type === "1-1" ? "cf-one" : "cf-many";
-      const label = rel.fieldName ? `: ${rel.fieldName}` : "";
+      const label = relationLabel(rel) ? `: ${relationLabel(rel)}` : "";
       const source = `${quoteIdent(rel.from)}.${quoteIdent(rel.fromColumn)}`;
       const target = `${quoteIdent(rel.to)}.${quoteIdent(rel.toColumn)}`;
       lines.push(

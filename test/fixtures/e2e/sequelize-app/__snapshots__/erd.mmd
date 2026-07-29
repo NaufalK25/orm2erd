@@ -34,6 +34,6 @@ erDiagram
   }
 
   %% Relationships
-  User ||--o{ Post : "posts"
-  Post ||--o{ PostTag : "tagLinks"
-  Tag ||--o{ PostTag : "postLinks"
+  User ||--o{ Post : "posts (authorId)"
+  Post ||--o{ PostTag : "tagLinks (postId)"
+  Tag ||--o{ PostTag : "postLinks (tagId)"

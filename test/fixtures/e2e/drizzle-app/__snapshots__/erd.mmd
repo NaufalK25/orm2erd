@@ -34,7 +34,7 @@ erDiagram
   }
 
   %% Relationships
-  posts ||--o{ post_tags : ""
-  tags ||--o{ post_tags : ""
-  users ||--o{ posts : ""
-  users ||--o| profiles : ""
+  posts ||--o{ post_tags : "post_id"
+  tags ||--o{ post_tags : "tag_id"
+  users ||--o{ posts : "author_id"
+  users ||--o| profiles : "user_id"

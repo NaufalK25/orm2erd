@@ -154,6 +154,33 @@ describe("plantumlEmitter", () => {
     expect(output).toContain('Post }o--o{ Tag : "tags"');
   });
 
+  it("disambiguates two same-alias relations between the same entity pair with the FK column (#2)", () => {
+    const model: ERDModel = {
+      entities: [],
+      relations: [
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fieldName: "posts",
+          toColumn: "authorId",
+        },
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fieldName: "posts",
+          toColumn: "editorId",
+        },
+      ],
+    };
+
+    const output = plantumlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain('User ||--o{ Post : "posts (authorId)"');
+    expect(output).toContain('User ||--o{ Post : "posts (editorId)"');
+  });
+
   it("downgrades the `from` marker to optional when isFromOptional is set", () => {
     const model: ERDModel = {
       entities: [],

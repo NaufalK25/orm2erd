@@ -1,4 +1,5 @@
 import type { Emitter } from "./types";
+import { relationLabel } from "./label";
 import { compositeUniqueMates } from "./uniques";
 
 export const plantumlEmitter: Emitter = {
@@ -74,9 +75,7 @@ export const plantumlEmitter: Emitter = {
           : rel.type === "n-n"
             ? "}o--o{"
             : `${fromMarker}--o|`;
-      lines.push(
-        `  ${rel.from} ${symbol} ${rel.to} : "${rel.fieldName ?? ""}"`,
-      );
+      lines.push(`  ${rel.from} ${symbol} ${rel.to} : "${relationLabel(rel)}"`);
     }
 
     lines.push("@enduml");

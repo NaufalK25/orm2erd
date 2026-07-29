@@ -165,6 +165,33 @@ describe("mermaidEmitter", () => {
     expect(output).toContain(`string name "The user's display name."`);
   });
 
+  it("disambiguates two same-alias relations between the same entity pair with the FK column (#2)", () => {
+    const model: ERDModel = {
+      entities: [],
+      relations: [
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fieldName: "posts",
+          toColumn: "authorId",
+        },
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fieldName: "posts",
+          toColumn: "editorId",
+        },
+      ],
+    };
+
+    const output = mermaidEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain('User ||--o{ Post : "posts (authorId)"');
+    expect(output).toContain('User ||--o{ Post : "posts (editorId)"');
+  });
+
   it("marks composite-unique members UK and notes their group mates (#4a)", () => {
     const model: ERDModel = {
       entities: [

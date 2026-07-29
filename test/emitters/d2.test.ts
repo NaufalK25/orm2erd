@@ -147,19 +147,23 @@ describe("d2Emitter", () => {
 
     const output = d2Emitter.emit(model, { typeMode: "canonical" });
 
-    expect(output).toContain('"Profile"."userId" <-> "User"."id" {');
-    expect(output).toContain('"User"."id" <-> "Post"."authorId" {');
-    expect(output).toContain('"Post"."id" <-> "Tag"."id" {');
+    expect(output).toContain('"Profile"."userId" <-> "User"."id": id {');
+    expect(output).toContain('"User"."id" <-> "Post"."authorId": authorId {');
+    expect(output).toContain('"Post"."id" <-> "Tag"."id": id {');
 
-    const oneToOne = output.split('"Profile"."userId" <-> "User"."id" {')[1];
+    const oneToOne = output.split(
+      '"Profile"."userId" <-> "User"."id": id {',
+    )[1];
     expect(oneToOne).toContain("source-arrowhead.shape: cf-one-required\n");
     expect(oneToOne).toContain("target-arrowhead.shape: cf-one\n");
 
-    const oneToMany = output.split('"User"."id" <-> "Post"."authorId" {')[1];
+    const oneToMany = output.split(
+      '"User"."id" <-> "Post"."authorId": authorId {',
+    )[1];
     expect(oneToMany).toContain("source-arrowhead.shape: cf-one-required\n");
     expect(oneToMany).toContain("target-arrowhead.shape: cf-many\n");
 
-    const manyToMany = output.split('"Post"."id" <-> "Tag"."id" {')[1];
+    const manyToMany = output.split('"Post"."id" <-> "Tag"."id": id {')[1];
     expect(manyToMany).toContain("source-arrowhead.shape: cf-many\n");
     expect(manyToMany).toContain("target-arrowhead.shape: cf-many\n");
   });
@@ -190,11 +194,13 @@ describe("d2Emitter", () => {
     const output = d2Emitter.emit(model, { typeMode: "canonical" });
 
     const oneToOne = output.split(
-      '"Schedule"."id" <-> "ScheduleCrmData"."scheduleId" {',
+      '"Schedule"."id" <-> "ScheduleCrmData"."scheduleId": scheduleId {',
     )[1];
     expect(oneToOne).toContain("source-arrowhead.shape: cf-one\n");
 
-    const oneToMany = output.split('"User"."id" <-> "Post"."authorId" {')[1];
+    const oneToMany = output.split(
+      '"User"."id" <-> "Post"."authorId": authorId {',
+    )[1];
     expect(oneToMany).toContain("source-arrowhead.shape: cf-one\n");
   });
 
@@ -216,7 +222,40 @@ describe("d2Emitter", () => {
     const output = d2Emitter.emit(model, { typeMode: "canonical" });
 
     expect(output).not.toContain('"Post" <-> "Tag"');
-    expect(output).toContain('"User"."id" <-> "Post"."authorId" {');
+    expect(output).toContain('"User"."id" <-> "Post"."authorId": authorId {');
+  });
+
+  it("disambiguates two same-alias relations between the same entity pair with the FK column (#2)", () => {
+    const model: ERDModel = {
+      entities: [],
+      relations: [
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fieldName: "posts",
+          fromColumn: "id",
+          toColumn: "authorId",
+        },
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fieldName: "posts",
+          fromColumn: "id",
+          toColumn: "editorId",
+        },
+      ],
+    };
+
+    const output = d2Emitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain(
+      '"User"."id" <-> "Post"."authorId": posts (authorId) {',
+    );
+    expect(output).toContain(
+      '"User"."id" <-> "Post"."editorId": posts (editorId) {',
+    );
   });
 
   it("marks composite-unique members {constraint:unique} and notes their group mates (#4a)", () => {
