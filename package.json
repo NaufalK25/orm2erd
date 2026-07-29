@@ -15,7 +15,8 @@
     "lint:fix": "oxlint . --fix",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "types": "./dist/index.d.ts",
   "exports": {
@@ -73,6 +74,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "@vitest/coverage-v8": "^4.1.10",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "mongoose": "^9.7.4",
