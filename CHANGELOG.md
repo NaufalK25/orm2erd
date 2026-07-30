@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🏷️ [1.9.0] - 2026-07-30
+
+### 🚀 Added
+
+- **Optional-relation support.** The IR's `Relation` gained `isFromOptional`, marking whether the
+  `from` (referenced/parent) end is optional — i.e. the FK column on the `to` (child) side is
+  nullable, so a child row can exist without a parent. All five adapters now resolve it: Prisma
+  from `field.isRequired`, Sequelize/Drizzle from the FK column's own nullability (both quirkily
+  never set `allowNull`/`notNull` on primary keys, so that's special-cased to always non-nullable),
+  TypeORM from the owning join column's `isNullable`, and Mongoose from `path.isRequired` on
+  whichever side holds the ref. Getting adapters to report this consistently also meant fixing the
+  relation `from`/`to` assignment itself in a few spots (Prisma 1-1, TypeORM one-to-one, Mongoose
+  paired/standalone refs) so the FK-holding side always lands on `to`, matching the invariant every
+  other relation shape already followed. Mermaid renders it directly: the `to` end is always `o`
+  (nothing can force a parent to have a child), while the `from` end downgrades from `||` to `|o`
+  when `isFromOptional` is set.
+- **Physical table/column names in the IR.** `Entity.tableName` and `Field.columnName` are now
+  populated whenever the physical name differs from the logical one — Prisma's `@@map`/`@map`,
+  Sequelize's `tableName`/`field` options, TypeORM's `entityMetadata.tableName`/
+  `column.databaseName`, and Mongoose's `model.collection.name`. Drizzle is exempt: its `name`/
+  `getColumnName()` already resolve the physical SQL name directly (it has no separate ORM-level
+  model name to diverge from), so `tableName`/`columnName` would always just equal `name` there.
+  Not yet rendered by any emitter — this lays the groundwork for surfacing physical names in
+  generated diagrams.
+
+### 💊 Fixed
+
+- Two relations sharing the same alias but different FK columns (e.g. two FKs from the same entity
+  pair) rendered identical, ambiguous edge labels. A new `relationLabel()` helper (`emitters/
+  label.ts`) appends the FK column in parentheses when it differs from the field name — e.g.
+  `author (authorId)` — used by Mermaid, D2, and PlantUML.
+
 ## 🏷️ [1.8.0] - 2026-07-29
 
 ### 🚀 Added
