@@ -70,6 +70,7 @@
     "@clack/prompts": "^1.7.0",
     "@prisma/internals": "^7.8.0",
     "c12": "^3.3.4",
+    "clipboardy": "^5.3.2",
     "commander": "^15.0.0",
     "tsx": "^4.23.1"
   },

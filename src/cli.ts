@@ -1,4 +1,5 @@
 import { Command, Option } from "commander";
+import clipboardy from "clipboardy";
 import pc from "picocolors";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
@@ -48,6 +49,7 @@ interface ProgramOptions {
   typeMode: TypeMode;
   check: boolean;
   stdout: boolean;
+  copy: boolean;
   verbose: boolean;
 }
 
@@ -79,6 +81,10 @@ program
   .option(
     "--stdout",
     "print the diagram to stdout instead of writing a file (single format only)",
+  )
+  .option(
+    "--copy",
+    "copy the diagram to the clipboard instead of writing a file (single format only)",
   )
   .option(
     "--verbose",
@@ -353,6 +359,7 @@ async function generateAndWrite(
   typeMode: TypeMode,
   check: boolean,
   stdout: boolean,
+  copy: boolean,
   verbose: boolean,
   interactive: boolean,
 ): Promise<void> {
@@ -454,6 +461,22 @@ async function generateAndWrite(
           `${icon("✔", "o")}Printed ${selectedEmitters[0].format} diagram to stdout`,
         ),
       );
+    }
+
+    if (copy) {
+      const content = outputs[0].content;
+      await phase("Copying to clipboard…");
+      await clipboardy.write(content);
+      const summary = `Copied ${selectedEmitters[0].format} diagram to clipboard`;
+      if (interactive) {
+        s?.stop(pc.green(`${icon("✔", "o")}${summary}`));
+        outro(pc.green(`${icon("✔", "o")}Done`));
+      } else {
+        statusLog(pc.green(`${icon("✔", "o")}${summary}`));
+      }
+    }
+
+    if (stdout || copy) {
       process.exit(0);
     }
 
@@ -520,10 +543,14 @@ async function main() {
   const formats = await resolveFormats(interactive);
   const selectedEmitters = formats.map(getEmitter);
 
-  if (opts.stdout && selectedEmitters.length > 1) {
+  const singleFormatFlags = [
+    opts.stdout && "--stdout",
+    opts.copy && "--copy",
+  ].filter((flag): flag is string => Boolean(flag));
+  if (singleFormatFlags.length > 0 && selectedEmitters.length > 1) {
     console.error(
       pc.red(
-        `${icon("✖", "x")}Multiple --format values given with --stdout. Pass --format <format> to specify one.`,
+        `${icon("✖", "x")}Multiple --format values given with ${singleFormatFlags.join("/")}. Pass --format <format> to specify one.`,
       ),
     );
     process.exit(1);
@@ -533,9 +560,13 @@ async function main() {
     selectedEmitters.length > 1
       ? "erd"
       : `erd.${selectedEmitters[0].fileExtension}`;
+  // --stdout/--copy never write a file, so the output-path prompt would ask
+  // for something that's never used — skip it regardless of `interactive`.
   const outBase = await expandOutDir(
     opts.out ??
-      (await resolveOutBase(interactive, outExample, selectedEmitters)),
+      (opts.stdout || opts.copy
+        ? "erd"
+        : await resolveOutBase(interactive, outExample, selectedEmitters)),
   );
   const typeMode = await resolveTypeMode(interactive);
 
@@ -548,6 +579,7 @@ async function main() {
     typeMode,
     opts.check,
     opts.stdout,
+    opts.copy,
     opts.verbose,
     interactive,
   );
