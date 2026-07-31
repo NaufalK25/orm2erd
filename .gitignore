@@ -3,6 +3,8 @@ node_modules/
 
 # Build output
 dist/
+# ...except this fixture, which intentionally represents a compiled dist/ layout
+!test/fixtures/mikroorm/detect/conventional-dist-js/dist/
 
 # Env
 .env
