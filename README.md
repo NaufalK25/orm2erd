@@ -151,9 +151,9 @@ erDiagram
   }
 
   %% Relationships
-  User ||--o{ Post : "posts"
-  User ||--o{ Comment : "comments"
-  Post ||--o{ Comment : "comments"
+  User ||--o{ Post : "posts (authorId)"
+  User ||--o{ Comment : "comments (authorId)"
+  Post ||--o{ Comment : "comments (postId)"
   Post }o--o{ Tag : "tags"
 ```
 
@@ -248,7 +248,7 @@ erDiagram
   }
 
   %% Relationships
-  User ||--o{ Post : "posts"
+  User ||--o{ Post : "posts (authorId)"
 ```
 
 ### Flags
