@@ -657,6 +657,16 @@ export const mikroormAdapter: ORMAdapter = {
       );
     }
 
-    return buildModel(Object.values(orm.getMetadata().getAll()));
+    // v6's `getAll()` returns a plain `Dictionary<EntityMetadata>`; v7's
+    // returns a real `Map<string, EntityMetadata>` — the only runtime
+    // behavior difference between the two versions this adapter has to
+    // account for (confirmed by reading each version's compiled
+    // MetadataStorage.js, not assumed from either's .d.ts).
+    const all = orm.getMetadata().getAll();
+    const allMetadata =
+      all instanceof Map
+        ? [...all.values()]
+        : Object.values(all as Record<string, MikroOrmEntityMetadata>);
+    return buildModel(allMetadata);
   },
 };

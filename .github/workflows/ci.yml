@@ -33,3 +33,35 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info
           fail_ci_if_error: false
+
+  # The committed @mikro-orm/core/@mikro-orm/sqlite devDependencies stay
+  # pinned to v6 (the main `ci` job above) since it's still what most
+  # production/NestJS codebases run; this job additionally verifies the
+  # MikroORM adapter against v7 (npm's current `latest` tag) by swapping the
+  # installed version on top of `npm ci` without touching package.json/
+  # package-lock.json.
+  mikroorm-v7:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+      - name: Swap in MikroORM v7
+        run: npm install @mikro-orm/core@7 @mikro-orm/sqlite@7 @mikro-orm/decorators@7 --no-save
+      - name: Run MikroORM adapter/detect tests with coverage
+        run: npx vitest run test/adapters/mikroorm-v7.test.ts test/detect/mikroorm.test.ts --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: mikroorm-v7
+          fail_ci_if_error: false

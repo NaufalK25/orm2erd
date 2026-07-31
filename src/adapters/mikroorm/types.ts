@@ -72,12 +72,16 @@ export interface MikroOrmEntityMetadata {
   pivotTable?: boolean;
 }
 
-// `getAll()`'s real v6 runtime return type is a plain `Dictionary<EntityMetadata>`
-// keyed by entity name — NOT a `Map`, despite what `.d.ts` type hints from
-// other MikroORM versions might suggest. Confirmed by reading the compiled
-// `MetadataStorage.js` in a real v6.6.16 install.
+// `getAll()`'s real runtime return type differs by major version — a plain
+// `Dictionary<EntityMetadata>` keyed by entity name in v6, but a real
+// `Map<string, EntityMetadata>` in v7. Confirmed by reading the compiled
+// `MetadataStorage.js` in both a real v6.6.16 and v7.1.9 install (not
+// assumed from either version's `.d.ts`). The adapter branches on
+// `instanceof Map` to normalize both into an array.
 export interface MikroOrmMetadataStorage {
-  getAll(): Record<string, MikroOrmEntityMetadata>;
+  getAll():
+    | Record<string, MikroOrmEntityMetadata> // v6
+    | Map<string, MikroOrmEntityMetadata>; // v7
 }
 
 export interface MikroOrmInstance {
