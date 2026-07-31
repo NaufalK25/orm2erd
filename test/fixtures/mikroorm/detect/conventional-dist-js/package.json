@@ -1,0 +1,4 @@
+{
+  "name": "conventional-dist-js",
+  "dependencies": { "@mikro-orm/core": "^6.6.16" }
+}

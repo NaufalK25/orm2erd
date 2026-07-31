@@ -1,0 +1,4 @@
+{
+  "name": "conventional-js",
+  "devDependencies": { "@mikro-orm/core": "^6.6.16" }
+}

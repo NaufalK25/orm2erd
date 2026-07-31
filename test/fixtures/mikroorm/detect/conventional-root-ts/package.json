@@ -1,0 +1,4 @@
+{
+  "name": "conventional-root-ts",
+  "dependencies": { "@mikro-orm/core": "^6.6.16" }
+}

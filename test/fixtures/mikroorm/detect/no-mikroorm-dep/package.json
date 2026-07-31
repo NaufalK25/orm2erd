@@ -1,0 +1,4 @@
+{
+  "name": "no-mikroorm-dep",
+  "dependencies": { "express": "^4.0.0" }
+}

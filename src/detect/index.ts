@@ -4,6 +4,7 @@ import { sequelizeDetector } from "./sequelize";
 import { mongooseDetector } from "./mongoose";
 import { typeormDetector } from "./typeorm";
 import { drizzleDetector } from "./drizzle";
+import { mikroormDetector } from "./mikroorm";
 
 export type { Detector, DetectResult } from "./types";
 
@@ -13,6 +14,7 @@ export const detectors: Detector[] = [
   mongooseDetector,
   typeormDetector,
   drizzleDetector,
+  mikroormDetector,
 ];
 
 export interface DetectedORM extends DetectResult {

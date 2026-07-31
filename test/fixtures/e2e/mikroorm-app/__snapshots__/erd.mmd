@@ -1,0 +1,32 @@
+erDiagram
+
+  %% Entities
+  %% Registered application users.
+  User {
+    int id PK
+    string email UK
+    string name "The user's display name."
+  }
+
+  Tag {
+    int id PK
+    string name UK
+  }
+
+  Profile {
+    int id PK
+    string? bio
+    int user_id FK
+  }
+
+  Post {
+    int id PK
+    string title
+    string? content
+    int author_id FK
+  }
+
+  %% Relationships
+  User ||--o{ Post : "posts (author_id)"
+  User ||--o| Profile : "user (user_id)"
+  Post }o--o{ Tag : "tags"

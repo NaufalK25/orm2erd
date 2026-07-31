@@ -1,0 +1,8 @@
+{
+  "name": "e2e-mikroorm-app-fixture",
+  "version": "1.0.0",
+  "dependencies": {
+    "@mikro-orm/core": "^6.6.16",
+    "@mikro-orm/sqlite": "^6.6.16"
+  }
+}

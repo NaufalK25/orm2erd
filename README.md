@@ -46,7 +46,7 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 | <img src="./.github/assets/mongoose.svg" width="16" height="16" alt="Mongoose Icon" style="vertical-align:middle;"> | Mongoose | ✅ Supported |
 | <img src="./.github/assets/typeorm.svg" width="16" height="16" alt="TypeORM Icon" style="vertical-align:middle;"> | TypeORM | ✅ Supported |
 | <img src="./.github/assets/drizzle.svg" width="16" height="16" alt="Drizzle Icon" style="vertical-align:middle;"> | Drizzle | ✅ Supported |
-| | MikroORM | 🚧 Planned |
+| <img src="./.github/assets/mikroorm.svg" width="16" height="16" alt="MikroORM Icon" style="vertical-align:middle;"> | MikroORM | ✅ Supported |
 <!-- | | BookShelf.js | 🚧 Planned | -->
 <!-- | | Waterline | 🚧 Planned | -->
 <!-- | | Objection.js | 🚧 Planned | -->

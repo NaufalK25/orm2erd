@@ -28,6 +28,21 @@ const RULES: HintRule[] = [
       `This looks like an eager database connection attempt at import time (e.g. ".authenticate()"/".sync()"/".connect()" outside a guard) — orm2erd only reads schema metadata and never needs a live DB connection.`,
   },
   {
+    pattern: /No driver specified|No database specified/,
+    hint: () =>
+      `MikroORM's config needs a real "driver" and "dbName"/"clientUrl" — use \`defineConfig\` from your driver package (e.g. \`import { defineConfig } from "@mikro-orm/postgresql"\`) rather than a plain options object with no driver.`,
+  },
+  {
+    pattern: /Please provide either 'type' or 'entity' attribute in (\S+)/,
+    hint: (match) =>
+      `MikroORM property "${match[1]}" has no explicit type and relies on "emitDecoratorMetadata" reflection to infer it, which orm2erd's lightweight TS transform doesn't emit — add an explicit \`type\`/\`entity\` option to that property's decorator, or configure @mikro-orm/reflection's TsMorphMetadataProvider in the target's own config.`,
+  },
+  {
+    pattern: /Cannot read properties of undefined \(reading 'constructor'\)/,
+    hint: () =>
+      `This looks like a MikroORM decorator running under the wrong calling convention — check that a tsconfig.json with "experimentalDecorators": true is discoverable above the entity files (and, if you're relying on implicit property types, "emitDecoratorMetadata": true too).`,
+  },
+  {
     pattern:
       /is not defined in ES module scope|Unexpected token ['"]export['"]|require is not defined/,
     hint: () =>

@@ -1,0 +1,4 @@
+{
+  "name": "no-candidates",
+  "dependencies": { "@mikro-orm/core": "^6.6.16" }
+}

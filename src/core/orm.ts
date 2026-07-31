@@ -1,2 +1,2 @@
 export type ORMName =
-  "prisma" | "sequelize" | "mongoose" | "typeorm" | "drizzle";
+  "prisma" | "sequelize" | "mongoose" | "typeorm" | "drizzle" | "mikroorm";

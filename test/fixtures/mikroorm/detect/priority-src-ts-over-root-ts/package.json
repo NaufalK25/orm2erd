@@ -1,0 +1,4 @@
+{
+  "name": "priority-src-ts-over-root-ts",
+  "dependencies": { "@mikro-orm/core": "^6.6.16" }
+}

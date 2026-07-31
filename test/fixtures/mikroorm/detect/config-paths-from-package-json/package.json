@@ -1,0 +1,5 @@
+{
+  "name": "config-paths-from-package-json",
+  "dependencies": { "@mikro-orm/core": "^6.6.16" },
+  "mikro-orm": { "configPaths": ["config/custom.config.ts"] }
+}

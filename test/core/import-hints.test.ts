@@ -24,6 +24,27 @@ describe("friendlyImportHint", () => {
     expect(friendlyImportHint(err)).toMatch(/database connection/);
   });
 
+  it("hints at a missing driver/dbName for a MikroORM config validation error", () => {
+    const err = new Error(
+      "No driver specified, please fill in the `driver` option or use `defineConfig` helper",
+    );
+    expect(friendlyImportHint(err)).toMatch(/defineConfig/);
+  });
+
+  it("hints at an explicit type/entity option for a MikroORM implicit-type error", () => {
+    const err = new Error(
+      "Please provide either 'type' or 'entity' attribute in User.id.",
+    );
+    expect(friendlyImportHint(err)).toMatch(/User\.id/);
+  });
+
+  it("hints at experimentalDecorators for a MikroORM decorator calling-convention crash", () => {
+    const err = new Error(
+      "Cannot read properties of undefined (reading 'constructor')",
+    );
+    expect(friendlyImportHint(err)).toMatch(/experimentalDecorators/);
+  });
+
   it("hints at a CJS/ESM mismatch for an ES-module-scope error", () => {
     const err = new Error("__dirname is not defined in ES module scope");
     expect(friendlyImportHint(err)).toMatch(/CommonJS\/ESM mismatch/);

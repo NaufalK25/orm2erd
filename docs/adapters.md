@@ -347,3 +347,120 @@ file(s):
   instance's `sqlToQuery` — a pure query-builder call needing no live DB connection. A default
   that fails to stringify (`drizzle-kit` itself only supports param-free `sql` default
   expressions) is left undefined rather than surfacing an internal error for a display-only value.
+
+## MikroORM
+
+Targets MikroORM v6 (`@mikro-orm/core@^6`) — classic `@Entity()`/`@Property()`/... decorators, the
+dominant style in existing production/NestJS codebases. (v7 moved decorators to a different import
+path and promotes a newer `defineEntity()` API instead; not targeted, though the discovery
+mechanism below is unchanged between the two versions.)
+
+**Detect** — [`src/detect/mikroorm.ts`](../src/detect/mikroorm.ts)
+
+- Requires `@mikro-orm/core` in `dependencies`/`devDependencies`.
+- Resolves the config file the same way MikroORM's own CLI does (`ConfigurationLoader.getConfigPaths()`,
+  minus its `MIKRO_ORM_CLI_CONFIG` env-var tier, which has no filesystem convention to check):
+  `package.json`'s `"mikro-orm": { "configPaths": [...] }` first, then a fixed priority list —
+  `src/mikro-orm.config.ts`, `mikro-orm.config.ts`, `dist/mikro-orm.config.js`,
+  `build/mikro-orm.config.js`, `src/mikro-orm.config.js`, `mikro-orm.config.js`. Like Drizzle's
+  config resolution, this is a single well-known priority chain the tool itself falls back
+  through, not several sibling conventions worth flagging as ambiguous — only the highest-priority
+  file that actually exists is suggested.
+
+**Parse** — [`src/adapters/mikroorm/index.ts`](../src/adapters/mikroorm/index.ts)
+
+The entry is the config file. Unlike TypeORM, this never needs TypeORM's private
+`ConnectionMetadataBuilder`-style reach-in — `MikroORM.init()`/`.getMetadata()` is MikroORM's own
+public, documented API, and (unlike the `.d.ts` for some versions implies) `getMetadata().getAll()`
+returns a plain `Dictionary<EntityMetadata>` in v6, not a `Map` — confirmed by reading the compiled
+`MetadataStorage.js`, not assumed from the type declarations.
+
+- The config file's default export is loaded via `tsImport()` and duck-typed as either a plain
+  options object (the standard `defineConfig({...})` convention — has an `entities`/`entitiesTs`/
+  `driver` field) or an already-initialized instance/promise (a bootstrap file that calls
+  `MikroORM.init(...)` itself and exports the result) — tolerating one level of double-wrapped
+  default export, same as the Drizzle adapter's config loader. For the instance/promise case,
+  orm2erd can't force `connect: false`/`preferTs` (see below), so it depends on the target's own
+  call already being safe to run without a reachable database.
+- For the options-object case, `entities`/`entitiesTs` accept directory paths to scan (MikroORM's
+  "folder-based discovery"), not just explicit classes — `entitiesTs` (TS source) is preferred over
+  `entities` (compiled output) when present. MikroORM auto-detects whether it's running under
+  ts-node/tsx via `Utils.detectTypeScriptSupport()` (checking `process.argv`/`execArgv` for
+  `node_modules/tsx/`-style markers), which never matches orm2erd's own process (it calls
+  `tsImport()` programmatically, not via a loader flag) — so `preferTs: true` is always forced in
+  the options this adapter builds, or MikroORM would default to scanning nonexistent compiled
+  `entities` output instead.
+- **`connect: false` is a hard requirement, not just hygiene**: `MikroORM.init()` defaults
+  `connect: true` in v6 and, *after* discovery succeeds, does `if (config.get('connect')) await
+  orm.connect()` — if that throws (an unreachable DB, which it will be from orm2erd's process),
+  the whole `init()` call rejects and metadata is never returned even though discovery already
+  completed. Always forced off for the options-object path.
+- Folder-based discovery calls `Utils.dynamicImport(path)` per matched file — a real dynamic
+  `import()`, not `require()` — and `Utils` exposes an explicit override hook,
+  `Utils.dynamicImportProvider` (a static property on the target's own imported `Utils` class,
+  resolved via `createRequire` like the Drizzle adapter's own dependency loads). Set to a
+  `tsImport`-backed function before the config file is even loaded, this routes every file
+  MikroORM's own scanner touches through orm2erd's existing loader instead of a plain `import()`.
+- Classic decorators still need real `tsc`, though for a narrower reason than TypeORM: MikroORM's
+  default `ReflectMetadataProvider` only needs `emitDecoratorMetadata`-derived `design:type`
+  reflection for a property with **no explicit `type`/`entity` option** — MikroORM itself throws a
+  clear, catchable error for exactly that case ("provide either 'type' or 'entity' attribute"),
+  rather than TypeORM's more opaque failure modes. Since sniffing which properties need it isn't
+  worth the complexity, any `.ts` `entitiesTs` directory is unconditionally compiled with the
+  target's own `typescript` + nearest `tsconfig.json` (forcing `--experimentalDecorators
+  --emitDecoratorMetadata` via CLI flags — safe to force since v6 has no alternative decorator
+  style to conflict with), reusing the same temp-dir-with-pinned-`package.json` approach as the
+  TypeORM adapter's `runTargetTsc`. The compiled directory path is then substituted into `entities`
+  in place of the original `entitiesTs` entry — MikroORM's own scanner does the rest.
+- No standalone public "discover these paths for me" helper exists in v6 (that's a v7 addition,
+  `@mikro-orm/core/file-discovery`) — directory-path strings (original or tsc-compiled-mirrored)
+  are passed straight into the `entities` array of orm2erd's own `MikroORM.init()` call, and
+  MikroORM's internal folder scan handles the rest, exactly as it would for a real project.
+- Fields: canonical type is decided from `EntityProperty.type`, normalized by stripping a trailing
+  `"Type"` suffix first — empirically, `type` isn't always the short registry key (`types.decimal`
+  round-trips as `"DecimalType"`, not `"decimal"`) — falling back to the real driver SQL type
+  (`columnTypes[0]`, trimmed of any `"(precision,scale)"` suffix) and then `runtimeType`
+  (`'number'|'string'|'boolean'|...`) for anything still unrecognized.
+- MikroORM never exposes an owning relation's physical FK column as its own scalar
+  `EntityProperty` the way TypeORM does — there's no synthetic `"authorId"` property, `author`
+  (with `fieldNames: ['author_id']`) *is* the relation. A `Field` is synthesized for it instead (for
+  `m:1`/`1:1` owning props only — an owning `m:n` prop's `fieldNames` is just a bookkeeping echo of
+  its own property name, not a real column on this table, since the join lives in the pivot table),
+  typed off the referenced entity's own PK field(s) via `targetMeta`, paired positionally with
+  `referencedColumnNames`.
+- `@Embedded()`: MikroORM flattens embedded properties into `EntityMetadata.props` itself before
+  this adapter ever sees them, and the two embedding modes leave opposite traces. Inline (the
+  default) leaves the wrapper property with no column of its own (`columnTypes: []`) — only its
+  already-flattened leaf properties (`kind: "scalar"`, real prefixed `fieldNames`, e.g.
+  `address_street`) are physical, so the plain `kind === "scalar"` field filter already picks
+  those up correctly with no special-casing. `{ object: true }` is the reverse: the wrapper
+  property itself (`kind: "embedded"`, `object: true`) becomes the one physical column, storing the
+  whole thing as JSON — resolved to canonical type `"json"` via the normal `columnTypes[0]`
+  fallback tier, no override needed — and MikroORM additionally synthesizes a `persist: false`
+  scalar mirror per embedded field (named `wrapper~field`) purely for JSON-path querying, which the
+  field filter excludes via `persist !== false` (this also incidentally excludes any other
+  `persist: false` computed/formula property, which was never a physical column either). A relation
+  is never emitted for either mode — `"embedded"` is the only non-`"scalar"` kind that isn't handled
+  by one of `buildRelation`'s relation-kind cases, falling through to its `default: undefined`.
+- Composite keys: `compositePK`/`primaryKeys` (already property names, matching `Field.name`) carry
+  a composite PK. Multi-column uniques come from `EntityMetadata.uniques` entries with >1
+  `properties`; single-column ones from there, *or* directly from a scalar property's own `unique`
+  flag (`@Property({ unique: true })`) — MikroORM keeps these two mechanisms separate, unlike
+  TypeORM funneling both into one place.
+- Descriptions: `Entity.description`/`Field.description` come from `@Entity({ comment })`/
+  `@Property({ comment })`.
+- Plain indexes: `EntityMetadata.indexes` entries (each `properties: string | string[]` resolved to
+  an array) are carried onto `Entity.indexes` — uniques are already covered above.
+- Relations: one `EntityProperty` exists per declared side (`User.posts` and `Post.author` are two
+  separate properties paired via `mappedBy`/`inversedBy`) — each kind is emitted from exactly one
+  side to avoid double-counting, the same `.inverseRelation`-style dedup as the TypeORM adapter:
+  `1:m` emits from the "one" side (the FK column/`deleteRule`/`updateRule` belong to the paired
+  `m:1` property found via `mappedBy`); `m:1` only emits standalone if unpaired (no `inversedBy`);
+  `1:1`/`m:n` only emit from the owning side (`owner: true`).
+- MikroORM's own synthesized implicit `m:n` pivot-table metadata (marked `pivotTable: true`) is
+  filtered out before building entities — never a real user-declared entity, same idea as
+  TypeORM's synthetic junction-table filtering, just a different marker.
+- Relation actions: `deleteRule`/`updateRule` (**not** `cascade`, an unrelated ORM-level
+  persist/merge/remove concept MikroORM deliberately decoupled from these in v7) map onto
+  `Relation.onDelete`/`.onUpdate` — already close to the IR's own lowercase spelling, so this is
+  mostly a pass-through table.

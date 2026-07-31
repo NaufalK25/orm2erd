@@ -41,6 +41,11 @@ const cases: Case[] = [
     dir: "drizzle-app",
     expectedCandidate: "drizzle.config.ts",
   },
+  {
+    orm: "mikroorm",
+    dir: "mikroorm-app",
+    expectedCandidate: "mikro-orm.config.ts",
+  },
 ];
 
 describe.each(cases)("$orm app fixture", ({ orm, dir, expectedCandidate }) => {
