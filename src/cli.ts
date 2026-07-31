@@ -1,42 +1,24 @@
 import { Command, Option } from "commander";
-import clipboardy from "clipboardy";
 import pc from "picocolors";
-import { mkdir, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { dirname } from "node:path";
-import type { Writable } from "node:stream";
-import {
-  intro,
-  outro,
-  text,
-  select,
-  spinner,
-  isCancel,
-  cancel,
-  log,
-  isTTY,
-  isCI,
-  unicode,
-} from "@clack/prompts";
-import { DetectedORM, detectORMs } from "./detect";
-import { adapters, getAdapter, ORMAdapter } from "./adapters";
-import { Emitter, emitters, getEmitter } from "./emitters";
-import { withSuppressedOutput } from "./core/suppress-output";
-import { withGuardedExit } from "./core/guard-exit";
-import type { OutputFormat, TypeMode } from "./core/format";
+import { intro, isCI, isTTY } from "@clack/prompts";
+import { detectORMs } from "./detect";
+import { getAdapter } from "./adapters";
+import { getEmitter } from "./emitters";
+import type { TypeMode } from "./core/format";
 import type { ORMName } from "./core/orm";
 import type { PackageJson } from "./core/package";
+import { expandOutDir } from "./core/out-path";
+import { icon } from "./cli/render";
 import {
-  checkOutput,
-  diffWords,
-  type DiffRow,
-  type DiffSegment,
-} from "./core/check";
-import { friendlyImportHint } from "./core/import-hints";
-import { gridMultiselect } from "./core/grid-multiselect";
-import { expandOutDir, resolveOutPath } from "./core/out-path";
-
-const ALL_ORM_NAMES = Object.keys(adapters) as ORMName[];
+  ALL_ORM_NAMES,
+  resolveEntryPath,
+  resolveFormats,
+  resolveORM,
+  resolveOutBase,
+  resolveTypeMode,
+} from "./cli/resolve";
+import { generateAndWrite } from "./cli/run";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../package.json") as PackageJson;
@@ -111,413 +93,6 @@ ${pc.bold("Examples:")}
 
 const opts = program.opts<ProgramOptions>();
 
-// Emoji only render where the terminal's locale/environment signals support
-// for it (same heuristic @clack/prompts uses for its own box-drawing
-// characters); everywhere else falls back to plain ASCII, or nothing for
-// purely decorative icons.
-function icon(symbol: string, fallback = ""): string {
-  if (unicode) return `${symbol} `;
-  return fallback ? `${fallback} ` : "";
-}
-
-// Renders one side of a "change" row: the prefix and changed words in yellow
-// (bold), unchanged words dimmed so the eye lands on what actually changed.
-function renderChangedSide(prefix: string, segments: DiffSegment[]): string {
-  const body = segments
-    .map((seg) =>
-      seg.changed ? pc.bold(pc.yellow(seg.text)) : pc.dim(seg.text),
-    )
-    .join("");
-  return pc.yellow(prefix) + body;
-}
-
-// Renders classified diff rows for the terminal: additions green, removals red,
-// and edits ("change") as a yellow before/after pair with only the changed
-// words highlighted. The ---/+++ headers are dimmed. picocolors auto-disables
-// when output isn't a TTY (e.g. a CI log), so this degrades to plain text there.
-function renderDiff(path: string, rows: DiffRow[]): string {
-  const out = [
-    pc.dim(`--- ${path} (on disk)`),
-    pc.dim(`+++ ${path} (regenerated)`),
-  ];
-
-  for (const row of rows) {
-    if (row.kind === "add") {
-      out.push(pc.green(`+ ${row.line}`));
-    } else if (row.kind === "remove") {
-      out.push(pc.red(`- ${row.line}`));
-    } else {
-      const { removed, added } = diffWords(row.before, row.after);
-      out.push(renderChangedSide("- ", removed));
-      out.push(renderChangedSide("+ ", added));
-    }
-  }
-
-  return out.join("\n");
-}
-
-// Unwraps a clack prompt result, exiting cleanly on Ctrl+C instead of
-// letting the cancel symbol leak into the rest of the pipeline.
-function orExit<T>(value: T | symbol): T {
-  if (isCancel(value)) {
-    cancel(pc.red(`${icon("🚫", "x")}Cancelled.`));
-    process.exit(0);
-  }
-  return value;
-}
-
-async function resolveORM(
-  detected: DetectedORM[],
-  interactive: boolean,
-): Promise<{ ormName: ORMName; entryCandidates: string[] }> {
-  let ormName: ORMName | undefined = opts.orm;
-  let entryCandidates: string[] = [];
-
-  if (!ormName) {
-    if (detected.length === 1) {
-      ormName = detected[0].name;
-      entryCandidates = detected[0].candidates;
-      if (interactive) {
-        log.step(`${icon("🔍")}Detected: ${ormName}`);
-      }
-    } else if (detected.length > 1) {
-      if (!interactive) {
-        console.error(
-          pc.red(
-            `${icon("✖", "x")}Multiple ORMs detected (${detected.map((d) => d.name).join(", ")}). Pass --orm <name> to specify one.`,
-          ),
-        );
-        process.exit(1);
-      }
-      ormName = orExit(
-        await select({
-          message: `${icon("🔍")}Multiple ORMs detected — which one?`,
-          options: detected.map((d) => ({
-            value: d.name,
-            label: d.name,
-            hint: `confidence ${d.confidence}`,
-          })),
-        }),
-      );
-      entryCandidates =
-        detected.find((d) => d.name === ormName)?.candidates ?? [];
-    } else {
-      if (!interactive) {
-        console.error(
-          pc.red(
-            `${icon("✖", "x")}No supported ORM detected. Pass --orm <name> to specify one.`,
-          ),
-        );
-        process.exit(1);
-      }
-      ormName = orExit(
-        await select({
-          message: `${icon("🔍")}No supported ORM detected. Which one are you using?`,
-          options: ALL_ORM_NAMES.map((name) => ({ value: name, label: name })),
-        }),
-      );
-    }
-  } else {
-    entryCandidates =
-      detected.find((d) => d.name === ormName)?.candidates ?? [];
-  }
-
-  return { ormName, entryCandidates };
-}
-
-async function resolveEntryPath(
-  ormName: ORMName,
-  entryCandidates: string[],
-  interactive: boolean,
-): Promise<string> {
-  if (entryCandidates.length > 1) {
-    // Ambiguous: e.g. Prisma with both a single schema.prisma and a
-    // multi-file prisma/schema/ directory present at once.
-    if (interactive) {
-      return orExit(
-        await select({
-          message: `${icon("📁")}Multiple possible entry points found for ${ormName} — which one?`,
-          options: entryCandidates.map((c) => ({ value: c, label: c })),
-        }),
-      );
-    }
-    console.error(
-      pc.red(
-        `${icon("✖", "x")}Multiple possible entry points found for ${ormName}:\n` +
-          entryCandidates.map((c) => `  - ${c}`).join("\n") +
-          `\nPass --entry <path> to specify one.`,
-      ),
-    );
-    process.exit(1);
-  }
-
-  if (interactive) {
-    const suggestedEntry = entryCandidates[0];
-    return orExit(
-      await text({
-        message: `${icon("📄")}Entry point for ${ormName}:`,
-        initialValue: suggestedEntry,
-        placeholder: suggestedEntry ?? "./path/to/schema",
-        validate: (value) => (value ? undefined : "Entry path is required."),
-      }),
-    );
-  }
-
-  if (entryCandidates.length === 1) {
-    return entryCandidates[0];
-  }
-
-  console.error(
-    pc.red(
-      `${icon("✖", "x")}No entry point found for ${ormName}. Pass --entry <path> to specify one.`,
-    ),
-  );
-  process.exit(1);
-}
-
-async function resolveFormats(interactive: boolean): Promise<OutputFormat[]> {
-  let formats: OutputFormat[];
-
-  if (opts.format?.trim().toLowerCase() === "all") {
-    return Object.keys(emitters) as OutputFormat[];
-  }
-
-  if (opts.format) {
-    formats = (opts.format as string)
-      .split(",")
-      .map((f) => f.trim())
-      .filter(Boolean) as OutputFormat[];
-  } else if (interactive) {
-    const available = Object.keys(emitters) as OutputFormat[];
-    formats = orExit(
-      await gridMultiselect({
-        message: `${icon("🎨")}Output format(s):`,
-        options: available.map((f) => ({ value: f, label: f })),
-        initialValues: available.includes("mermaid") ? ["mermaid"] : [],
-        required: true,
-      }),
-    );
-  } else {
-    formats = ["mermaid"];
-  }
-  return formats;
-}
-
-async function resolveTypeMode(interactive: boolean): Promise<TypeMode> {
-  if (opts.typeMode) {
-    return opts.typeMode;
-  }
-  if (interactive) {
-    return orExit(
-      await select({
-        message: `${icon("🏷️ ")}Type labels:`,
-        options: [
-          {
-            value: "canonical",
-            label: "Canonical",
-            hint: "portable across ORMs",
-          },
-          { value: "native", label: "Native", hint: "ORM-specific type names" },
-        ],
-        initialValue: "canonical",
-      }),
-    );
-  }
-  return "canonical";
-}
-
-async function resolveOutBase(
-  interactive: boolean,
-  outExample: string,
-  selectedEmitters: Emitter[],
-): Promise<string> {
-  if (interactive) {
-    const preview =
-      selectedEmitters.length > 1
-        ? ` (writes ${selectedEmitters
-            .map((e) => `${outExample}.${e.fileExtension}`)
-            .join(", ")})`
-        : "";
-    return orExit(
-      await text({
-        message: `${icon("💾")}Output path:${preview}`,
-        initialValue: outExample,
-        defaultValue: outExample,
-      }),
-    );
-  }
-
-  return "erd";
-}
-
-async function generateAndWrite(
-  cwd: string,
-  adapter: ORMAdapter,
-  entryPath: string,
-  selectedEmitters: Emitter[],
-  outBase: string,
-  typeMode: TypeMode,
-  check: boolean,
-  stdout: boolean,
-  copy: boolean,
-  verbose: boolean,
-  interactive: boolean,
-): Promise<void> {
-  // withSuppressedOutput below patches process.stdout.write to a no-op
-  // during extract(), which would also swallow the spinner's own renders.
-  // Capture the real write fn before that patch exists so the spinner can
-  // bypass it.
-  const realStdoutWrite = process.stdout.write.bind(process.stdout);
-  const spinnerOutput = {
-    write: realStdoutWrite,
-    get columns() {
-      return process.stdout.columns;
-    },
-  } as unknown as Writable;
-
-  // No indicator: "timer" — its digits can't tick during the synchronous
-  // block below and freeze on a number, which reads as broken; a static
-  // glyph doesn't carry that expectation.
-  const s = interactive ? spinner({ output: spinnerOutput }) : undefined;
-  let spinnerStarted = false;
-  // --stdout writes the diagram itself to stdout, so status/log lines are
-  // routed to stderr instead — keeps `orm2erd --stdout | some-tool` clean.
-  const statusLog = stdout ? console.error : console.log;
-  const phase = async (label: string) => {
-    const line = `${icon("⚙️ ")}${label}`;
-    if (interactive) {
-      if (!spinnerStarted) {
-        s?.start(line);
-        spinnerStarted = true;
-      } else {
-        s?.message(line);
-      }
-      // The spinner only paints from its own ~80-120ms interval. Some phases
-      // (e.g. importing the target's models) are one long synchronous block
-      // that starves that interval entirely, so without yielding here first,
-      // the label would never render before the block already finished.
-      await new Promise((resolve) => setTimeout(resolve, 150));
-    } else {
-      statusLog(line);
-    }
-  };
-
-  try {
-    await phase("Resolving entry…");
-    const entry = await adapter.resolveEntry(entryPath, cwd);
-
-    await phase("Parsing schema…");
-    const model = await withGuardedExit(() =>
-      verbose
-        ? adapter.extract(entry)
-        : withSuppressedOutput(() => adapter.extract(entry)),
-    );
-
-    await phase("Generating diagram(s)…");
-    const allExtensions = selectedEmitters.map((e) => e.fileExtension);
-    const outputs = selectedEmitters.map((emitter) => ({
-      path: resolveOutPath(outBase, emitter.fileExtension, allExtensions),
-      content: emitter.emit(model, { typeMode }),
-    }));
-
-    if (check) {
-      const results = await Promise.all(
-        outputs.map((o) => checkOutput(o.path, o.content)),
-      );
-      const failed = results.filter((r) => r.status !== "ok");
-
-      if (failed.length === 0) {
-        console.log(
-          pc.green(
-            `${icon("✔", "o")}ERD up to date (${results.map((r) => r.path).join(", ")})`,
-          ),
-        );
-        process.exit(0);
-      }
-
-      for (const r of failed) {
-        if (r.status === "missing") {
-          console.error(
-            pc.red(
-              `${icon("✖", "x")}${r.path} does not exist — run without --check to create it`,
-            ),
-          );
-        } else {
-          console.error(
-            pc.yellow(`${icon("≠", "~")}${r.path} is out of date:`),
-          );
-          console.error(renderDiff(r.path, r.rows ?? []));
-        }
-      }
-      console.error(pc.dim("\nRun orm2erd without --check to regenerate."));
-      process.exit(1);
-    }
-
-    if (stdout) {
-      const content = outputs[0].content;
-      realStdoutWrite(content.endsWith("\n") ? content : `${content}\n`);
-      statusLog(
-        pc.dim(
-          `${icon("✔", "o")}Printed ${selectedEmitters[0].format} diagram to stdout`,
-        ),
-      );
-    }
-
-    if (copy) {
-      const content = outputs[0].content;
-      await phase("Copying to clipboard…");
-      await clipboardy.write(content);
-      const summary = `Copied ${selectedEmitters[0].format} diagram to clipboard`;
-      if (interactive) {
-        s?.stop(pc.green(`${icon("✔", "o")}${summary}`));
-        outro(pc.green(`${icon("✔", "o")}Done`));
-      } else {
-        statusLog(pc.green(`${icon("✔", "o")}${summary}`));
-      }
-    }
-
-    if (stdout || copy) {
-      process.exit(0);
-    }
-
-    await phase("Writing output…");
-    const outDir = dirname(outBase);
-    if (outDir !== ".") {
-      await mkdir(outDir, { recursive: true });
-    }
-
-    const written: string[] = [];
-    for (const { path, content } of outputs) {
-      await writeFile(path, content, "utf-8");
-      written.push(path);
-    }
-
-    const summary = `Written to ${written.join(", ")}`;
-    if (interactive) {
-      s?.stop(pc.green(`${icon("✔", "o")}${summary}`));
-      outro(pc.green(`${icon("✔", "o")}Done`));
-    } else {
-      console.log(pc.green(`${icon("✔", "o")}${summary}`));
-    }
-
-    // Importing the target codebase can leave open handles (DB connection,
-    // timers) that would otherwise hold the event loop open forever.
-    process.exit(0);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    const hint = friendlyImportHint(err);
-    const fullMessage = hint ? `${message}\n${pc.dim(hint)}` : message;
-    if (interactive) {
-      s?.error(fullMessage);
-      outro(pc.red(`${icon("✖", "x")}Failed`));
-    } else {
-      console.error(pc.red(`${icon("✖", "x")}${message}`));
-      if (hint) console.error(pc.dim(hint));
-    }
-    process.exit(1);
-  }
-}
-
 async function main() {
   const cwd = process.cwd();
   // isCI() is also checked because some CI runners still report a TTY.
@@ -534,13 +109,17 @@ async function main() {
   const skipDetection = Boolean(opts.orm) && Boolean(opts.entry);
   const detected = skipDetection ? [] : await detectORMs(cwd);
 
-  const { ormName, entryCandidates } = await resolveORM(detected, interactive);
+  const { ormName, entryCandidates } = await resolveORM(
+    detected,
+    interactive,
+    opts.orm,
+  );
   const adapter = getAdapter(ormName);
   const entryPath =
     opts.entry ??
     (await resolveEntryPath(ormName, entryCandidates, interactive));
 
-  const formats = await resolveFormats(interactive);
+  const formats = await resolveFormats(interactive, opts.format);
   const selectedEmitters = formats.map(getEmitter);
 
   const singleFormatFlags = [
@@ -568,7 +147,7 @@ async function main() {
         ? "erd"
         : await resolveOutBase(interactive, outExample, selectedEmitters)),
   );
-  const typeMode = await resolveTypeMode(interactive);
+  const typeMode = await resolveTypeMode(interactive, opts.typeMode);
 
   await generateAndWrite(
     cwd,

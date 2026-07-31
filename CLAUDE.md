@@ -23,7 +23,13 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 
 ```
 src/
-  cli.ts             # commander flags + @clack/prompts interactive flow; drives the pipeline
+  cli.ts             # commander flags + main(); wires src/cli/* together, no logic of its own
+  cli/
+    render.ts        # icon/orExit/renderDiff — pure terminal-rendering helpers, no I/O
+    resolve.ts        # resolveORM/resolveEntryPath/resolveFormats/resolveTypeMode/resolveOutBase
+                       # (prompt-or-flag resolution, one function per CLI concern)
+    run.ts             # generateAndWrite: phase reporter (spinner/status lines) + the
+                        # check/stdout/copy/write-file execution paths
   detect/            # index.ts (registry + detectORMs) + one file per ORM + shared.ts (scan helpers)
   adapters/          # types.ts (ORMAdapter/ResolvedEntry) + index.ts (registry) + one folder per ORM
   core/
