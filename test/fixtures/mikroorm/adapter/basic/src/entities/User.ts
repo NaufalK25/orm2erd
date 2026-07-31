@@ -1,4 +1,5 @@
-import { Collection, Entity, OneToMany, PrimaryKey, Property } from "@mikro-orm/core";
+import { Collection } from "@mikro-orm/core";
+import { Entity, OneToMany, PrimaryKey, Property } from "@mikro-orm/decorators/legacy";
 import { Post } from "./Post";
 
 @Entity({ tableName: "users", comment: "App users" })

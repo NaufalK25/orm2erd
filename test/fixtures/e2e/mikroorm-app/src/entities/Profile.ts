@@ -1,4 +1,4 @@
-import { Entity, OneToOne, PrimaryKey, Property } from "@mikro-orm/core";
+import { Entity, OneToOne, PrimaryKey, Property } from "@mikro-orm/decorators/legacy";
 import { User } from "./User";
 
 @Entity({ tableName: "profiles" })

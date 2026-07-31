@@ -1,4 +1,11 @@
-import { Collection, Entity, OneToMany, OneToOne, PrimaryKey, Property } from "@mikro-orm/core";
+import { Collection } from "@mikro-orm/core";
+import {
+  Entity,
+  OneToMany,
+  OneToOne,
+  PrimaryKey,
+  Property,
+} from "@mikro-orm/decorators/legacy";
 import { Post } from "./Post";
 import { Profile } from "./Profile";
 

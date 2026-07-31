@@ -4,7 +4,7 @@ import {
   Entity,
   PrimaryKey,
   Property,
-} from "@mikro-orm/core";
+} from "@mikro-orm/decorators/legacy";
 
 @Embeddable()
 export class Address {

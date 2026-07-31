@@ -1,4 +1,5 @@
-import { Entity, PrimaryKey, Property, Type } from "@mikro-orm/core";
+import { Type } from "@mikro-orm/core";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/decorators/legacy";
 
 // A Type subclass whose column type has no corresponding entry in the
 // adapter's canonical-type lookup tables, forcing the runtimeType fallback.

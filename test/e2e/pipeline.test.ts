@@ -58,6 +58,10 @@ describe.each(cases)("$orm app fixture", ({ orm, dir, expectedCandidate }) => {
     expect(match?.candidates).toContain(expectedCandidate);
   });
 
+  // Real `tsc` spawns (typeorm/mikroorm) put this close enough to the default
+  // 5s budget to flake under a fully-loaded parallel test run — same
+  // reasoning as the equivalent bump in test/adapters/mikroorm.test.ts's
+  // "no entities discovered" case.
   it("resolves, extracts, and emits a non-trivial ERD matching the golden snapshot", async () => {
     const detected = await detectORMs(cwd);
     const match = detected.find((d) => d.name === orm)!;
@@ -77,5 +81,5 @@ describe.each(cases)("$orm app fixture", ({ orm, dir, expectedCandidate }) => {
     await expect(dbml).toMatchFileSnapshot(
       join(cwd, "__snapshots__", "erd.dbml"),
     );
-  });
+  }, 15_000);
 });

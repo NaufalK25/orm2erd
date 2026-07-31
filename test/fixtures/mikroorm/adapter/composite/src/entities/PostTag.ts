@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, Unique } from "@mikro-orm/core";
+import { Entity, PrimaryKey, Property, Unique } from "@mikro-orm/decorators/legacy";
 
 // Composite primary key (two @PrimaryKey) + a multi-column @Unique. The
 // single-column `slug` unique stays on the field, not the group — mirrors

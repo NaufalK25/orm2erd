@@ -350,10 +350,18 @@ file(s):
 
 ## MikroORM
 
-Targets MikroORM v6 (`@mikro-orm/core@^6`) — classic `@Entity()`/`@Property()`/... decorators, the
-dominant style in existing production/NestJS codebases. (v7 moved decorators to a different import
-path and promotes a newer `defineEntity()` API instead; not targeted, though the discovery
-mechanism below is unchanged between the two versions.)
+Targets MikroORM v7 (`@mikro-orm/core@^7`, npm's current `latest` tag) — classic
+`@Entity()`/`@Property()`/... decorators, the dominant style carried over from existing
+production/NestJS codebases. v7 extracted these decorators out of `@mikro-orm/core` into a
+separate `@mikro-orm/decorators` package (imported from its `/legacy` subpath for the classic
+`experimentalDecorators` style this adapter compiles for — v7 also has an `/es` subpath for the
+newer TC39 stage-3 decorator style, not targeted here) and promotes a newer `defineEntity()` API
+alongside it. This is purely informational for the adapter itself, since it just executes whatever
+a target project's own entry point imports and never imports decorators itself — but it does mean
+a real v7 project using classic decorators needs `@mikro-orm/decorators` as its own dependency, and
+(since v7's default `metadataProvider` is no longer reflection-based now that decorators are
+opt-in) needs to set `metadataProvider: ReflectMetadataProvider` in its own config to keep
+implicit, `emitDecoratorMetadata`-inferred property types working the way v6 did by default.
 
 **Detect** — [`src/detect/mikroorm.ts`](../src/detect/mikroorm.ts)
 
@@ -371,9 +379,10 @@ mechanism below is unchanged between the two versions.)
 
 The entry is the config file. Unlike TypeORM, this never needs TypeORM's private
 `ConnectionMetadataBuilder`-style reach-in — `MikroORM.init()`/`.getMetadata()` is MikroORM's own
-public, documented API, and (unlike the `.d.ts` for some versions implies) `getMetadata().getAll()`
-returns a plain `Dictionary<EntityMetadata>` in v6, not a `Map` — confirmed by reading the compiled
-`MetadataStorage.js`, not assumed from the type declarations.
+public, documented API. `getMetadata().getAll()` returns a real `Map<string, EntityMetadata>` in
+v7 — confirmed by reading the compiled `MetadataStorage.js`, not assumed from the `.d.ts` (an
+earlier version of this adapter targeted v6, where the same method instead returned a plain
+`Dictionary` object; that's no longer relevant now that only v7 is targeted).
 
 - The config file's default export is loaded via `tsImport()` and duck-typed as either a plain
   options object (the standard `defineConfig({...})` convention — has an `entities`/`entitiesTs`/
@@ -390,11 +399,10 @@ returns a plain `Dictionary<EntityMetadata>` in v6, not a `Map` — confirmed by
   `tsImport()` programmatically, not via a loader flag) — so `preferTs: true` is always forced in
   the options this adapter builds, or MikroORM would default to scanning nonexistent compiled
   `entities` output instead.
-- **`connect: false` is a hard requirement, not just hygiene**: `MikroORM.init()` defaults
-  `connect: true` in v6 and, *after* discovery succeeds, does `if (config.get('connect')) await
-  orm.connect()` — if that throws (an unreachable DB, which it will be from orm2erd's process),
-  the whole `init()` call rejects and metadata is never returned even though discovery already
-  completed. Always forced off for the options-object path.
+- No `connect: false` handling is needed: v7's `MikroORM.init()` never auto-connects at all —
+  `connect()` is always a separate, explicit call the target project has to make itself, so
+  discovery always completes and returns metadata regardless of whether a real database is
+  reachable from orm2erd's process.
 - Folder-based discovery calls `Utils.dynamicImport(path)` per matched file — a real dynamic
   `import()`, not `require()` — and `Utils` exposes an explicit override hook,
   `Utils.dynamicImportProvider` (a static property on the target's own imported `Utils` class,
@@ -402,20 +410,29 @@ returns a plain `Dictionary<EntityMetadata>` in v6, not a `Map` — confirmed by
   `tsImport`-backed function before the config file is even loaded, this routes every file
   MikroORM's own scanner touches through orm2erd's existing loader instead of a plain `import()`.
 - Classic decorators still need real `tsc`, though for a narrower reason than TypeORM: MikroORM's
-  default `ReflectMetadataProvider` only needs `emitDecoratorMetadata`-derived `design:type`
-  reflection for a property with **no explicit `type`/`entity` option** — MikroORM itself throws a
-  clear, catchable error for exactly that case ("provide either 'type' or 'entity' attribute"),
-  rather than TypeORM's more opaque failure modes. Since sniffing which properties need it isn't
-  worth the complexity, any `.ts` `entitiesTs` directory is unconditionally compiled with the
-  target's own `typescript` + nearest `tsconfig.json` (forcing `--experimentalDecorators
-  --emitDecoratorMetadata` via CLI flags — safe to force since v6 has no alternative decorator
-  style to conflict with), reusing the same temp-dir-with-pinned-`package.json` approach as the
-  TypeORM adapter's `runTargetTsc`. The compiled directory path is then substituted into `entities`
-  in place of the original `entitiesTs` entry — MikroORM's own scanner does the rest.
-- No standalone public "discover these paths for me" helper exists in v6 (that's a v7 addition,
-  `@mikro-orm/core/file-discovery`) — directory-path strings (original or tsc-compiled-mirrored)
-  are passed straight into the `entities` array of orm2erd's own `MikroORM.init()` call, and
-  MikroORM's internal folder scan handles the rest, exactly as it would for a real project.
+  `ReflectMetadataProvider` only needs `emitDecoratorMetadata`-derived `design:type` reflection for
+  a property with **no explicit `type`/`entity` option** — MikroORM itself throws a clear,
+  catchable error for exactly that case ("provide either 'type' or 'entity' attribute"), rather
+  than TypeORM's more opaque failure modes. Since sniffing which properties need it isn't worth the
+  complexity, any `.ts` `entitiesTs` directory is unconditionally compiled with the target's own
+  `typescript` + nearest `tsconfig.json` (forcing `--experimentalDecorators --emitDecoratorMetadata`
+  via CLI flags — safe to force since classic decorators have no alternative style to conflict
+  with), reusing the same temp-dir-with-pinned-`package.json` approach as the TypeORM adapter's
+  `runTargetTsc`. The compiled directory path is then substituted into `entities` in place of the
+  original `entitiesTs` entry — MikroORM's own scanner does the rest.
+- v7 does expose a standalone public "discover these paths for me" helper
+  (`@mikro-orm/core/file-discovery`), but there's no reason to call it separately — directory-path
+  strings (original or tsc-compiled-mirrored) are passed straight into the `entities` array of
+  orm2erd's own `MikroORM.init()` call, and MikroORM's internal folder scan (via `Utils.dynamicImport`,
+  which reads the override hook from `globalThis.dynamicImportProvider` in v7) handles the rest,
+  exactly as it would for a real project.
+- A required relation property (`@ManyToOne`/`@OneToOne` with no explicit `nullable` option)
+  resolves to `EntityProperty.nullable: undefined` in v7, not v6's explicit `false` — v7's
+  `ReflectMetadataProvider` never sets `.optional`, which is what `MetadataDiscovery.
+  initNullability()` falls back to for an unset `nullable`. `Field.isNullable`/
+  `Relation.isFromOptional` coalesce this with a small `isNullableFlag()` helper, restoring "not
+  explicitly nullable means required" — the same default every other adapter in this codebase
+  already uses.
 - Fields: canonical type is decided from `EntityProperty.type`, normalized by stripping a trailing
   `"Type"` suffix first — empirically, `type` isn't always the short registry key (`types.decimal`
   round-trips as `"DecimalType"`, not `"decimal"`) — falling back to the real driver SQL type

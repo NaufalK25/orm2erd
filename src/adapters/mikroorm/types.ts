@@ -2,11 +2,11 @@
 // Not imported from `@mikro-orm/core` itself for TYPES — every value at
 // runtime is obtained via the TARGET project's own installed copy (see
 // `createRequire` usage in index.ts), same "use the target's own install"
-// principle as the Drizzle/TypeORM adapters. Trimmed to the v6 shape this
-// adapter actually reads (verified against a real `@mikro-orm/core@6.6.16`
+// principle as the Drizzle/TypeORM adapters. Trimmed to the v7 shape this
+// adapter actually reads (verified against a real `@mikro-orm/core@7.1.9`
 // install, not assumed from the package's own .d.ts, which in a couple of
-// places doesn't match its own runtime — see the comments on
-// `MikroOrmMetadataStorage.getAll` and `EntityProperty.type` below).
+// places doesn't match its own runtime — see the comment on
+// `EntityProperty.type` below).
 
 export type MikroOrmReferenceKind =
   "scalar" | "1:1" | "1:m" | "m:1" | "m:n" | "embedded";
@@ -72,12 +72,8 @@ export interface MikroOrmEntityMetadata {
   pivotTable?: boolean;
 }
 
-// `getAll()`'s real v6 runtime return type is a plain `Dictionary<EntityMetadata>`
-// keyed by entity name — NOT a `Map`, despite what `.d.ts` type hints from
-// other MikroORM versions might suggest. Confirmed by reading the compiled
-// `MetadataStorage.js` in a real v6.6.16 install.
 export interface MikroOrmMetadataStorage {
-  getAll(): Record<string, MikroOrmEntityMetadata>;
+  getAll(): Map<string, MikroOrmEntityMetadata>;
 }
 
 export interface MikroOrmInstance {
@@ -99,10 +95,4 @@ export interface MikroOrmCoreModule {
   MikroORM: {
     init(options: MikroOrmOptions): Promise<MikroOrmInstance>;
   };
-  // The dynamic-import hook MikroORM's own folder-based entity discovery
-  // calls per matched file — a static property on the target's own `Utils`
-  // class (v7 moved this to `globalThis.dynamicImportProvider` instead; v6
-  // keeps it here). Overriding it routes discovery through orm2erd's
-  // existing tsx-based loader instead of a plain `import()`.
-  Utils: { dynamicImportProvider: (id: string) => Promise<unknown> };
 }

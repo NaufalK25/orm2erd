@@ -185,6 +185,17 @@ function collectSingleColumnUniqueNames(
   return names;
 }
 
+// v7's `ReflectMetadataProvider` never sets `EntityProperty.optional` (unlike
+// whatever v6's own version did internally) — `MetadataDiscovery.
+// initNullability()` falls back to `prop.optional` for any property with no
+// explicit `nullable` option, so a required `@ManyToOne`/`@OneToOne` now
+// resolves to `nullable: undefined` instead of v6's `false`. Coalescing here
+// restores "not explicitly nullable means required", the same default every
+// other adapter in this codebase already uses.
+function isNullableFlag(nullable: boolean | undefined): boolean {
+  return Boolean(nullable);
+}
+
 function buildScalarField(
   prop: MikroOrmEntityProperty,
   singleColumnUniqueNames: Set<string>,
@@ -197,7 +208,7 @@ function buildScalarField(
     nativeType: nativeTypeName(prop),
     isList: prop.array,
     isPrimaryKey: prop.primary,
-    isNullable: prop.primary ? false : prop.nullable,
+    isNullable: prop.primary ? false : isNullableFlag(prop.nullable),
     isUnique: Boolean(prop.unique) || singleColumnUniqueNames.has(prop.name),
     defaultValue: resolveDefaultValue(prop.default),
     enumValues: prop.enum ? prop.items?.map(String) : undefined,
@@ -229,7 +240,7 @@ function buildForeignKeyFields(prop: MikroOrmEntityProperty): Field[] {
       type: referencedProp ? toCanonicalType(referencedProp) : "int",
       nativeType: referencedProp ? nativeTypeName(referencedProp) : "unknown",
       isForeignKey: true,
-      isNullable: prop.nullable,
+      isNullable: isNullableFlag(prop.nullable),
     };
   });
 }
@@ -324,7 +335,7 @@ function buildRelation(
         fieldName: prop.name,
         fromColumn: meta.primaryKeys[0],
         toColumn: owningProp?.fieldNames?.[0],
-        isFromOptional: owningProp?.nullable,
+        isFromOptional: isNullableFlag(owningProp?.nullable),
         onDelete: toRelationAction(owningProp?.deleteRule),
         onUpdate: toRelationAction(owningProp?.updateRule),
       };
@@ -340,7 +351,7 @@ function buildRelation(
         type: "1-n",
         fromColumn: prop.targetMeta?.primaryKeys[0],
         toColumn: prop.fieldNames?.[0],
-        isFromOptional: prop.nullable,
+        isFromOptional: isNullableFlag(prop.nullable),
         onDelete: toRelationAction(prop.deleteRule),
         onUpdate: toRelationAction(prop.updateRule),
       };
@@ -356,7 +367,7 @@ function buildRelation(
         fieldName: prop.name,
         fromColumn: prop.targetMeta?.primaryKeys[0],
         toColumn: prop.fieldNames?.[0],
-        isFromOptional: prop.nullable,
+        isFromOptional: isNullableFlag(prop.nullable),
         onDelete: toRelationAction(prop.deleteRule),
         onUpdate: toRelationAction(prop.updateRule),
       };
@@ -579,10 +590,11 @@ export const mikroormAdapter: ORMAdapter = {
     // Routes MikroORM's own folder-based entity discovery through orm2erd's
     // tsx-based loader instead of a plain `import()` — needed even before
     // we know the config shape, since the entry module itself (or code it
-    // eagerly calls) may trigger discovery as a side effect.
+    // eagerly calls) may trigger discovery as a side effect. v7 reads this
+    // hook only from `globalThis`, not off `Utils` the way earlier versions
+    // did.
     const importer = (id: string) =>
       tsImport(id, pathToFileURL(entry.path).href);
-    core.Utils.dynamicImportProvider = importer;
     (globalThis as { dynamicImportProvider?: unknown }).dynamicImportProvider =
       importer;
 
@@ -592,9 +604,11 @@ export const mikroormAdapter: ORMAdapter = {
 
     if (looksLikeMikroOrmInstance(resolved)) {
       // The entry file already called `MikroORM.init(...)` itself and
-      // exported the result — we can't force `connect: false`/`preferTs`
-      // for this path, so it depends on the target's own call already
-      // being safe to run without a reachable database.
+      // exported the result — we can't force `preferTs` for this path, so
+      // it depends on the target's own call already being safe to run
+      // without a reachable database. (v7's `init()` never auto-connects at
+      // all, unlike v6, so there's no `connect: false` to worry about here
+      // either.)
       orm = resolved;
     } else if (looksLikeMikroOrmOptions(resolved)) {
       const baseDir = resolved.baseDir
@@ -612,11 +626,12 @@ export const mikroormAdapter: ORMAdapter = {
         ...(resolved.entitiesTs ?? []),
       ].filter((e) => typeof e !== "string");
 
-      // v6 has no standalone public "discover these paths for me" helper
-      // (that's a v7 addition) — instead, directory-path strings are passed
-      // straight into `entities` and MikroORM's own `MikroORM.init()` does
-      // the folder scan internally via `Utils.dynamicImport`, which we've
-      // already routed through `tsImport` above.
+      // v7 does expose a standalone "discover these paths for me" helper
+      // (`@mikro-orm/core/file-discovery`), but there's no reason to call it
+      // separately — directory-path strings are passed straight into
+      // `entities` and `MikroORM.init()` already runs the same folder scan
+      // internally via `fs.dynamicImport`, which we've already routed
+      // through `tsImport` above.
       let tscBuild: TscBuild | undefined;
       const entityPathsOrClasses: unknown[] = [...alreadyResolvedEntities];
 
@@ -644,7 +659,6 @@ export const mikroormAdapter: ORMAdapter = {
           ...resolved,
           entities: entityPathsOrClasses,
           entitiesTs: undefined,
-          connect: false,
           preferTs: false,
           baseDir,
         });
@@ -657,6 +671,6 @@ export const mikroormAdapter: ORMAdapter = {
       );
     }
 
-    return buildModel(Object.values(orm.getMetadata().getAll()));
+    return buildModel([...orm.getMetadata().getAll().values()]);
   },
 };
