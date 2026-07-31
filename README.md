@@ -257,7 +257,7 @@ erDiagram
 | --- | --- |
 | `--orm <name>` | ORM to use — see [Supported ORMs](#supported-orms). Skips detection. |
 | `--entry <path>` | Path to the ORM's schema/model entry. Skips the entry-point prompt. |
-| `--format <formats>` | Output format(s), comma-separated — see [Output formats](#output-formats). |
+| `--format <formats>` | Output format(s), comma-separated, or `all` for every supported format — see [Output formats](#output-formats). |
 | `--out <path>` | Output path — bare name gets each format's extension appended; a full filename is used as-is when there's only one format. |
 | `--type-mode <mode>` | Type labels to emit: `canonical` (portable, default) or `native` (ORM-specific). |
 | `--check` | Verify the committed ERD file(s) are up to date instead of writing. Exits non-zero on drift or if a file is missing; writes nothing. See [Keeping the ERD in sync](#keeping-the-erd-in-sync-ci). |

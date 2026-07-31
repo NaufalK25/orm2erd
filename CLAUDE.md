@@ -226,7 +226,7 @@ orm2erd --orm prisma --entry ./schema.prisma --format mermaid,dbml --out ./erd
 | --- | --- |
 | `--orm <name>` | Skip detection, use this ORM directly. |
 | `--entry <path>` | Skip the entry-point prompt/candidate resolution. |
-| `--format <formats>` | Comma-separated output format(s); defaults to `mermaid` non-interactively. |
+| `--format <formats>` | Comma-separated output format(s), or `all` for every registered emitter; defaults to `mermaid` non-interactively. |
 | `--out <path>` | Bare name gets each format's extension appended; a full filename is used as-is when there's exactly one format. |
 | `--type-mode <mode>` | `canonical` (default, portable) or `native` (ORM-specific type names) field-type labels. |
 | `--check` | Regenerate in-memory and diff against the file(s) already on disk; writes nothing, exits non-zero on drift/missing — see `src/core/check.ts`. Forces non-interactive. |

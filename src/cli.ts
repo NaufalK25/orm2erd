@@ -288,6 +288,11 @@ function resolveOutPath(
 
 async function resolveFormats(interactive: boolean): Promise<OutputFormat[]> {
   let formats: OutputFormat[];
+
+  if (opts.format?.trim().toLowerCase() === "all") {
+    return Object.keys(emitters) as OutputFormat[];
+  }
+
   if (opts.format) {
     formats = (opts.format as string)
       .split(",")
