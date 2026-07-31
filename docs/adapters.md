@@ -350,10 +350,15 @@ file(s):
 
 ## MikroORM
 
-Targets MikroORM v6 (`@mikro-orm/core@^6`) — classic `@Entity()`/`@Property()`/... decorators, the
-dominant style in existing production/NestJS codebases. (v7 moved decorators to a different import
-path and promotes a newer `defineEntity()` API instead; not targeted, though the discovery
-mechanism below is unchanged between the two versions.)
+Supports both MikroORM v6 (`@mikro-orm/core@^6`) and v7 (`@mikro-orm/core@^7`, npm's current
+`latest` tag) — classic `@Entity()`/`@Property()`/... decorators, the dominant style in existing
+production/NestJS codebases. v7 extracted these decorators out of `@mikro-orm/core` into a
+separate `@mikro-orm/decorators` package and promotes a newer `defineEntity()` API instead — purely
+informational for this adapter, since it just executes whatever a target project's own entry point
+imports; it never imports decorators itself. The one real runtime difference between the two
+versions is `getMetadata().getAll()`'s return shape (see below); discovery, `connect`,
+`dynamicImportProvider`, folder-based scanning, and everything else described in this section is
+unchanged between v6 and v7.
 
 **Detect** — [`src/detect/mikroorm.ts`](../src/detect/mikroorm.ts)
 
@@ -371,9 +376,11 @@ mechanism below is unchanged between the two versions.)
 
 The entry is the config file. Unlike TypeORM, this never needs TypeORM's private
 `ConnectionMetadataBuilder`-style reach-in — `MikroORM.init()`/`.getMetadata()` is MikroORM's own
-public, documented API, and (unlike the `.d.ts` for some versions implies) `getMetadata().getAll()`
-returns a plain `Dictionary<EntityMetadata>` in v6, not a `Map` — confirmed by reading the compiled
-`MetadataStorage.js`, not assumed from the type declarations.
+public, documented API. `getMetadata().getAll()`'s return shape differs by major version though —
+confirmed by reading each version's compiled `MetadataStorage.js`, not assumed from either's
+`.d.ts`: a plain `Dictionary<EntityMetadata>` in v6, but a real `Map<string, EntityMetadata>` in
+v7. The adapter branches on `instanceof Map` to normalize both into an array before building the
+model.
 
 - The config file's default export is loaded via `tsImport()` and duck-typed as either a plain
   options object (the standard `defineConfig({...})` convention — has an `entities`/`entitiesTs`/
@@ -390,11 +397,13 @@ returns a plain `Dictionary<EntityMetadata>` in v6, not a `Map` — confirmed by
   `tsImport()` programmatically, not via a loader flag) — so `preferTs: true` is always forced in
   the options this adapter builds, or MikroORM would default to scanning nonexistent compiled
   `entities` output instead.
-- **`connect: false` is a hard requirement, not just hygiene**: `MikroORM.init()` defaults
+- **`connect: false` is a hard requirement in v6, not just hygiene**: `MikroORM.init()` defaults
   `connect: true` in v6 and, *after* discovery succeeds, does `if (config.get('connect')) await
   orm.connect()` — if that throws (an unreachable DB, which it will be from orm2erd's process),
   the whole `init()` call rejects and metadata is never returned even though discovery already
-  completed. Always forced off for the options-object path.
+  completed. Always forced off for the options-object path. (v7's `init()` dropped the auto-connect
+  step entirely — `connect()` is always a separate, explicit call now — so the flag is an inert,
+  harmless no-op key there, but still passed unconditionally since it's needed for v6.)
 - Folder-based discovery calls `Utils.dynamicImport(path)` per matched file — a real dynamic
   `import()`, not `require()` — and `Utils` exposes an explicit override hook,
   `Utils.dynamicImportProvider` (a static property on the target's own imported `Utils` class,
