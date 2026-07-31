@@ -7,6 +7,16 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: "development"
+    ignore:
+      # MikroORM v6 stays the pinned devDependency by design — the adapter
+      # targets both v6 and v7, tested via a separate CI job that installs
+      # v7 on the fly, not by bumping this primary pin. A major bump here
+      # would also need every mikroorm fixture's decorator imports migrated
+      # to @mikro-orm/decorators, not just a version change.
+      - dependency-name: "@mikro-orm/core"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@mikro-orm/sqlite"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
