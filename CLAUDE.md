@@ -162,7 +162,8 @@ interface Emitter {
   (Prisma, Drizzle) usually returns exactly one; others can return several equally-plausible
   paths (e.g. Prisma with both a `prisma.config.*`-resolved schema and a default
   `prisma/schema.prisma` on disk). `confidenceFromCandidates()` (`src/detect/shared.ts`) scores a
-  single candidate as certain (`1`) and multiple as an ambiguous tie (`0.5`).
+  single candidate as certain (`1`) and N candidates as an even split of that certainty (`1/N`,
+  e.g. `0.5` for two, `0.33` for three), since each is an equally-plausible guess.
 - If 0 ORMs detected → prompt the user to manually pick one (non-interactive: error, exit 1).
 - If 2+ ORMs detected → show a picker (non-interactive: error asking for `--orm`).
 - If the resolved ORM has multiple entry candidates → show a picker (non-interactive: error

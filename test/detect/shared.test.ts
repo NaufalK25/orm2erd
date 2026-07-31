@@ -8,7 +8,26 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { findFilesByContent } from "../../src/detect/shared";
+import {
+  confidenceFromCandidates,
+  findFilesByContent,
+} from "../../src/detect/shared";
+
+describe("confidenceFromCandidates", () => {
+  it("scores zero candidates as zero", () => {
+    expect(confidenceFromCandidates([])).toBe(0);
+  });
+
+  it("scores a single candidate as certain", () => {
+    expect(confidenceFromCandidates(["a"])).toBe(1);
+  });
+
+  it("splits certainty evenly across multiple equally-plausible candidates", () => {
+    expect(confidenceFromCandidates(["a", "b"])).toBe(0.5);
+    expect(confidenceFromCandidates(["a", "b", "c"])).toBe(0.33);
+    expect(confidenceFromCandidates(["a", "b", "c", "d"])).toBe(0.25);
+  });
+});
 
 describe("findFilesByContent", () => {
   const dirs: string[] = [];

@@ -1,11 +1,13 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
-// A single candidate is treated as certain; multiple candidates as an
-// ambiguous tie the user still has to break. Shared across all detectors so
-// "confidence" means the same thing regardless of which ORM found it.
+// A single candidate is treated as certain (1); N candidates split that
+// certainty evenly (1/N), since each is an equally-plausible guess the user
+// still has to break the tie on. Shared across all detectors so "confidence"
+// means the same thing regardless of which ORM found it.
 export function confidenceFromCandidates(candidates: string[]): number {
-  return candidates.length === 1 ? 1 : candidates.length > 1 ? 0.5 : 0;
+  if (candidates.length === 0) return 0;
+  return Math.round((1 / candidates.length) * 100) / 100;
 }
 
 // Conventional model-directory names checked when nothing more specific
