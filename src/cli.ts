@@ -2,7 +2,7 @@ import { Command, Option } from "commander";
 import pc from "picocolors";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { dirname, extname } from "node:path";
+import { dirname } from "node:path";
 import type { Writable } from "node:stream";
 import {
   intro,
@@ -33,6 +33,7 @@ import {
 } from "./core/check";
 import { friendlyImportHint } from "./core/import-hints";
 import { gridMultiselect } from "./core/grid-multiselect";
+import { expandOutDir, resolveOutPath } from "./core/out-path";
 
 const ALL_ORM_NAMES = Object.keys(adapters) as ORMName[];
 
@@ -261,29 +262,6 @@ async function resolveEntryPath(
     ),
   );
   process.exit(1);
-}
-
-function resolveOutPath(
-  base: string,
-  extension: string,
-  allExtensions: string[],
-): string {
-  const ext = extname(base).slice(1);
-
-  // A single format with an explicit extension is used exactly as given
-  // (e.g. --out erd.md).
-  if (allExtensions.length === 1) {
-    return ext ? base : `${base}.${extension}`;
-  }
-
-  // With multiple formats, only strip an existing extension if it matches
-  // one this run will actually produce (e.g. base "erd.mmd" while also
-  // emitting dbml) — otherwise it's part of the intended name (e.g.
-  // "file.erd") and each emitter's extension is appended after it.
-  if (ext && allExtensions.includes(ext)) {
-    return `${base.slice(0, -(ext.length + 1))}.${extension}`;
-  }
-  return `${base}.${extension}`;
 }
 
 async function resolveFormats(interactive: boolean): Promise<OutputFormat[]> {
@@ -523,9 +501,10 @@ async function main() {
     selectedEmitters.length > 1
       ? "erd"
       : `erd.${selectedEmitters[0].fileExtension}`;
-  const outBase =
+  const outBase = await expandOutDir(
     opts.out ??
-    (await resolveOutBase(interactive, outExample, selectedEmitters));
+      (await resolveOutBase(interactive, outExample, selectedEmitters)),
+  );
   const typeMode = await resolveTypeMode(interactive);
 
   await generateAndWrite(
