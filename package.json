@@ -76,7 +76,7 @@
   },
   "devDependencies": {
     "@mikro-orm/core": "^6.6.16",
-    "@mikro-orm/sqlite": "^6.6.16",
+    "@mikro-orm/sqlite": "^7.1.9",
     "@types/node": "^26.1.1",
     "@vitest/coverage-v8": "^4.1.10",
     "drizzle-kit": "^0.31.10",
