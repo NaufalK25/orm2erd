@@ -199,14 +199,14 @@ async function resolveORM(
       if (!interactive) {
         console.error(
           pc.red(
-            `${icon("✖", "x")}No supported ORM detected. Pass --orm <name> to specify one manually.`,
+            `${icon("✖", "x")}No supported ORM detected. Pass --orm <name> to specify one.`,
           ),
         );
         process.exit(1);
       }
       ormName = orExit(
         await select({
-          message: `${icon("🔍")}No ORM detected. Which one are you using?`,
+          message: `${icon("🔍")}No supported ORM detected. Which one are you using?`,
           options: ALL_ORM_NAMES.map((name) => ({ value: name, label: name })),
         }),
       );
@@ -230,7 +230,7 @@ async function resolveEntryPath(
     if (interactive) {
       return orExit(
         await select({
-          message: `${icon("📁")}Multiple schema locations found for ${ormName} — which one?`,
+          message: `${icon("📁")}Multiple possible entry points found for ${ormName} — which one?`,
           options: entryCandidates.map((c) => ({ value: c, label: c })),
         }),
       );
@@ -239,7 +239,7 @@ async function resolveEntryPath(
       pc.red(
         `${icon("✖", "x")}Multiple possible entry points found for ${ormName}:\n` +
           entryCandidates.map((c) => `  - ${c}`).join("\n") +
-          `\nPass one explicitly via --entry.`,
+          `\nPass --entry <path> to specify one.`,
       ),
     );
     process.exit(1);
@@ -263,7 +263,7 @@ async function resolveEntryPath(
 
   console.error(
     pc.red(
-      `${icon("✖", "x")}No entry point found for ${ormName}. Provide one via --entry.`,
+      `${icon("✖", "x")}No entry point found for ${ormName}. Pass --entry <path> to specify one.`,
     ),
   );
   process.exit(1);
@@ -522,7 +522,9 @@ async function main() {
 
   if (opts.stdout && selectedEmitters.length > 1) {
     console.error(
-      pc.red(`${icon("✖", "x")}--stdout requires exactly one --format.`),
+      pc.red(
+        `${icon("✖", "x")}Multiple --format values given with --stdout. Pass --format <format> to specify one.`,
+      ),
     );
     process.exit(1);
   }
