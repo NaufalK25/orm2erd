@@ -261,6 +261,7 @@ erDiagram
 | `--out <path>` | Output path — bare name gets each format's extension appended; a full filename is used as-is when there's only one format. A directory (trailing slash, or an existing directory) writes `erd.<ext>` inside it. |
 | `--type-mode <mode>` | Type labels to emit: `canonical` (portable, default) or `native` (ORM-specific). |
 | `--check` | Verify the committed ERD file(s) are up to date instead of writing. Exits non-zero on drift or if a file is missing; writes nothing. See [Keeping the ERD in sync](#keeping-the-erd-in-sync-ci). |
+| `--stdout` | Print the diagram to stdout instead of writing a file — requires exactly one `--format`. Status output goes to stderr, so the diagram can be piped cleanly (e.g. `orm2erd ... --stdout > erd.mmd` or into a clipboard tool). |
 | `--verbose` | Show log output from the target codebase during extraction (suppressed by default). |
 | `-v, --version` | Output the current version. |
 | `-h, --help` | Show usage and examples. |

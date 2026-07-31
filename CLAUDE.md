@@ -230,6 +230,7 @@ orm2erd --orm prisma --entry ./schema.prisma --format mermaid,dbml --out ./erd
 | `--out <path>` | Bare name gets each format's extension appended; a full filename is used as-is when there's exactly one format. A directory (trailing slash, or an existing directory) writes `erd.<ext>` inside it — see `src/core/out-path.ts`. |
 | `--type-mode <mode>` | `canonical` (default, portable) or `native` (ORM-specific type names) field-type labels. |
 | `--check` | Regenerate in-memory and diff against the file(s) already on disk; writes nothing, exits non-zero on drift/missing — see `src/core/check.ts`. Forces non-interactive. |
+| `--stdout` | Print the diagram to stdout instead of writing a file; requires exactly one `--format`. Forces non-interactive, same as `--check`; status/log lines are routed to stderr so the stdout stream stays clean for piping. |
 | `--verbose` | Don't suppress the target codebase's own console/stdout output during `extract()`. |
 
 In a TTY (and not CI, not `--check`), any omitted flag falls back to an interactive `@clack/prompts`

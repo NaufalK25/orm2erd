@@ -47,6 +47,7 @@ interface ProgramOptions {
   out: string;
   typeMode: TypeMode;
   check: boolean;
+  stdout: boolean;
   verbose: boolean;
 }
 
@@ -74,6 +75,10 @@ program
   .option(
     "--check",
     "verify committed ERD file(s) are up to date; exit non-zero on drift or if missing (writes nothing)",
+  )
+  .option(
+    "--stdout",
+    "print the diagram to stdout instead of writing a file (single format only)",
   )
   .option(
     "--verbose",
@@ -347,6 +352,7 @@ async function generateAndWrite(
   outBase: string,
   typeMode: TypeMode,
   check: boolean,
+  stdout: boolean,
   verbose: boolean,
   interactive: boolean,
 ): Promise<void> {
@@ -367,6 +373,9 @@ async function generateAndWrite(
   // glyph doesn't carry that expectation.
   const s = interactive ? spinner({ output: spinnerOutput }) : undefined;
   let spinnerStarted = false;
+  // --stdout writes the diagram itself to stdout, so status/log lines are
+  // routed to stderr instead — keeps `orm2erd --stdout | some-tool` clean.
+  const statusLog = stdout ? console.error : console.log;
   const phase = async (label: string) => {
     const line = `${icon("⚙️ ")}${label}`;
     if (interactive) {
@@ -382,7 +391,7 @@ async function generateAndWrite(
       // the label would never render before the block already finished.
       await new Promise((resolve) => setTimeout(resolve, 150));
     } else {
-      console.log(line);
+      statusLog(line);
     }
   };
 
@@ -437,6 +446,17 @@ async function generateAndWrite(
       process.exit(1);
     }
 
+    if (stdout) {
+      const content = outputs[0].content;
+      realStdoutWrite(content.endsWith("\n") ? content : `${content}\n`);
+      statusLog(
+        pc.dim(
+          `${icon("✔", "o")}Printed ${selectedEmitters[0].format} diagram to stdout`,
+        ),
+      );
+      process.exit(0);
+    }
+
     await phase("Writing output…");
     const outDir = dirname(outBase);
     if (outDir !== ".") {
@@ -479,8 +499,10 @@ async function main() {
   const cwd = process.cwd();
   // isCI() is also checked because some CI runners still report a TTY.
   // --check must never prompt (it runs in CI); force non-interactive so it
-  // relies on flags / detection only.
-  const interactive = isTTY(process.stdout) && !isCI() && !opts.check;
+  // relies on flags / detection only. --stdout needs the same treatment so
+  // status/prompt chrome never lands on the stream the diagram is printed to.
+  const interactive =
+    isTTY(process.stdout) && !isCI() && !opts.check && !opts.stdout;
 
   if (interactive) intro(`${icon("📊")}${pc.bold("orm2erd")}`);
 
@@ -497,6 +519,14 @@ async function main() {
 
   const formats = await resolveFormats(interactive);
   const selectedEmitters = formats.map(getEmitter);
+
+  if (opts.stdout && selectedEmitters.length > 1) {
+    console.error(
+      pc.red(`${icon("✖", "x")}--stdout requires exactly one --format.`),
+    );
+    process.exit(1);
+  }
+
   const outExample =
     selectedEmitters.length > 1
       ? "erd"
@@ -515,6 +545,7 @@ async function main() {
     outBase,
     typeMode,
     opts.check,
+    opts.stdout,
     opts.verbose,
     interactive,
   );
