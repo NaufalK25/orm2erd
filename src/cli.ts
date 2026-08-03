@@ -5,7 +5,7 @@ import { intro, isCI, isTTY } from "@clack/prompts";
 import { detectORMs } from "./detect";
 import { getAdapter } from "./adapters";
 import { getEmitter } from "./emitters";
-import type { TypeMode } from "./core/format";
+import type { NameMode, RelationLabelMode, TypeMode } from "./core/format";
 import type { ORMName } from "./core/orm";
 import type { PackageJson } from "./core/package";
 import { expandOutDir } from "./core/out-path";
@@ -14,8 +14,10 @@ import {
   ALL_ORM_NAMES,
   resolveEntryPath,
   resolveFormats,
+  resolveNameMode,
   resolveORM,
   resolveOutBase,
+  resolveRelationLabelMode,
   resolveTypeMode,
 } from "./cli/resolve";
 import { generateAndWrite } from "./cli/run";
@@ -29,6 +31,8 @@ interface ProgramOptions {
   format: string;
   out: string;
   typeMode: TypeMode;
+  names: NameMode;
+  relationLabel: RelationLabelMode;
   check: boolean;
   stdout: boolean;
   copy: boolean;
@@ -56,6 +60,18 @@ program
       "type labels to emit: canonical (portable) or native (ORM-specific)",
     ).choices(["canonical", "native"]),
   )
+  .addOption(
+    new Option(
+      "--names <mode>",
+      "entity/field identifiers to emit: table (physical, default), model (ORM names), or both",
+    ).choices(["table", "model", "both"]),
+  )
+  .addOption(
+    new Option(
+      "--relation-label <mode>",
+      "relation edge label: both (alias + disambiguating FK column, default), alias, or column",
+    ).choices(["both", "alias", "column"]),
+  )
   .option(
     "--check",
     "verify committed ERD file(s) are up to date; exit non-zero on drift or if missing (writes nothing)",
@@ -78,7 +94,8 @@ program
 ${pc.bold("Examples:")}
   $ orm2erd
   $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid,dbml --out ./erd
-  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --type-mode native`,
+  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --type-mode native
+  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --names both`,
   )
   .configureHelp({
     styleTitle: (str) => pc.bold(pc.underline(str)),
@@ -148,6 +165,11 @@ async function main() {
         : await resolveOutBase(interactive, outExample, selectedEmitters)),
   );
   const typeMode = await resolveTypeMode(interactive, opts.typeMode);
+  const nameMode = await resolveNameMode(interactive, opts.names);
+  const relationLabelMode = await resolveRelationLabelMode(
+    interactive,
+    opts.relationLabel,
+  );
 
   await generateAndWrite(
     cwd,
@@ -156,6 +178,8 @@ async function main() {
     selectedEmitters,
     outBase,
     typeMode,
+    nameMode,
+    relationLabelMode,
     opts.check,
     opts.stdout,
     opts.copy,

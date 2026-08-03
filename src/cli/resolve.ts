@@ -4,7 +4,12 @@ import { adapters } from "../adapters";
 import type { DetectedORM } from "../detect";
 import { emitters, type Emitter } from "../emitters";
 import { gridMultiselect } from "../core/grid-multiselect";
-import type { OutputFormat, TypeMode } from "../core/format";
+import type {
+  NameMode,
+  OutputFormat,
+  RelationLabelMode,
+  TypeMode,
+} from "../core/format";
 import type { ORMName } from "../core/orm";
 import { icon, orExit } from "./render";
 
@@ -174,6 +179,60 @@ export async function resolveTypeMode(
     );
   }
   return "canonical";
+}
+
+export async function resolveNameMode(
+  interactive: boolean,
+  nameModeOpt: NameMode | undefined,
+): Promise<NameMode> {
+  if (nameModeOpt) {
+    return nameModeOpt;
+  }
+  if (interactive) {
+    return orExit(
+      await select({
+        message: `${icon("🏷️ ")}Entity/field names:`,
+        options: [
+          {
+            value: "table",
+            label: "Table",
+            hint: "physical table/column names",
+          },
+          { value: "model", label: "Model", hint: "ORM model/field names" },
+          { value: "both", label: "Both", hint: "physical name + ORM alias" },
+        ],
+        initialValue: "table",
+      }),
+    );
+  }
+  return "table";
+}
+
+export async function resolveRelationLabelMode(
+  interactive: boolean,
+  relationLabelModeOpt: RelationLabelMode | undefined,
+): Promise<RelationLabelMode> {
+  if (relationLabelModeOpt) {
+    return relationLabelModeOpt;
+  }
+  if (interactive) {
+    return orExit(
+      await select({
+        message: `${icon("🏷️ ")}Relation edge labels:`,
+        options: [
+          {
+            value: "both",
+            label: "Both",
+            hint: "association alias, plus the FK column when it disambiguates",
+          },
+          { value: "alias", label: "Alias", hint: "association alias only" },
+          { value: "column", label: "Column", hint: "FK column name only" },
+        ],
+        initialValue: "both",
+      }),
+    );
+  }
+  return "both";
 }
 
 export async function resolveOutBase(

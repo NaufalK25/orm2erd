@@ -223,4 +223,64 @@ describe("quickdbdEmitter", () => {
     expect(output).not.toContain("postId int FK -");
     expect(output).not.toContain("postId int FK >-");
   });
+
+  describe("nameMode", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          tableName: "users",
+          fields: [
+            {
+              name: "fullName",
+              columnName: "full_name",
+              type: "string",
+              nativeType: "STRING",
+            },
+          ],
+        },
+        {
+          name: "Post",
+          tableName: "posts",
+          fields: [
+            {
+              name: "authorId",
+              columnName: "author_id",
+              type: "int",
+              nativeType: "INTEGER",
+              isForeignKey: true,
+            },
+          ],
+        },
+      ],
+      relations: [
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fromColumn: "id",
+          toColumn: "authorId",
+        },
+      ],
+    };
+
+    it("uses physical table/column names under 'table', including the inline FK reference", () => {
+      const output = quickdbdEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+      });
+      expect(output).toContain("users\n--");
+      expect(output).toContain("full_name string");
+      expect(output).toContain("author_id int FK >- users.id");
+    });
+
+    it("has no entity alias syntax, but notes the field alias under 'both'", () => {
+      const output = quickdbdEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "both",
+      });
+      expect(output).toContain("users\n--");
+      expect(output).toContain("full_name string # alias: fullName");
+    });
+  });
 });

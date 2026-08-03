@@ -4,8 +4,10 @@ import { emitters } from "../../src/emitters";
 import {
   resolveEntryPath,
   resolveFormats,
+  resolveNameMode,
   resolveOutBase,
   resolveORM,
+  resolveRelationLabelMode,
   resolveTypeMode,
 } from "../../src/cli/resolve";
 
@@ -134,6 +136,30 @@ describe("resolveTypeMode", () => {
 
   it("defaults to canonical non-interactively", async () => {
     await expect(resolveTypeMode(false, undefined)).resolves.toBe("canonical");
+  });
+});
+
+describe("resolveNameMode", () => {
+  it("returns the explicit --names value", async () => {
+    await expect(resolveNameMode(false, "both")).resolves.toBe("both");
+  });
+
+  it("defaults to table non-interactively", async () => {
+    await expect(resolveNameMode(false, undefined)).resolves.toBe("table");
+  });
+});
+
+describe("resolveRelationLabelMode", () => {
+  it("returns the explicit --relation-label value", async () => {
+    await expect(resolveRelationLabelMode(false, "column")).resolves.toBe(
+      "column",
+    );
+  });
+
+  it("defaults to both non-interactively", async () => {
+    await expect(resolveRelationLabelMode(false, undefined)).resolves.toBe(
+      "both",
+    );
   });
 });
 

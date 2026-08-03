@@ -1,16 +1,22 @@
 import type { Emitter } from "./types";
+import { buildNameResolver } from "./names";
 
 export const dbmlEmitter: Emitter = {
   format: "dbml",
   fileExtension: "dbml",
   emit(model, options) {
-    const { typeMode } = options;
+    const { typeMode, nameMode = "model" } = options;
+    const names = buildNameResolver(model, nameMode);
 
     const lines = ["// Entities"];
     const enumsByName = new Map<string, string[]>();
 
     for (const entity of model.entities) {
-      lines.push(`Table ${entity.name} {`);
+      const entityAlias = names.entityAlias(entity.name);
+      // DBML has no table-display-alias syntax, unlike Mermaid/PlantUML/D2 —
+      // the model name goes in a plain comment above the table instead.
+      if (entityAlias) lines.push(`// ${entityAlias}`);
+      lines.push(`Table ${names.entityId(entity.name)} {`);
       // Composite PK members are declared once in the `indexes` block below;
       // also tagging each field `[pk]` would double-define the primary key.
       const compositePkMembers = new Set(entity.primaryKey ?? []);
@@ -24,16 +30,24 @@ export const dbmlEmitter: Emitter = {
         const defaultValueDisplay = field.defaultValue
           ? `"${field.defaultValue.replaceAll('"', "'")}"`
           : undefined;
+        const fieldAlias = names.fieldAlias(field);
+        // DBML's field settings only support one `note:` attribute —
+        // fold the alias and the description into it rather than
+        // emitting two, which DBML would silently let the last one win.
+        const noteParts = [
+          fieldAlias && `alias: ${fieldAlias}`,
+          field.description,
+        ].filter((p): p is string => Boolean(p));
         const constraints = [
           field.isPrimaryKey && !compositePkMembers.has(field.name) && "pk",
           field.isUnique && "unique",
           !field.isNullable && "not null",
           field.defaultValue && "default: " + defaultValueDisplay,
-          field.description &&
-            `note: "${field.description.replaceAll('"', "'")}"`,
+          noteParts.length > 0 &&
+            `note: "${noteParts.join(" | ").replaceAll('"', "'")}"`,
         ].filter((c): c is string => Boolean(c));
         lines.push(
-          `  ${field.name} ${typeLabel}${constraints.length > 0 ? " [" + constraints.join(", ") + "]" : ""}`,
+          `  ${names.fieldId(field)} ${typeLabel}${constraints.length > 0 ? " [" + constraints.join(", ") + "]" : ""}`,
         );
 
         if (field.enumValues && field.enumValues.length > 0) {
@@ -41,19 +55,28 @@ export const dbmlEmitter: Emitter = {
         }
       }
 
+      // entity.primaryKey/uniques/indexes are always keyed by attribute
+      // (model-level) name, never physical column name — resolve each
+      // through the same map the field declarations above used, so a
+      // composite key doesn't silently keep model names under --names table.
+      const resolveNames = (fields: string[]) =>
+        fields.map((f) => names.fieldIdByName(entity, f));
+
       // Composite PK / multi-column uniques / plain indexes → DBML native
       // indexes block. A single-column index is a bare field name; multiple
       // columns are wrapped in parens — both accept the same `[...]` attrs.
       const indexLines = [
-        entity.primaryKey && `    (${entity.primaryKey.join(", ")}) [pk]`,
+        entity.primaryKey &&
+          `    (${resolveNames(entity.primaryKey).join(", ")}) [pk]`,
         ...(entity.uniques ?? []).map(
-          (cols) => `    (${cols.join(", ")}) [unique]`,
+          (cols) => `    (${resolveNames(cols).join(", ")}) [unique]`,
         ),
         ...(entity.indexes ?? []).map((idx) => {
+          const resolvedFields = resolveNames(idx.fields);
           const columns =
-            idx.fields.length > 1
-              ? `(${idx.fields.join(", ")})`
-              : idx.fields[0];
+            resolvedFields.length > 1
+              ? `(${resolvedFields.join(", ")})`
+              : resolvedFields[0];
           const attrs = [
             idx.isUnique && "unique",
             idx.name && `name: "${idx.name.replaceAll('"', "'")}"`,
@@ -90,8 +113,16 @@ export const dbmlEmitter: Emitter = {
         rel.onDelete && `delete: ${rel.onDelete}`,
         rel.onUpdate && `update: ${rel.onUpdate}`,
       ].filter((a): a is string => Boolean(a));
+      const fromEntity = model.entities.find((e) => e.name === rel.from);
+      const toEntity = model.entities.find((e) => e.name === rel.to);
+      const fromColumnId = fromEntity
+        ? names.fieldIdByName(fromEntity, rel.fromColumn)
+        : rel.fromColumn;
+      const toColumnId = toEntity
+        ? names.fieldIdByName(toEntity, rel.toColumn)
+        : rel.toColumn;
       lines.push(
-        `Ref: ${rel.from}.${rel.fromColumn} ${symbol} ${rel.to}.${rel.toColumn}${actions.length > 0 ? " [" + actions.join(", ") + "]" : ""}`,
+        `Ref: ${names.entityId(rel.from)}.${fromColumnId} ${symbol} ${names.entityId(rel.to)}.${toColumnId}${actions.length > 0 ? " [" + actions.join(", ") + "]" : ""}`,
       );
     }
 

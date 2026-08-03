@@ -305,4 +305,42 @@ describe("plantumlEmitter", () => {
       "addedBy : string <<unique>>, -- unique with: tagId",
     );
   });
+
+  describe("nameMode", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          tableName: "users",
+          fields: [
+            {
+              name: "fullName",
+              columnName: "full_name",
+              type: "string",
+              nativeType: "STRING",
+            },
+          ],
+        },
+      ],
+      relations: [],
+    };
+
+    it("uses physical table/column names under 'table'", () => {
+      const output = plantumlEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+      });
+      expect(output).toContain("entity users {");
+      expect(output).toContain("full_name : string");
+    });
+
+    it("renders the physical name as an entity alias under 'both'", () => {
+      const output = plantumlEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "both",
+      });
+      expect(output).toContain('entity users as "User" {');
+      expect(output).toContain("-- alias: fullName");
+    });
+  });
 });

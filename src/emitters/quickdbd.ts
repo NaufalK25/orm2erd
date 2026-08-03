@@ -1,5 +1,6 @@
 import type { Emitter } from "./types";
 import type { Relation } from "../core/model";
+import { buildNameResolver } from "./names";
 
 interface InlineFk {
   symbol: string;
@@ -31,13 +32,17 @@ export const quickdbdEmitter: Emitter = {
   format: "quickdbd",
   fileExtension: "txt",
   emit(model, options) {
-    const { typeMode } = options;
+    const { typeMode, nameMode = "model" } = options;
+    // quickdbd has no entity alias syntax, so "both" mode falls back to the
+    // physical identifier alone, same as "table" mode.
+    const names = buildNameResolver(model, nameMode);
     const inlineFks = buildInlineFkMap(model.relations);
+    const entityByName = new Map(model.entities.map((e) => [e.name, e]));
 
     const lines = ["# Entities"];
 
     for (const entity of model.entities) {
-      lines.push(`${entity.name}`, "--");
+      lines.push(`${names.entityId(entity.name)}`, "--");
       for (const field of entity.fields) {
         let displayType = typeMode === "native" ? field.nativeType : field.type;
         if (field.type === "enum") {
@@ -45,11 +50,16 @@ export const quickdbdEmitter: Emitter = {
         }
         const typeLabel = `${displayType}${field.isList ? "[]" : ""}`;
 
+        // buildInlineFkMap's keys/values are attribute (model-level) names —
+        // the same convention as entity.primaryKey/uniques — so the lookup
+        // key stays raw while only the displayed reference is resolved.
         const fk = inlineFks.get(`${entity.name}.${field.name}`);
+        const refEntity = fk ? entityByName.get(fk.refEntity) : undefined;
         const fkToken = fk
-          ? `FK ${fk.symbol} ${fk.refEntity}.${fk.refColumn}`
+          ? `FK ${fk.symbol} ${names.entityId(fk.refEntity)}.${refEntity ? names.fieldIdByName(refEntity, fk.refColumn) : fk.refColumn}`
           : field.isForeignKey && "FK";
 
+        const fieldAlias = names.fieldAlias(field);
         const constraints = [
           field.isPrimaryKey && "PK",
           field.isUnique && "UNIQUE",
@@ -61,9 +71,10 @@ export const quickdbdEmitter: Emitter = {
           field.enumValues && `enum: ${field.enumValues.join(", ")}`,
           field.defaultValue &&
             `default: ${field.defaultValue.replaceAll('"', "'")}`,
+          fieldAlias && `alias: ${fieldAlias}`,
         ].filter((c): c is string => Boolean(c));
 
-        const line = `${field.name} ${typeLabel}${constraints.length > 0 ? " " + constraints.join(" ") : ""}`;
+        const line = `${names.fieldId(field)} ${typeLabel}${constraints.length > 0 ? " " + constraints.join(" ") : ""}`;
         lines.push(
           comments.length > 0 ? `${line} # ${comments.join(" | ")}` : line,
         );

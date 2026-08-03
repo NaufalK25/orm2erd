@@ -446,4 +446,73 @@ describe("dbmlEmitter", () => {
     expect(output).not.toContain("[delete");
     expect(output).not.toContain("[update");
   });
+
+  describe("nameMode", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          tableName: "users",
+          primaryKey: ["postId", "tagId"],
+          fields: [
+            {
+              name: "postId",
+              columnName: "post_id",
+              type: "int",
+              nativeType: "INTEGER",
+            },
+            { name: "tagId", type: "int", nativeType: "INTEGER" },
+            {
+              name: "fullName",
+              columnName: "full_name",
+              type: "string",
+              nativeType: "STRING",
+            },
+          ],
+        },
+        {
+          name: "Post",
+          tableName: "posts",
+          fields: [
+            {
+              name: "authorId",
+              columnName: "author_id",
+              type: "int",
+              nativeType: "INTEGER",
+              isForeignKey: true,
+            },
+          ],
+        },
+      ],
+      relations: [
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fromColumn: "postId",
+          toColumn: "authorId",
+        },
+      ],
+    };
+
+    it("uses physical table/column names under 'table', including composite PK and the Ref line", () => {
+      const output = dbmlEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+      });
+      expect(output).toContain("Table users {");
+      expect(output).toContain("full_name string");
+      expect(output).toContain("(post_id, tagId) [pk]");
+      expect(output).toContain("Ref: users.post_id > posts.author_id");
+    });
+
+    it("puts the model name in a comment above the table and in the field note under 'both'", () => {
+      const output = dbmlEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "both",
+      });
+      expect(output).toContain("// User\nTable users {");
+      expect(output).toContain('note: "alias: fullName"');
+    });
+  });
 });

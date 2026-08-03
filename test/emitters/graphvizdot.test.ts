@@ -325,4 +325,65 @@ describe("graphvizdotEmitter", () => {
       '<td align="left">UNIQUE, unique with: tagId</td>',
     );
   });
+
+  describe("nameMode", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          tableName: "users",
+          fields: [
+            {
+              name: "fullName",
+              columnName: "full_name",
+              type: "string",
+              nativeType: "STRING",
+            },
+          ],
+        },
+        {
+          name: "Post",
+          tableName: "posts",
+          fields: [
+            {
+              name: "authorId",
+              columnName: "author_id",
+              type: "int",
+              nativeType: "INTEGER",
+              isForeignKey: true,
+            },
+          ],
+        },
+      ],
+      relations: [
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fromColumn: "id",
+          toColumn: "authorId",
+        },
+      ],
+    };
+
+    it("uses physical table/column names under 'table', keeping ports on the raw field name", () => {
+      const output = graphvizdotEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+      });
+      expect(output).toContain('"users" [label=<');
+      expect(output).toContain("<b>full_name</b>");
+      expect(output).toContain('port="authorId"');
+      expect(output).toContain('"users":"id" -> "posts":"authorId"');
+    });
+
+    it("renders the physical name as an entity/field alias row under 'both'", () => {
+      const output = graphvizdotEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "both",
+      });
+      expect(output).toContain("<i>User</i>");
+      expect(output).toContain("alias: fullName");
+    });
+  });
 });

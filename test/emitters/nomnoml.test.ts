@@ -245,4 +245,45 @@ describe("nomnomlEmitter", () => {
     expect(output).toContain("[User] 0..1 -- 0..1 [Profile]");
     expect(output).toContain("[User] 0..1 -- * [Post]");
   });
+
+  describe("nameMode", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          tableName: "users",
+          fields: [
+            {
+              name: "fullName",
+              columnName: "full_name",
+              type: "string",
+              nativeType: "STRING",
+            },
+          ],
+        },
+        { name: "Post", tableName: "posts", fields: [] },
+      ],
+      relations: [{ from: "User", to: "Post", type: "1-n" }],
+    };
+
+    it("uses physical table/column names under 'table'", () => {
+      const output = nomnomlEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+      });
+      expect(output).toContain("[<table> users|");
+      expect(output).toContain("full_name |");
+      expect(output).toContain("[users] 1 -- * [posts]");
+    });
+
+    it("has no alias syntax, so 'both' falls back to the physical identifier alone", () => {
+      const output = nomnomlEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "both",
+      });
+      expect(output).toContain("[<table> users|");
+      expect(output).not.toContain("User");
+      expect(output).toContain("full_name | string NN alias: fullName");
+    });
+  });
 });

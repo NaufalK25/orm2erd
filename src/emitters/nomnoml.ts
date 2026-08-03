@@ -1,15 +1,19 @@
 import type { Emitter } from "./types";
+import { buildNameResolver } from "./names";
 
 export const nomnomlEmitter: Emitter = {
   format: "nomnoml",
   fileExtension: "noml",
   emit(model, options) {
-    const { typeMode } = options;
+    const { typeMode, nameMode = "model" } = options;
+    // nomnoml has no entity alias syntax, so "both" mode falls back to the
+    // physical identifier alone, same as "table" mode.
+    const names = buildNameResolver(model, nameMode);
 
     const lines = ["#direction: right", "", "// Entities"];
 
     for (const entity of model.entities) {
-      lines.push(`[<table> ${entity.name}|`);
+      lines.push(`[<table> ${names.entityId(entity.name)}|`);
       entity.fields.forEach((field, index) => {
         let displayType = typeMode === "native" ? field.nativeType : field.type;
         if (field.type === "enum") {
@@ -22,14 +26,16 @@ export const nomnomlEmitter: Emitter = {
           field.isUnique && "unique",
           !field.isNullable && "NN",
         ].filter((c): c is string => Boolean(c));
+        const fieldAlias = names.fieldAlias(field);
         const comments = [
           typeLabel,
           constraints.length > 0 && constraints.join(", "),
           field.defaultValue && "= " + field.defaultValue.replaceAll('"', "'"),
+          fieldAlias && `alias: ${fieldAlias}`,
         ].filter((c): c is string => Boolean(c));
         const isLastField = index === entity.fields.length - 1;
         lines.push(
-          `  ${field.name} | ${comments.join(" ")}${isLastField ? "" : " ||"}`,
+          `  ${names.fieldId(field)} | ${comments.join(" ")}${isLastField ? "" : " ||"}`,
         );
       });
       lines.push("]");
@@ -51,7 +57,9 @@ export const nomnomlEmitter: Emitter = {
           : rel.type === "n-n"
             ? "* -- *"
             : `${fromMarker} -- 0..1`;
-      lines.push(`[${rel.from}] ${symbol} [${rel.to}]`);
+      lines.push(
+        `[${names.entityId(rel.from)}] ${symbol} [${names.entityId(rel.to)}]`,
+      );
     }
 
     return lines.join("\n");

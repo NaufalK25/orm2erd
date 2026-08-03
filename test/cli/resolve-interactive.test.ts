@@ -41,8 +41,10 @@ import { gridMultiselect } from "../../src/core/grid-multiselect";
 import {
   resolveEntryPath,
   resolveFormats,
+  resolveNameMode,
   resolveOutBase,
   resolveORM,
+  resolveRelationLabelMode,
   resolveTypeMode,
 } from "../../src/cli/resolve";
 
@@ -178,6 +180,38 @@ describe("resolveTypeMode (interactive)", () => {
     mockSelect.mockResolvedValueOnce("native");
     await expect(resolveTypeMode(true, undefined)).resolves.toBe("native");
     expect(mockSelect).toHaveBeenCalledOnce();
+  });
+});
+
+describe("resolveNameMode (interactive)", () => {
+  it("prompts to choose between table, model, and both", async () => {
+    mockSelect.mockResolvedValueOnce("both");
+    await expect(resolveNameMode(true, undefined)).resolves.toBe("both");
+    expect(mockSelect).toHaveBeenCalledOnce();
+    expect(mockSelect.mock.calls[0][0].initialValue).toBe("table");
+  });
+
+  it("skips the prompt entirely when --names was already given", async () => {
+    const result = await resolveNameMode(true, "model");
+    expect(mockSelect).not.toHaveBeenCalled();
+    expect(result).toBe("model");
+  });
+});
+
+describe("resolveRelationLabelMode (interactive)", () => {
+  it("prompts to choose between both, alias, and column", async () => {
+    mockSelect.mockResolvedValueOnce("alias");
+    await expect(resolveRelationLabelMode(true, undefined)).resolves.toBe(
+      "alias",
+    );
+    expect(mockSelect).toHaveBeenCalledOnce();
+    expect(mockSelect.mock.calls[0][0].initialValue).toBe("both");
+  });
+
+  it("skips the prompt entirely when --relation-label was already given", async () => {
+    const result = await resolveRelationLabelMode(true, "column");
+    expect(mockSelect).not.toHaveBeenCalled();
+    expect(result).toBe("column");
   });
 });
 

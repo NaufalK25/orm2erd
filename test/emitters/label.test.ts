@@ -28,4 +28,38 @@ describe("relationLabel", () => {
   it("returns an empty string when neither is present", () => {
     expect(relationLabel(base)).toBe("");
   });
+
+  describe("mode: alias", () => {
+    it("returns the alias even when a disambiguating column is present", () => {
+      expect(
+        relationLabel(
+          { ...base, fieldName: "posts", toColumn: "authorId" },
+          "alias",
+        ),
+      ).toBe("posts");
+    });
+
+    it("falls back to the column when there's no alias", () => {
+      expect(relationLabel({ ...base, toColumn: "authorId" }, "alias")).toBe(
+        "authorId",
+      );
+    });
+  });
+
+  describe("mode: column", () => {
+    it("returns the column even when an alias is present", () => {
+      expect(
+        relationLabel(
+          { ...base, fieldName: "posts", toColumn: "authorId" },
+          "column",
+        ),
+      ).toBe("authorId");
+    });
+
+    it("falls back to the alias when there's no column", () => {
+      expect(relationLabel({ ...base, fieldName: "posts" }, "column")).toBe(
+        "posts",
+      );
+    });
+  });
 });

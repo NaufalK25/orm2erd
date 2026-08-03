@@ -345,4 +345,64 @@ describe("d2Emitter", () => {
       '  "addedBy":  "string NOT NULL unique with: tagId" {constraint:unique}',
     );
   });
+
+  describe("nameMode", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          tableName: "users",
+          fields: [
+            {
+              name: "fullName",
+              columnName: "full_name",
+              type: "string",
+              nativeType: "STRING",
+            },
+          ],
+        },
+        {
+          name: "Post",
+          tableName: "posts",
+          fields: [
+            {
+              name: "authorId",
+              columnName: "author_id",
+              type: "int",
+              nativeType: "INTEGER",
+              isForeignKey: true,
+            },
+          ],
+        },
+      ],
+      relations: [
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fromColumn: "id",
+          toColumn: "authorId",
+        },
+      ],
+    };
+
+    it("uses physical table/column identifiers under 'table', including relation endpoints", () => {
+      const output = d2Emitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+      });
+      expect(output).toContain('"users": {');
+      expect(output).toContain('  "full_name":');
+      expect(output).toContain('"users"."id" <-> "posts"."author_id"');
+    });
+
+    it("renders the physical name as an entity label and notes the alias under 'both'", () => {
+      const output = d2Emitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "both",
+      });
+      expect(output).toContain('"users": "User" {');
+      expect(output).toContain("alias: fullName");
+    });
+  });
 });

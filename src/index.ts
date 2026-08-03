@@ -22,4 +22,9 @@ export type {
   RelationAction,
 } from "./core/model";
 export type { ORMName } from "./core/orm";
-export type { OutputFormat, TypeMode } from "./core/format";
+export type {
+  NameMode,
+  OutputFormat,
+  RelationLabelMode,
+  TypeMode,
+} from "./core/format";

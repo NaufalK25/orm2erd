@@ -1,12 +1,18 @@
 import type { Emitter } from "./types";
 import { relationLabel } from "./label";
 import { compositeUniqueMates } from "./uniques";
+import { buildNameResolver } from "./names";
 
 export const plantumlEmitter: Emitter = {
   format: "plantuml",
   fileExtension: "puml",
   emit(model, options) {
-    const { typeMode } = options;
+    const {
+      typeMode,
+      nameMode = "model",
+      relationLabelMode = "both",
+    } = options;
+    const names = buildNameResolver(model, nameMode);
 
     const lines = [
       "@startuml",
@@ -17,7 +23,13 @@ export const plantumlEmitter: Emitter = {
     ];
 
     for (const entity of model.entities) {
-      lines.push(`entity ${entity.name} {`);
+      const entityId = names.entityId(entity.name);
+      const entityAlias = names.entityAlias(entity.name);
+      lines.push(
+        entityAlias
+          ? `entity ${entityId} as "${entityAlias}" {`
+          : `entity ${entityId} {`,
+      );
 
       const renderField = (field: (typeof entity.fields)[number]) => {
         let displayType = typeMode === "native" ? field.nativeType : field.type;
@@ -30,17 +42,19 @@ export const plantumlEmitter: Emitter = {
           field.isForeignKey && "FK",
           (field.isUnique || uniqueMates) && "unique",
         ].filter((c): c is string => Boolean(c));
+        const fieldAlias = names.fieldAlias(field);
         const extras = [
           constraints.length > 0 && `<<${constraints.join(", ")}>>`,
           field.defaultValue && ` = ${field.defaultValue}`,
           uniqueMates &&
             uniqueMates.length > 0 &&
-            `-- unique with: ${uniqueMates.join(", ")}`,
+            `-- unique with: ${uniqueMates.map((mate) => names.fieldIdByName(entity, mate)).join(", ")}`,
+          fieldAlias && `-- alias: ${fieldAlias}`,
           field.description && `-- ${field.description}`,
         ].filter((c): c is string => Boolean(c));
         const marker = field.isPrimaryKey || !field.isNullable ? "* " : "";
         lines.push(
-          `  ${marker}${field.name} : ${typeLabel}${extras.length > 0 ? " " + extras.join(", ") : ""}`,
+          `  ${marker}${names.fieldId(field)} : ${typeLabel}${extras.length > 0 ? " " + extras.join(", ") : ""}`,
         );
       };
 
@@ -55,7 +69,7 @@ export const plantumlEmitter: Emitter = {
 
       lines.push("}");
       if (entity.description) {
-        lines.push(`note bottom of ${entity.name} : ${entity.description}`);
+        lines.push(`note bottom of ${entityId} : ${entity.description}`);
       }
       lines.push("");
     }
@@ -75,7 +89,9 @@ export const plantumlEmitter: Emitter = {
           : rel.type === "n-n"
             ? "}o--o{"
             : `${fromMarker}--o|`;
-      lines.push(`  ${rel.from} ${symbol} ${rel.to} : "${relationLabel(rel)}"`);
+      lines.push(
+        `  ${names.entityId(rel.from)} ${symbol} ${names.entityId(rel.to)} : "${relationLabel(rel, relationLabelMode)}"`,
+      );
     }
 
     lines.push("@enduml");

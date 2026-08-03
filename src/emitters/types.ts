@@ -1,8 +1,17 @@
 import type { ERDModel } from "../core/model";
-import type { OutputFormat, TypeMode } from "../core/format";
+import type {
+  NameMode,
+  OutputFormat,
+  RelationLabelMode,
+  TypeMode,
+} from "../core/format";
 
 export interface EmitOptions {
   typeMode: TypeMode;
+  /** Entity/field identifier display mode. Defaults to "model" (current/legacy behavior) when omitted. */
+  nameMode?: NameMode;
+  /** Relation edge label mode. Defaults to "both" (current alias+column disambiguation) when omitted. */
+  relationLabelMode?: RelationLabelMode;
 }
 
 export interface Emitter {

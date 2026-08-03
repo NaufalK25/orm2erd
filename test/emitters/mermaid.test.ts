@@ -228,4 +228,103 @@ describe("mermaidEmitter", () => {
     expect(output).toContain('int tagId UK "unique with: addedBy"');
     expect(output).toContain('string addedBy UK "unique with: tagId"');
   });
+
+  describe("nameMode", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          tableName: "users",
+          fields: [
+            { name: "id", type: "int", nativeType: "INTEGER" },
+            {
+              name: "fullName",
+              columnName: "full_name",
+              type: "string",
+              nativeType: "STRING",
+            },
+          ],
+        },
+        {
+          name: "Post",
+          tableName: "posts",
+          fields: [
+            {
+              name: "authorId",
+              columnName: "author_id",
+              type: "int",
+              nativeType: "INTEGER",
+              isForeignKey: true,
+            },
+          ],
+        },
+      ],
+      relations: [
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fieldName: "posts",
+        },
+      ],
+    };
+
+    it("defaults to model names when nameMode is omitted", () => {
+      const output = mermaidEmitter.emit(model, { typeMode: "canonical" });
+      expect(output).toContain("User {");
+      expect(output).toContain("string fullName");
+      expect(output).toContain('User ||--o{ Post : "posts"');
+    });
+
+    it("uses physical table/column names under 'table'", () => {
+      const output = mermaidEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+      });
+      expect(output).toContain("users {");
+      expect(output).toContain("string full_name");
+      expect(output).toContain("int author_id");
+      expect(output).toContain('users ||--o{ posts : "posts"');
+    });
+
+    it("renders the physical name as an entity alias under 'both'", () => {
+      const output = mermaidEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "both",
+      });
+      expect(output).toContain('users["User"] {');
+      expect(output).toContain('string full_name "alias: fullName"');
+    });
+  });
+
+  describe("relationLabelMode", () => {
+    const model: ERDModel = {
+      entities: [],
+      relations: [
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fieldName: "posts",
+          toColumn: "authorId",
+        },
+      ],
+    };
+
+    it("pins the label to the alias only", () => {
+      const output = mermaidEmitter.emit(model, {
+        typeMode: "canonical",
+        relationLabelMode: "alias",
+      });
+      expect(output).toContain('User ||--o{ Post : "posts"');
+    });
+
+    it("pins the label to the FK column only", () => {
+      const output = mermaidEmitter.emit(model, {
+        typeMode: "canonical",
+        relationLabelMode: "column",
+      });
+      expect(output).toContain('User ||--o{ Post : "authorId"');
+    });
+  });
 });

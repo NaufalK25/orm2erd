@@ -6,7 +6,12 @@ import pc from "picocolors";
 import { outro, spinner } from "@clack/prompts";
 import type { ORMAdapter } from "../adapters";
 import { checkOutput } from "../core/check";
-import type { OutputFormat, TypeMode } from "../core/format";
+import type {
+  NameMode,
+  OutputFormat,
+  RelationLabelMode,
+  TypeMode,
+} from "../core/format";
 import { withGuardedExit } from "../core/guard-exit";
 import { friendlyImportHint } from "../core/import-hints";
 import { resolveOutPath } from "../core/out-path";
@@ -178,6 +183,8 @@ export async function generateAndWrite(
   selectedEmitters: Emitter[],
   outBase: string,
   typeMode: TypeMode,
+  nameMode: NameMode,
+  relationLabelMode: RelationLabelMode,
   check: boolean,
   stdoutFlag: boolean,
   copy: boolean,
@@ -201,7 +208,7 @@ export async function generateAndWrite(
     const allExtensions = selectedEmitters.map((e) => e.fileExtension);
     const outputs: Output[] = selectedEmitters.map((emitter) => ({
       path: resolveOutPath(outBase, emitter.fileExtension, allExtensions),
-      content: emitter.emit(model, { typeMode }),
+      content: emitter.emit(model, { typeMode, nameMode, relationLabelMode }),
     }));
 
     if (check) {

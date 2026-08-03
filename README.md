@@ -112,6 +112,10 @@ npx orm2erd
 │  erd.mmd
 ◆  Type labels:
 │  Canonical
+◆  Entity/field names:
+│  Table
+◆  Relation edge labels:
+│  Both
 │
 ◇  Written to erd.mmd
 │
@@ -175,6 +179,42 @@ By default, field types are emitted in a canonical, portable form (e.g. `string`
 npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --type-mode native
 ```
 
+When your ORM maps model/field names to different physical table/column names (e.g. Prisma's
+`@@map`/`@map`, Sequelize's `tableName`/`field`), `--names` controls which names show up in the
+diagram. It defaults to `table` — an ERD describes a database, so it matches what you'd see in
+`psql` — with `model` (the ORM's own names) and `both` (physical name plus the ORM name as an
+alias, where the output format supports one) also available:
+
+```prisma
+model User {
+  id       Int    @id @default(autoincrement())
+  fullName String @map("full_name")
+
+  @@map("users")
+}
+```
+
+```bash
+npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --names both
+```
+
+```mermaid
+erDiagram
+
+  %% Entities
+  users["User"] {
+    int id PK "default: autoincrement()"
+    string full_name "alias: fullName"
+  }
+
+  %% Relationships
+```
+
+Relation edge labels have a similar knob, `--relation-label <both|alias|column>` — `both` (the
+default) shows the association alias and appends the FK column only when it disambiguates two
+relations between the same entity pair (e.g. `posts (authorId)`); `alias`/`column` pin the label to
+just one.
+
 ### Keeping the ERD in sync (CI)
 
 Commit your generated ERD, then use `--check` to fail CI whenever the committed file no longer
@@ -191,8 +231,8 @@ npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --out .
 
 `--check` never touches the filesystem, so it's safe in a pre-commit hook or a pull-request check.
 It's flag-driven and non-interactive by design: pass it the **same** output-affecting flags you
-generated with (`--format`, `--out`, and `--type-mode` if you use it), or it will report drift
-against a differently-rendered file.
+generated with (`--format`, `--out`, and `--type-mode`/`--names`/`--relation-label` if you use
+them), or it will report drift against a differently-rendered file.
 
 Drop it into a workflow:
 
@@ -224,13 +264,16 @@ example, a Sequelize project with associations declared via `hasMany`/`belongsTo
 npx orm2erd --orm sequelize --entry ./models/index.js --format mermaid --out ./erd
 ```
 
+Sequelize pluralizes a model's table name by default (`User` → `users`) unless `tableName` is set
+explicitly — with `--names` defaulting to `table`, that's what shows up in the diagram:
+
 `erd.mmd`:
 
 ```mermaid
 erDiagram
 
   %% Entities
-  User {
+  Users {
     int id PK
     string email UK
     string? name
@@ -238,7 +281,7 @@ erDiagram
     datetime updatedAt
   }
 
-  Post {
+  Posts {
     int id PK
     string title
     boolean? published "default: false"
@@ -248,7 +291,7 @@ erDiagram
   }
 
   %% Relationships
-  User ||--o{ Post : "posts (authorId)"
+  Users ||--o{ Posts : "posts (authorId)"
 ```
 
 ### Flags
@@ -260,6 +303,8 @@ erDiagram
 | `--format <formats>` | Output format(s), comma-separated, or `all` for every supported format — see [Output formats](#output-formats). |
 | `--out <path>` | Output path — bare name gets each format's extension appended; a full filename is used as-is when there's only one format. A directory (trailing slash, or an existing directory) writes `erd.<ext>` inside it. |
 | `--type-mode <mode>` | Type labels to emit: `canonical` (portable, default) or `native` (ORM-specific). |
+| `--names <mode>` | Entity/field identifiers to emit: `table` (physical table/column names, default), `model` (ORM model/field names), or `both` (physical name, with the ORM name as an alias where the format supports one). |
+| `--relation-label <mode>` | Relation edge label: `both` (association alias, plus the FK column when it disambiguates two relations between the same entity pair — default), `alias`, or `column`. |
 | `--check` | Verify the committed ERD file(s) are up to date instead of writing. Exits non-zero on drift or if a file is missing; writes nothing. See [Keeping the ERD in sync](#keeping-the-erd-in-sync-ci). |
 | `--stdout` | Print the diagram to stdout instead of writing a file — requires exactly one `--format`. Status output goes to stderr, so the diagram can be piped cleanly (e.g. `orm2erd ... --stdout > erd.mmd` or into another tool). |
 | `--copy` | Copy the diagram to the clipboard instead of writing a file — requires exactly one `--format`. |

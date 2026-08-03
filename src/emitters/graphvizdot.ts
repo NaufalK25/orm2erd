@@ -1,5 +1,6 @@
 import type { Emitter } from "./types";
 import { compositeUniqueMates } from "./uniques";
+import { buildNameResolver } from "./names";
 
 // Text interpolated into an HTML-like label (`label=<...>`) must be
 // HTML-escaped — an unescaped `&`, `<`, or `>` from a field name, type,
@@ -26,7 +27,8 @@ export const graphvizdotEmitter: Emitter = {
   format: "graphvizdot",
   fileExtension: "gv",
   emit(model, options) {
-    const { typeMode } = options;
+    const { typeMode, nameMode = "model" } = options;
+    const names = buildNameResolver(model, nameMode);
 
     const lines = [
       "digraph ERD {",
@@ -37,11 +39,18 @@ export const graphvizdotEmitter: Emitter = {
     ];
 
     for (const entity of model.entities) {
+      const entityId = names.entityId(entity.name);
+      const entityAlias = names.entityAlias(entity.name);
       lines.push(
-        `  ${quoteId(entity.name)} [label=<`,
+        `  ${quoteId(entityId)} [label=<`,
         '    <table border="0" cellborder="1" cellspacing="0" cellpadding="4">',
-        `      <tr><td align="center" colspan="2"><b>${escapeHtml(entity.name)}</b></td></tr>`,
+        `      <tr><td align="center" colspan="2"><b>${escapeHtml(entityId)}</b></td></tr>`,
       );
+      if (entityAlias) {
+        lines.push(
+          `      <tr><td align="center" colspan="2"><i>${escapeHtml(entityAlias)}</i></td></tr>`,
+        );
+      }
       for (const field of entity.fields) {
         let displayType = typeMode === "native" ? field.nativeType : field.type;
         if (field.type === "enum") {
@@ -49,21 +58,27 @@ export const graphvizdotEmitter: Emitter = {
         }
         const typeLabel = `${displayType}${field.isList ? "[]" : ""}`;
         const uniqueMates = compositeUniqueMates(entity, field);
+        const fieldAlias = names.fieldAlias(field);
         const constraints = [
           field.isPrimaryKey && "PK",
           field.isForeignKey && "FK",
           (field.isUnique || uniqueMates) && "UNIQUE",
           uniqueMates &&
             uniqueMates.length > 0 &&
-            `unique with: ${uniqueMates.join(", ")}`,
+            `unique with: ${uniqueMates.map((mate) => names.fieldIdByName(entity, mate)).join(", ")}`,
+          fieldAlias && `alias: ${fieldAlias}`,
           field.isNullable && "nullable",
           field.defaultValue && `= ${field.defaultValue}`,
         ].filter((c): c is string => Boolean(c));
+        const fieldId = names.fieldId(field);
         // Every field gets a port (`port="<name>"`), not just constrained
         // ones: a relation column that lands on an unported field would
         // silently anchor its edge to the whole node instead of erroring.
+        // The port itself must stay the field's original name — relations
+        // resolve `fromColumn`/`toColumn` against the IR, not the display
+        // identifier — while the visible label follows `nameMode`.
         lines.push(
-          `      <tr><td align="left" port="${escapeHtml(field.name)}"><b>${escapeHtml(field.name)}</b>  <i>${escapeHtml(typeLabel)}</i></td><td align="left">${escapeHtml(constraints.join(", "))}</td></tr>`,
+          `      <tr><td align="left" port="${escapeHtml(field.name)}"><b>${escapeHtml(fieldId)}</b>  <i>${escapeHtml(typeLabel)}</i></td><td align="left">${escapeHtml(constraints.join(", "))}</td></tr>`,
         );
       }
       lines.push("    </table>>];");
@@ -95,7 +110,7 @@ export const graphvizdotEmitter: Emitter = {
             ? "[arrowhead=none, arrowtail=crow, dir=both]"
             : `[arrowhead=teeodot, arrowtail=${arrowtail}, dir=both, label="1-1"]`;
       lines.push(
-        `  ${quoteId(rel.from)}:${quoteId(rel.fromColumn)} -> ${quoteId(rel.to)}:${quoteId(rel.toColumn)} ${relationDetails};`,
+        `  ${quoteId(names.entityId(rel.from))}:${quoteId(rel.fromColumn)} -> ${quoteId(names.entityId(rel.to))}:${quoteId(rel.toColumn)} ${relationDetails};`,
       );
     }
 

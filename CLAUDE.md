@@ -45,7 +45,7 @@ src/
     package.ts             # package.json reading helper
   emitters/          # types.ts (Emitter/EmitOptions) + index.ts (registry) + one file per format
                       # (mermaid.ts, dbml.ts, plantuml.ts, d2.ts, etc)
-                      # + label.ts/uniques.ts (shared rendering helpers)
+                      # + label.ts/uniques.ts/names.ts (shared rendering helpers)
 bin/
   orm2erd.js       # shebang wrapper: #!/usr/bin/env node → import('../dist/cli.js')
 test/              # vitest, mirrors src/ (detect/, adapters/, core/, emitters/) + test/e2e/
@@ -151,6 +151,8 @@ interface ORMAdapter {
 
 interface EmitOptions {
   typeMode: TypeMode; // "canonical" | "native"
+  nameMode?: NameMode; // "model" | "table" | "both" — defaults to "model" when omitted
+  relationLabelMode?: RelationLabelMode; // "alias" | "column" | "both" — defaults to "both" when omitted
 }
 
 interface Emitter {
@@ -238,6 +240,8 @@ orm2erd --orm prisma --entry ./schema.prisma --format mermaid,dbml --out ./erd
 | `--format <formats>` | Comma-separated output format(s), or `all` for every registered emitter; defaults to `mermaid` non-interactively. |
 | `--out <path>` | Bare name gets each format's extension appended; a full filename is used as-is when there's exactly one format. A directory (trailing slash, or an existing directory) writes `erd.<ext>` inside it — see `src/core/out-path.ts`. |
 | `--type-mode <mode>` | `canonical` (default, portable) or `native` (ORM-specific type names) field-type labels. |
+| `--names <mode>` | `table` (default, physical table/column names), `model` (ORM model/field names), or `both` (physical name + ORM name as an alias where the format supports one) — see `src/emitters/names.ts`. |
+| `--relation-label <mode>` | `both` (default — alias, plus the FK column when it disambiguates two relations between the same entity pair), `alias`, or `column` — see `src/emitters/label.ts`. |
 | `--check` | Regenerate in-memory and diff against the file(s) already on disk; writes nothing, exits non-zero on drift/missing — see `src/core/check.ts`. Forces non-interactive. |
 | `--stdout` | Print the diagram to stdout instead of writing a file; requires exactly one `--format`. Forces non-interactive, same as `--check`; status/log lines are routed to stderr so the stdout stream stays clean for piping. |
 | `--copy` | Copy the diagram to the clipboard instead of writing a file; requires exactly one `--format`. Uses `clipboardy`; stays interactive (spinner/intro/outro) since it never touches stdout. |

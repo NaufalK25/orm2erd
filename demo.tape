@@ -42,4 +42,12 @@ Enter
 Sleep 1.5s
 Enter
 
+# ? Entity/field names: (table pre-selected)
+Sleep 1.5s
+Enter
+
+# ? Relation edge labels: (both pre-selected)
+Sleep 1.5s
+Enter
+
 Sleep 2s
