@@ -37,9 +37,9 @@ Table PostTag {
 }
 
 // Relationships
-Ref: User.id > Post.authorId [delete: cascade, update: cascade]
-Ref: Post.id > PostTag.postId [delete: cascade, update: cascade]
-Ref: Tag.id > PostTag.tagId [delete: cascade, update: cascade]
+Ref: User.id < Post.authorId [delete: cascade, update: cascade]
+Ref: Post.id < PostTag.postId [delete: cascade, update: cascade]
+Ref: Tag.id < PostTag.tagId [delete: cascade, update: cascade]
 
 // Enums
 Enum enum_Post_status {

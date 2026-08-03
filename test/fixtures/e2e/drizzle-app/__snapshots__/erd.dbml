@@ -36,9 +36,9 @@ Table users {
 }
 
 // Relationships
-Ref: posts.id > post_tags.post_id [delete: cascade, update: no action]
-Ref: tags.id > post_tags.tag_id [delete: cascade, update: no action]
-Ref: users.id > posts.author_id [delete: cascade, update: cascade]
+Ref: posts.id < post_tags.post_id [delete: cascade, update: no action]
+Ref: tags.id < post_tags.tag_id [delete: cascade, update: no action]
+Ref: users.id < posts.author_id [delete: cascade, update: cascade]
 Ref: users.id - profiles.user_id [delete: cascade, update: no action]
 
 // Enums

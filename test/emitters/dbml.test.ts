@@ -174,7 +174,36 @@ describe("dbmlEmitter", () => {
     const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
 
     expect(output).toContain("Ref: Profile.userId - User.id");
-    expect(output).toContain("Ref: User.id > Post.authorId");
+    expect(output).toContain("Ref: User.id < Post.authorId");
+  });
+
+  it("prefixes the operator with ? when isFromOptional marks a nullable FK", () => {
+    const model: ERDModel = {
+      entities: [],
+      relations: [
+        {
+          from: "Profile",
+          to: "User",
+          type: "1-1",
+          fromColumn: "userId",
+          toColumn: "id",
+          isFromOptional: true,
+        },
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fromColumn: "id",
+          toColumn: "authorId",
+          isFromOptional: true,
+        },
+      ],
+    };
+
+    const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
+
+    expect(output).toContain("Ref: Profile.userId ?- User.id");
+    expect(output).toContain("Ref: User.id ?< Post.authorId");
   });
 
   it("uses <> for a many-to-many relation that does carry resolvable columns", () => {
@@ -378,7 +407,7 @@ describe("dbmlEmitter", () => {
 
     expect(output).not.toContain("Post <> Tag");
     expect(output).not.toContain("Ref: Post ");
-    expect(output).toContain("Ref: User.id > Post.authorId");
+    expect(output).toContain("Ref: User.id < Post.authorId");
   });
 
   it("renders onDelete/onUpdate as a DBML ref action attribute", () => {
@@ -400,7 +429,7 @@ describe("dbmlEmitter", () => {
     const output = dbmlEmitter.emit(model, { typeMode: "canonical" });
 
     expect(output).toContain(
-      "Ref: Post.id > User.authorId [delete: cascade, update: restrict]",
+      "Ref: Post.id < User.authorId [delete: cascade, update: restrict]",
     );
   });
 
@@ -503,7 +532,7 @@ describe("dbmlEmitter", () => {
       expect(output).toContain("Table users {");
       expect(output).toContain("full_name string");
       expect(output).toContain("(post_id, tagId) [pk]");
-      expect(output).toContain("Ref: users.post_id > posts.author_id");
+      expect(output).toContain("Ref: users.post_id < posts.author_id");
     });
 
     it("puts the model name in a comment above the table and in the field note under 'both'", () => {

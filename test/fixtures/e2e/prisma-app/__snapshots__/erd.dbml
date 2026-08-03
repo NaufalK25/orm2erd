@@ -22,7 +22,7 @@ Table Tag {
 }
 
 // Relationships
-Ref: User.id > Post.authorId [delete: cascade]
+Ref: User.id < Post.authorId [delete: cascade]
 
 // Enums
 Enum Role {

@@ -104,9 +104,23 @@ export const dbmlEmitter: Emitter = {
       // a bare "Ref: TableA <> TableB", which isn't valid DBML.
       if (!rel.fromColumn || !rel.toColumn) continue;
 
-      // Dbml's ref notation: > = one-to-many, <> =
-      // many-to-many, - = one-to-one.
-      const symbol = rel.type === "1-n" ? ">" : rel.type === "n-n" ? "<>" : "-";
+      // DBML's ref operator reads left-to-right: `<` means the left column
+      // is the "one"/unique side and the right is "many" (e.g. `users.id <
+      // posts.author_id`); `>` is the mirror (left "many", right "one").
+      // `rel.from` is always the one/referenced side and `rel.to` always the
+      // many/FK-holding side (see Relation in core/model.ts), so 1-n uses
+      // `<` here — using `>` would claim `rel.from` (unique) allows "many",
+      // which real DBML tooling flags as invalid.
+      const baseSymbol =
+        rel.type === "1-n" ? "<" : rel.type === "n-n" ? "<>" : "-";
+      // A `?` next to one side means the *other* side doesn't need a match
+      // (e.g. `users.id ?< posts.editor_id` = "a post may have no editor").
+      // `rel.from` is always written on the left here, so marking it
+      // optional (isFromOptional — the FK column on `rel.to` is nullable)
+      // means placing `?` immediately before the operator. n-n never sets
+      // isFromOptional (see Relation in core/model.ts), so this only ever
+      // fires for 1-1/1-n.
+      const symbol = rel.isFromOptional ? `?${baseSymbol}` : baseSymbol;
       // DBML's action names are already the IR's own canonical spelling
       // ("cascade", "set null", ...) — no translation needed.
       const actions = [

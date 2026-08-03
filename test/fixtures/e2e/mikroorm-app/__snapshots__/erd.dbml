@@ -29,5 +29,5 @@ Table Post {
 }
 
 // Relationships
-Ref: User.id > Post.author_id [delete: cascade, update: cascade]
+Ref: User.id < Post.author_id [delete: cascade, update: cascade]
 Ref: User.id - Profile.user_id [delete: cascade]

@@ -25,4 +25,4 @@ Table User {
 }
 
 // Relationships
-Ref: User._id > Post.author
+Ref: User._id < Post.author
