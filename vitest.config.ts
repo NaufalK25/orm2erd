@@ -6,7 +6,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "lcov"],
       include: ["src/**"],
-      exclude: ["src/cli.ts"],
+      exclude: ["src/cli.ts", "src/cli/run.ts"],
     },
   },
 });
