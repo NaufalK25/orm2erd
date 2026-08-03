@@ -5,6 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🏷️ [2.0.0] - 2026-08-03
+
+### ⚠️ Breaking
+
+- **Default entity/field names switched from ORM model names to physical table/column names.**
+  New `--names <table|model|both>` flag controls this — `table` (physical names, e.g. Sequelize's
+  pluralized `Users` table or Prisma's `@@map`-ed name) is now the default, since an ERD describes
+  a database and should match what you'd see in `psql`; `model` restores the previous default (the
+  ORM's own model/field names), and `both` renders the physical name with the ORM name as an alias
+  where the output format supports one. A companion `--relation-label <both|alias|column>` flag
+  (default `both`) controls whether relation edges show the association alias, the FK column, or
+  both when they disambiguate two relations between the same entity pair. Existing `--check`/CI
+  pipelines that don't pass `--names`/`--relation-label` explicitly will see diagrams regenerate
+  with different content under the new default — pass `--names model` to keep prior output
+  unchanged.
+  ([e290816](https://github.com/NaufalK25/orm2erd/commit/e290816))
+- **`--out <name>` resolves inside an existing same-named directory instead of next to it.**
+  Previously a bare, extension-less `--out erd` always resolved to a sibling file, `erd.mmd`,
+  regardless of what else existed on disk. Now, if `erd` already exists as a directory, the same
+  flag resolves to `erd/erd.mmd` instead — silently different output for anyone who already had a
+  directory at that path (e.g. a folder collecting several exported diagrams), breaking `--check`/
+  CI configs and any script reading the old sibling-file location. Only bare names colliding with
+  an existing directory are affected; a trailing slash (`--out erd/`) was always directory-aware
+  and a name with no on-disk collision is unchanged.
+  ([c73a3f7](https://github.com/NaufalK25/orm2erd/commit/c73a3f7))
+
+### 🚀 Added
+
+- **MikroORM support**, targeting both v6 (`@mikro-orm/core@^6`, classic `@Entity()`/`@Property()`
+  decorators) and v7 (`@mikro-orm/core@^7`) via the same adapter — entities, fields, relations, and
+  composite keys are read from MikroORM's own `getMetadata().getAll()`. The one real behavioral
+  difference between the two majors — `getAll()` returning a plain `Dictionary` in v6 vs. a real
+  `Map` in v7 — is branched on via `instanceof Map` so both are normalized the same way; v6's
+  mandatory `connect: false` (an unreachable DB otherwise kills discovery entirely) is a
+  harmless no-op pass-through under v7, which dropped auto-connect. See
+  [docs/adapters.md](./docs/adapters.md#mikroorm) for the full detection/entry/parsing details.
+  ([c63f7d4](https://github.com/NaufalK25/orm2erd/commit/c63f7d4),
+  [7c3dc31](https://github.com/NaufalK25/orm2erd/commit/7c3dc31))
+- **`--stdout`** prints the generated diagram to stdout instead of writing a file (requires exactly
+  one `--format`); status/log lines route to stderr so the diagram itself can be piped cleanly,
+  e.g. `orm2erd ... --stdout > erd.mmd`.
+  ([9d4294f](https://github.com/NaufalK25/orm2erd/commit/9d4294f))
+- **`--copy`** copies the generated diagram straight to the clipboard instead of writing a file
+  (requires exactly one `--format`), via `clipboardy` (pure-JS, cross-platform, including WSL).
+  ([8c6dea1](https://github.com/NaufalK25/orm2erd/commit/8c6dea1))
+- **`--format all`** now works non-interactively too (previously only reachable via the interactive
+  multi-select), expanding to every registered emitter.
+  ([c6d2953](https://github.com/NaufalK25/orm2erd/commit/c6d2953))
+- Detection confidence for ORMs with multiple entry-point candidates is now computed dynamically
+  (`1 / candidateCount`, rounded) instead of a hardcoded 0.5 for any 2+ candidates — three
+  candidates now correctly reads as 33% instead of the same 50% shown for two.
+  ([b405325](https://github.com/NaufalK25/orm2erd/commit/b405325))
+
+### 💊 Fixed
+
+- DBML: one-to-many relations emitted the `>` ref operator, which DBML tooling reads as the *left*
+  column allowing "many" — backwards, since the IR's `from` side is always the one/referenced end.
+  Now emits `<` instead (`rel.from` stays on the left; `<` reads correctly for one-to-many, matching
+  the invariant that `rel.to` is always the FK-holding side). Optional relations (`isFromOptional`)
+  also now emit DBML's `?` prefix, e.g. `users.id ?< posts.editor_id`.
+  ([7857da1](https://github.com/NaufalK25/orm2erd/commit/7857da1))
+
 ## 🏷️ [1.9.0] - 2026-07-30
 
 ### 🚀 Added
