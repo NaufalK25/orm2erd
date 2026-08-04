@@ -253,7 +253,8 @@ orm2erd --orm prisma --entry ./schema.prisma --format mermaid,dbml --out ./erd
 | `--stdout` | Print the diagram to stdout instead of writing a file; requires exactly one `--format`. Forces non-interactive, same as `--check`; status/log lines are routed to stderr so the stdout stream stays clean for piping. |
 | `--copy` | Copy the diagram to the clipboard instead of writing a file; requires exactly one `--format`. Uses `clipboardy`; stays interactive (spinner/intro/outro) since it never touches stdout. |
 | `--verbose` | Don't suppress the target codebase's own console/stdout output during `extract()`. |
+| `-y, --yes` | Forces `interactive = false` in `src/cli.ts` (same as `--check`/`--stdout`/CI), so every omitted flag falls back to its non-interactive default instead of prompting. Reuses the existing default-value branch in each `resolve*` function in `src/cli/resolve.ts` — no separate default-value plumbing. |
 
-In a TTY (and not CI, not `--check`), any omitted flag falls back to an interactive `@clack/prompts`
-flow instead of a hard default. See [README.md](./README.md#flags) for the full flag reference and
-CI examples.
+In a TTY (and not CI, not `--check`, not `--stdout`, not `-y`/`--yes`), any omitted flag falls back
+to an interactive `@clack/prompts` flow instead of a hard default. See
+[README.md](./README.md#flags) for the full flag reference and CI examples.

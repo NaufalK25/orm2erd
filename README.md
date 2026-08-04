@@ -333,12 +333,13 @@ erDiagram
 | `--stdout` | Print the diagram to stdout instead of writing a file — requires exactly one `--format`. Status output goes to stderr, so the diagram can be piped cleanly (e.g. `orm2erd ... --stdout > erd.mmd` or into another tool). |
 | `--copy` | Copy the diagram to the clipboard instead of writing a file — requires exactly one `--format`. |
 | `--verbose` | Show log output from the target codebase during extraction (suppressed by default). |
+| `-y, --yes` | Skip interactive prompts; use the default for any flag not explicitly passed — the same resolution CI/non-interactive mode already uses. Useful once you know your flags and don't want to re-answer the picker every run. |
 | `-v, --version` | Output the current version. |
 | `-h, --help` | Show usage and examples. |
 
-In a TTY, any flag you omit falls back to an interactive prompt. In CI (no TTY, or `CI=true`),
-prompts are skipped — pass `--orm`, `--entry`, and `--format` explicitly, or the run exits with an
-error telling you which one is missing.
+In a TTY, any flag you omit falls back to an interactive prompt. In CI (no TTY, or `CI=true`), or
+when `-y`/`--yes` is passed, prompts are skipped — pass `--orm`, `--entry`, and `--format`
+explicitly, or the run exits with an error telling you which one is missing.
 
 For Prisma, if a `prisma.config.*` file is present, its `schema` field is respected as the entry
 point's default candidate,

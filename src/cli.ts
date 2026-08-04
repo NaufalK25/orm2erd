@@ -48,6 +48,7 @@ interface ProgramOptions {
   stdout: boolean;
   copy: boolean;
   verbose: boolean;
+  yes: boolean;
 }
 
 const program = new Command();
@@ -121,6 +122,10 @@ program
     "--verbose",
     "show log output from the target codebase during extraction (suppressed by default)",
   )
+  .option(
+    "-y, --yes",
+    "skip interactive prompts; use the default for any flag not explicitly passed (same defaults as CI/non-interactive mode)",
+  )
   .addHelpText(
     "after",
     `
@@ -130,7 +135,8 @@ ${pc.bold("Examples:")}
   $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --type-mode native
   $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --names both
   $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --case screaming_snake
-  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --inflect plural`,
+  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --inflect plural
+  $ orm2erd --orm prisma --entry ./prisma/schema.prisma -y`,
   )
   .configureHelp({
     styleTitle: (str) => pc.bold(pc.underline(str)),
@@ -151,8 +157,14 @@ async function main() {
   // --check must never prompt (it runs in CI); force non-interactive so it
   // relies on flags / detection only. --stdout needs the same treatment so
   // status/prompt chrome never lands on the stream the diagram is printed to.
+  // -y/--yes forces the same non-interactive resolution path on demand, so a
+  // TTY user can skip prompts and fall back to defaults without CI env vars.
   const interactive =
-    isTTY(process.stdout) && !isCI() && !opts.check && !opts.stdout;
+    isTTY(process.stdout) &&
+    !isCI() &&
+    !opts.check &&
+    !opts.stdout &&
+    !opts.yes;
 
   validateCheckRequiresOut(opts.check, opts.out);
 
