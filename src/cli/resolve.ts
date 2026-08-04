@@ -15,6 +15,24 @@ import { icon, orExit } from "./render";
 
 export const ALL_ORM_NAMES = Object.keys(adapters) as ORMName[];
 
+// --check has no memory of what --out was used on the run that created the
+// committed file, so there's no safe default to guess (e.g. "erd") — make
+// --out mandatory whenever --check is passed, rather than silently checking
+// the wrong path.
+export function validateCheckRequiresOut(
+  check: boolean,
+  out: string | undefined,
+): void {
+  if (check && !out) {
+    console.error(
+      pc.red(
+        `${icon("✖", "x")}--check requires --out <path> so it knows which committed file to verify against.`,
+      ),
+    );
+    process.exit(1);
+  }
+}
+
 export async function resolveORM(
   detected: DetectedORM[],
   interactive: boolean,

@@ -19,6 +19,7 @@ import {
   resolveOutBase,
   resolveRelationLabelMode,
   resolveTypeMode,
+  validateCheckRequiresOut,
 } from "./cli/resolve";
 import { generateAndWrite } from "./cli/run";
 
@@ -118,6 +119,8 @@ async function main() {
   // status/prompt chrome never lands on the stream the diagram is printed to.
   const interactive =
     isTTY(process.stdout) && !isCI() && !opts.check && !opts.stdout;
+
+  validateCheckRequiresOut(opts.check, opts.out);
 
   if (interactive) intro(`${icon("📊")}${pc.bold("orm2erd")}`);
 
