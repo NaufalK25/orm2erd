@@ -37,6 +37,7 @@ src/
     orm.ts            # ORMName union
     format.ts         # OutputFormat/TypeMode unions
     check.ts           # --check: diff a regenerated model against the file on disk
+    model-diff.ts        # --check --summary: structural (ERDModel-level) diff + gitignored JSON snapshot read/write
     dotenv.ts          # best-effort .env/.env.local loading before runtime introspection
     guard-exit.ts       # traps a target entry file calling process.exit() during import
     suppress-output.ts  # silences the target codebase's own console/stdout noise during extract()
@@ -249,12 +250,15 @@ orm2erd --orm prisma --entry ./schema.prisma --format mermaid,dbml --out ./erd
 | `--relation-label <mode>` | `both` (default — alias, plus the FK column when it disambiguates two relations between the same entity pair), `alias`, or `column` — see `src/emitters/label.ts`. |
 | `--case <mode>` | Letter-casing for rendered identifiers: `preserve` (default, source casing as-is), `snake`, `screaming_snake`, `camel`, `pascal`, `kebab`, `title`, `lower`, or `upper`. Only touches identifiers (entity/field/enum-type names) — never type labels, enum member values, or the `--names both` alias — see `src/core/case-transform.ts`. Some emitters conditionally quote an identifier that becomes syntactically unsafe after casing (a bare hyphen/space) — see `src/emitters/quote.ts`. |
 | `--inflect <mode>` | Pluralization for **entity/table identifiers only** (never fields, never the `--names both` alias): `preserve` (default, source number as-is), `plural`, or `singular` — via the `inflection` package, applied before `--case` (`--inflect plural --case kebab` on `PostTag` → `post-tags`) — see `src/core/inflect.ts`. |
-| `--check` | Regenerate in-memory and diff against the file(s) already on disk; writes nothing, exits non-zero on drift/missing — see `src/core/check.ts`. Forces non-interactive. |
-| `--stdout` | Print the diagram to stdout instead of writing a file; requires exactly one `--format`. Forces non-interactive, same as `--check`; status/log lines are routed to stderr so the stdout stream stays clean for piping. |
+| `--check` | Regenerate in-memory and diff against the file(s) already on disk; writes nothing, exits non-zero on drift/missing — see `src/core/check.ts`. Does NOT force non-interactive by itself — run from a TTY, ORM/entry/`--out`/etc. ambiguity all still prompt normally. `--out` is still always required, but never via a silently-accepted guess: non-interactively it's a hard error checked before any prompting starts (`validateCheckRequiresOut`), interactively it's a dedicated prompt with no pre-fillable default (`resolveOutBase`'s `check` param) — see `src/cli/resolve.ts`. |
+| `--summary` | With `--check`, print a structural (schema-level) diff grouped by entity (e.g. `users: +column "last_login_at"`) instead of the raw line diff, by comparing the freshly-extracted `ERDModel` against a gitignored `<out>.orm2erd-model.json` snapshot written alongside the diagram on the last non-`--check` run — see `src/core/model-diff.ts`. Falls back to the raw line diff (with an explanatory note) when no snapshot exists yet (e.g. first run, or a CI checkout with no prior local run — the snapshot is a local cache, not committed) or when the drift is formatting/ordering-only (no structural difference to show). Requires `--check`. |
+| `--stdout` | Print the diagram to stdout instead of writing a file; requires exactly one `--format`. Forces non-interactive so prompt chrome never lands on the stdout stream; status/log lines are routed to stderr so the stream stays clean for piping. |
 | `--copy` | Copy the diagram to the clipboard instead of writing a file; requires exactly one `--format`. Uses `clipboardy`; stays interactive (spinner/intro/outro) since it never touches stdout. |
 | `--verbose` | Don't suppress the target codebase's own console/stdout output during `extract()`. |
-| `-y, --yes` | Forces `interactive = false` in `src/cli.ts` (same as `--check`/`--stdout`/CI), so every omitted flag falls back to its non-interactive default instead of prompting. Reuses the existing default-value branch in each `resolve*` function in `src/cli/resolve.ts` — no separate default-value plumbing. |
+| `-y, --yes` | Forces `interactive = false` in `src/cli.ts` (same as `--stdout`/CI), so every omitted flag falls back to its non-interactive default instead of prompting. Reuses the existing default-value branch in each `resolve*` function in `src/cli/resolve.ts` — no separate default-value plumbing. |
 
-In a TTY (and not CI, not `--check`, not `--stdout`, not `-y`/`--yes`), any omitted flag falls back
-to an interactive `@clack/prompts` flow instead of a hard default. See
-[README.md](./README.md#flags) for the full flag reference and CI examples.
+In a TTY (and not CI, not `--stdout`, not `-y`/`--yes`), any omitted flag falls back to an
+interactive `@clack/prompts` flow instead of a hard default — including `--out` on a `--check` run,
+whose prompt (unlike a plain write's) has no pre-fillable default, so it can't be satisfied by
+blindly hitting Enter. See [README.md](./README.md#flags) for the full flag reference and CI
+examples.

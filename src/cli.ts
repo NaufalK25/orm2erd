@@ -28,6 +28,7 @@ import {
   resolveRelationLabelMode,
   resolveTypeMode,
   validateCheckRequiresOut,
+  validateSummaryRequiresCheck,
 } from "./cli/resolve";
 import { generateAndWrite } from "./cli/run";
 
@@ -45,6 +46,7 @@ interface ProgramOptions {
   case: CaseMode;
   inflect: InflectMode;
   check: boolean;
+  summary: boolean;
   stdout: boolean;
   copy: boolean;
   verbose: boolean;
@@ -111,6 +113,10 @@ program
     "verify committed ERD file(s) are up to date; exit non-zero on drift or if missing (writes nothing)",
   )
   .option(
+    "--summary",
+    "with --check, print a structural (schema-level) diff grouped by entity instead of the raw line diff (requires --check)",
+  )
+  .option(
     "--stdout",
     "print the diagram to stdout instead of writing a file (single format only)",
   )
@@ -154,19 +160,22 @@ const opts = program.opts<ProgramOptions>();
 async function main() {
   const cwd = process.cwd();
   // isCI() is also checked because some CI runners still report a TTY.
-  // --check must never prompt (it runs in CI); force non-interactive so it
-  // relies on flags / detection only. --stdout needs the same treatment so
-  // status/prompt chrome never lands on the stream the diagram is printed to.
-  // -y/--yes forces the same non-interactive resolution path on demand, so a
-  // TTY user can skip prompts and fall back to defaults without CI env vars.
+  // --check does NOT force non-interactive on its own — run locally from a
+  // TTY, it should still prompt for ORM/entry/--out/etc. ambiguity like any
+  // other run. --out is still required either way (see
+  // validateCheckRequiresOut / resolveOutBase's `check` param): non-
+  // interactively that's a hard error, interactively it's a prompt with no
+  // pre-fillable default, so it's never satisfied by a silently-accepted
+  // guess in either mode.
+  // --stdout forces non-interactive so status/prompt chrome never lands on
+  // the stream the diagram is printed to. -y/--yes forces the same
+  // non-interactive resolution path on demand, so a TTY user can skip
+  // prompts and fall back to defaults without CI env vars.
   const interactive =
-    isTTY(process.stdout) &&
-    !isCI() &&
-    !opts.check &&
-    !opts.stdout &&
-    !opts.yes;
+    isTTY(process.stdout) && !isCI() && !opts.stdout && !opts.yes;
 
-  validateCheckRequiresOut(opts.check, opts.out);
+  validateCheckRequiresOut(opts.check, opts.out, interactive);
+  validateSummaryRequiresCheck(opts.check, opts.summary);
 
   if (interactive) intro(`${icon("📊")}${pc.bold("orm2erd")}`);
 
@@ -211,7 +220,12 @@ async function main() {
     opts.out ??
       (opts.stdout || opts.copy
         ? "erd"
-        : await resolveOutBase(interactive, outExample, selectedEmitters)),
+        : await resolveOutBase(
+            interactive,
+            outExample,
+            selectedEmitters,
+            opts.check,
+          )),
   );
   const typeMode = await resolveTypeMode(interactive, opts.typeMode);
   const nameMode = await resolveNameMode(interactive, opts.names);
@@ -234,6 +248,7 @@ async function main() {
     caseMode,
     inflectMode,
     opts.check,
+    opts.summary,
     opts.stdout,
     opts.copy,
     opts.verbose,

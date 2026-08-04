@@ -25,3 +25,6 @@ Thumbs.db
 
 # Test/coverage
 coverage/
+
+# --check --summary local cache (per-run ERDModel snapshot, not committed)
+*.orm2erd-model.json

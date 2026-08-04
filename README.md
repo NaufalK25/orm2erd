@@ -251,10 +251,34 @@ npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --out .
 - **missing** → tells you to generate it first and exits `1`
 
 `--check` never touches the filesystem, so it's safe in a pre-commit hook or a pull-request check.
-It's flag-driven and non-interactive by design: pass it the **same** output-affecting flags you
-generated with (`--format`, `--out`, and
-`--type-mode`/`--names`/`--relation-label`/`--case`/`--inflect` if you use them), or it will report
-drift against a differently-rendered file.
+In CI it's flag-driven and non-interactive (same detection rules as every other run — no TTY, or
+`CI` env var set): pass it the **same** output-affecting flags you generated with (`--format`,
+`--out`, and `--type-mode`/`--names`/`--relation-label`/`--case`/`--inflect` if you use them), or it
+will report drift against a differently-rendered file.
+
+Run locally from a terminal, `--check` prompts like any other run if something's ambiguous (which
+ORM, which entry point, ...) — including `--out` itself if you don't pass it. That prompt is
+deliberately different from a plain write's: there's no pre-filled guess to accept by hitting
+Enter, since a wrong guess there means silently checking the wrong file. You have to type the
+actual path of the file that's already committed.
+
+Every generating (non-`--check`) run also writes a small `<out>.orm2erd-model.json` cache file
+alongside the diagram — a snapshot of the underlying model, gitignored by default. Add
+`--summary` to `--check` to use it: instead of a raw line diff, you get a structural,
+schema-level summary grouped by entity:
+
+```bash
+npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --out ./docs/erd.mmd --check --summary
+```
+
+```
+users: +column "last_login_at"
+posts → tags: cardinality changed (1-n → n-n)
+```
+
+Since the snapshot is a local cache (not committed), a CI runner or fresh clone with no prior
+local run won't have one yet — `--summary` falls back to the raw line diff with a note in that
+case, which is expected, not an error.
 
 Drop it into a workflow:
 
@@ -330,6 +354,7 @@ erDiagram
 | `--case <mode>` | Letter-casing for rendered identifiers: `preserve` (source casing as-is, default), `snake`, `screaming_snake`, `camel`, `pascal`, `kebab`, `title`, `lower`, or `upper`. |
 | `--inflect <mode>` | Pluralization for entity/table identifiers only: `preserve` (source number as-is, default), `plural`, or `singular`. |
 | `--check` | Verify the committed ERD file(s) are up to date instead of writing. Exits non-zero on drift or if a file is missing; writes nothing. See [Keeping the ERD in sync](#keeping-the-erd-in-sync-ci). |
+| `--summary` | With `--check`, print a structural (schema-level) diff grouped by entity instead of the raw line diff, using the gitignored `<out>.orm2erd-model.json` cache written on the last generating run. Falls back to the raw diff when no cache is available yet or the drift is formatting-only. Requires `--check`. |
 | `--stdout` | Print the diagram to stdout instead of writing a file — requires exactly one `--format`. Status output goes to stderr, so the diagram can be piped cleanly (e.g. `orm2erd ... --stdout > erd.mmd` or into another tool). |
 | `--copy` | Copy the diagram to the clipboard instead of writing a file — requires exactly one `--format`. |
 | `--verbose` | Show log output from the target codebase during extraction (suppressed by default). |

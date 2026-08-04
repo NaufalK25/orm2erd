@@ -20,15 +20,39 @@ export const ALL_ORM_NAMES = Object.keys(adapters) as ORMName[];
 // --check has no memory of what --out was used on the run that created the
 // committed file, so there's no safe default to guess (e.g. "erd") — make
 // --out mandatory whenever --check is passed, rather than silently checking
-// the wrong path.
+// the wrong path. Non-interactively (CI, -y, no TTY) this is a hard error:
+// there's no one to ask, and it's checked before any prompting starts so a
+// run doesn't walk through ORM/entry selection only to reject it at the very
+// end for a flag that was missing from the start. Interactively, resolving
+// --out is deferred to resolveOutBase's own check-aware prompt instead (see
+// its `check` param) — that prompt has no pre-fillable default to guess at
+// and requires explicit typed input, so it doesn't reintroduce the risky
+// silent-guess this guard exists to rule out.
 export function validateCheckRequiresOut(
   check: boolean,
   out: string | undefined,
+  interactive: boolean,
 ): void {
-  if (check && !out) {
+  if (check && !out && !interactive) {
     console.error(
       pc.red(
         `${icon("✖", "x")}--check requires --out <path> so it knows which committed file to verify against.`,
+      ),
+    );
+    process.exit(1);
+  }
+}
+
+// --summary is a presentation mode for the diff --check already computes —
+// there's nothing to summarize on a plain write run.
+export function validateSummaryRequiresCheck(
+  check: boolean,
+  summary: boolean,
+): void {
+  if (summary && !check) {
+    console.error(
+      pc.red(
+        `${icon("✖", "x")}--summary requires --check — it's a presentation mode for the diff --check computes.`,
       ),
     );
     process.exit(1);
@@ -323,8 +347,27 @@ export async function resolveOutBase(
   interactive: boolean,
   outExample: string,
   selectedEmitters: Emitter[],
+  check = false,
 ): Promise<string> {
   if (interactive) {
+    // --check has no committed file to fall back to, so unlike a plain
+    // write's prompt (which pre-fills a guessed path that Enter alone
+    // accepts), this one has no initialValue/defaultValue at all — an empty
+    // submit fails validation and re-prompts, so the path always comes from
+    // deliberate input, never a blindly-accepted guess.
+    if (check) {
+      return orExit(
+        await text({
+          message: `${icon("💾")}Which committed file should --check verify against?`,
+          placeholder: outExample,
+          validate: (value) =>
+            value
+              ? undefined
+              : "A path is required for --check — there's no safe default to guess.",
+        }),
+      );
+    }
+
     const preview =
       selectedEmitters.length > 1
         ? ` (writes ${selectedEmitters

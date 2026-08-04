@@ -260,3 +260,31 @@ describe("resolveOutBase (interactive)", () => {
     expect(result).toBe("./erd/out");
   });
 });
+
+describe("resolveOutBase (interactive) — check mode", () => {
+  it("prompts without a pre-fillable default, unlike the plain-write prompt", async () => {
+    mockText.mockResolvedValueOnce("./docs/erd");
+
+    const result = await resolveOutBase(true, "erd.mmd", [], true);
+
+    expect(mockText).toHaveBeenCalledOnce();
+    const opts = mockText.mock.calls[0][0];
+    expect(opts.initialValue).toBeUndefined();
+    expect(opts.defaultValue).toBeUndefined();
+    expect(opts.placeholder).toBe("erd.mmd");
+    expect(result).toBe("./docs/erd");
+  });
+
+  it("rejects an empty submission instead of silently guessing a path", async () => {
+    mockText.mockResolvedValueOnce("./docs/erd");
+
+    await resolveOutBase(true, "erd.mmd", [], true);
+
+    const opts = mockText.mock.calls[0][0];
+    const validate = opts.validate as (value: string) => string | Error | void;
+    expect(validate("")).toBe(
+      "A path is required for --check — there's no safe default to guess.",
+    );
+    expect(validate("./docs/erd")).toBeUndefined();
+  });
+});

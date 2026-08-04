@@ -16,17 +16,26 @@ import type {
 } from "../core/format";
 import { withGuardedExit } from "../core/guard-exit";
 import { friendlyImportHint } from "../core/import-hints";
+import type { ERDModel } from "../core/model";
+import {
+  diffModel,
+  formatModelDiff,
+  isModelDiffEmpty,
+  modelSnapshotPath,
+  readModelSnapshot,
+  writeModelSnapshot,
+} from "../core/model-diff";
 import { resolveOutPath } from "../core/out-path";
 import { withSuppressedOutput } from "../core/suppress-output";
 import type { Emitter } from "../emitters";
 import { icon, renderDiff } from "./render";
 
-interface Output {
+export interface Output {
   path: string;
   content: string;
 }
 
-interface PhaseReporter {
+export interface PhaseReporter {
   next(label: string): Promise<void>;
   succeed(summary: string): void;
   fail(err: unknown): void;
@@ -38,7 +47,7 @@ interface PhaseReporter {
 // to narrate each pipeline phase, plus the terminal outputs for --stdout and
 // the final success/failure lines — all of it shares the same "are we
 // interactive" branching, so it lives behind one small interface.
-function createPhaseReporter(
+export function createPhaseReporter(
   interactive: boolean,
   stdout: boolean,
 ): PhaseReporter {
@@ -107,7 +116,16 @@ function createPhaseReporter(
   };
 }
 
-async function runCheck(outputs: Output[]): Promise<never> {
+export interface CheckContext {
+  model: ERDModel;
+  outBase: string;
+  summary: boolean;
+}
+
+export async function runCheck(
+  outputs: Output[],
+  ctx: CheckContext,
+): Promise<never> {
   const results = await Promise.all(
     outputs.map((o) => checkOutput(o.path, o.content)),
   );
@@ -122,6 +140,29 @@ async function runCheck(outputs: Output[]): Promise<never> {
     process.exit(0);
   }
 
+  const drifted = failed.some((r) => r.status === "drift");
+
+  // Resolved once, up front, so the per-file loop below knows whether to
+  // print the raw diff or defer to the structural summary instead.
+  let structuralLines: string[] | null = null;
+  let structuralNote: string | null = null;
+
+  if (ctx.summary && drifted) {
+    const snapshotPath = modelSnapshotPath(ctx.outBase);
+    const previous = await readModelSnapshot(snapshotPath);
+    if (!previous) {
+      structuralNote = `No structural snapshot found (${snapshotPath}) — showing the text diff instead; a snapshot will be written next time you run without --check.`;
+    } else {
+      const diff = diffModel(previous, ctx.model);
+      if (isModelDiffEmpty(diff)) {
+        structuralNote =
+          "No structural (schema-level) differences found — the on-disk content differs only in formatting/ordering. Showing the text diff instead.";
+      } else {
+        structuralLines = formatModelDiff(diff);
+      }
+    }
+  }
+
   for (const r of failed) {
     if (r.status === "missing") {
       console.error(
@@ -129,11 +170,29 @@ async function runCheck(outputs: Output[]): Promise<never> {
           `${icon("✖", "x")}${r.path} does not exist — run without --check to create it`,
         ),
       );
-    } else {
-      console.error(pc.yellow(`${icon("≠", "~")}${r.path} is out of date:`));
+      continue;
+    }
+    console.error(
+      pc.yellow(
+        `${icon("≠", "~")}${r.path} is out of date${structuralLines ? "" : ":"}`,
+      ),
+    );
+    if (!structuralLines) {
       console.error(renderDiff(r.path, r.rows ?? []));
     }
   }
+
+  if (structuralLines) {
+    console.error(
+      pc.yellow(`${icon("≠", "~")}Structural (schema-level) drift:`),
+    );
+    for (const line of structuralLines) {
+      console.error(`  ${line}`);
+    }
+  } else if (structuralNote) {
+    console.error(pc.dim(structuralNote));
+  }
+
   console.error(pc.dim("\nRun orm2erd without --check to regenerate."));
   process.exit(1);
 }
@@ -159,10 +218,11 @@ async function writeClipboard(
   phase.succeed(`Copied ${format} diagram to clipboard`);
 }
 
-async function writeFiles(
+export async function writeFiles(
   phase: PhaseReporter,
   outBase: string,
   outputs: Output[],
+  model: ERDModel,
 ) {
   const outDir = dirname(outBase);
   if (outDir !== ".") {
@@ -174,6 +234,10 @@ async function writeFiles(
     await writeFile(path, content, "utf-8");
     written.push(path);
   }
+
+  const snapshotPath = modelSnapshotPath(outBase);
+  await writeModelSnapshot(snapshotPath, model);
+  written.push(snapshotPath);
 
   phase.succeed(`Written to ${written.join(", ")}`);
 }
@@ -190,6 +254,7 @@ export async function generateAndWrite(
   caseMode: CaseMode,
   inflectMode: InflectMode,
   check: boolean,
+  summary: boolean,
   stdoutFlag: boolean,
   copy: boolean,
   verbose: boolean,
@@ -222,7 +287,7 @@ export async function generateAndWrite(
     }));
 
     if (check) {
-      await runCheck(outputs);
+      await runCheck(outputs, { model, outBase, summary });
       return;
     }
 
@@ -240,7 +305,7 @@ export async function generateAndWrite(
     }
 
     await phase.next("Writing output…");
-    await writeFiles(phase, outBase, outputs);
+    await writeFiles(phase, outBase, outputs, model);
 
     // Importing the target codebase can leave open handles (DB connection,
     // timers) that would otherwise hold the event loop open forever.
