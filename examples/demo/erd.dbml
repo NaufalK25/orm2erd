@@ -26,6 +26,6 @@ Table Tag {
 }
 
 // Relationships
-Ref: User.id > Post.authorId
-Ref: User.id > Comment.authorId
-Ref: Post.id > Comment.postId
+Ref: User.id < Post.authorId
+Ref: User.id < Comment.authorId
+Ref: Post.id < Comment.postId
