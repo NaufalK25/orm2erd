@@ -1,6 +1,14 @@
 import type { Emitter } from "./types";
 import { buildNameResolver } from "./names";
 import { toCase } from "../core/case-transform";
+import { hasHyphen, hasSpace } from "./quote";
+
+// Unlike Mermaid, DBML needs quoting for a bare hyphen too, not just a
+// space — verified empirically (`post-tag` alone breaks unquoted). One
+// quote character (`"..."`) covers both triggers here.
+function quoteIdent(id: string): string {
+  return hasHyphen(id) || hasSpace(id) ? `"${id}"` : id;
+}
 
 export const dbmlEmitter: Emitter = {
   format: "dbml",
@@ -17,7 +25,7 @@ export const dbmlEmitter: Emitter = {
       // DBML has no table-display-alias syntax, unlike Mermaid/PlantUML/D2 —
       // the model name goes in a plain comment above the table instead.
       if (entityAlias) lines.push(`// ${entityAlias}`);
-      lines.push(`Table ${names.entityId(entity.name)} {`);
+      lines.push(`Table ${quoteIdent(names.entityId(entity.name))} {`);
       // Composite PK members are declared once in the `indexes` block below;
       // also tagging each field `[pk]` would double-define the primary key.
       const compositePkMembers = new Set(entity.primaryKey ?? []);
@@ -25,15 +33,19 @@ export const dbmlEmitter: Emitter = {
         const isEnum = Boolean(field.enumValues && field.enumValues.length > 0);
         // An enum's nativeType is a real schema identifier here — it's the
         // name of the `Enum` block declared below and referenced by every
-        // field of that type — so it gets case-transformed like any other
-        // identifier. A plain native type label (typeMode: "native" on a
-        // non-enum field, e.g. "VARCHAR2") is fixed driver vocabulary, not a
-        // naming convention, and must never be case-transformed.
-        const displayType = isEnum
-          ? toCase(field.nativeType, caseMode)
-          : typeMode === "native"
-            ? field.nativeType
-            : field.type;
+        // field of that type — so it gets case-transformed (and quoted if
+        // needed) like any other identifier. Computed once and reused for
+        // both the field's type reference below and the `Enum` block header
+        // further down, so they can never end up mismatched. A plain native
+        // type label (typeMode: "native" on a non-enum field, e.g.
+        // "VARCHAR2") is fixed driver vocabulary, not a naming convention,
+        // and must never be case-transformed or quoted.
+        const enumTypeName = isEnum
+          ? quoteIdent(toCase(field.nativeType, caseMode))
+          : undefined;
+        const displayType =
+          enumTypeName ??
+          (typeMode === "native" ? field.nativeType : field.type);
         const typeLabel = `${displayType}${field.isList ? "[]" : ""}`;
         const defaultValueDisplay = field.defaultValue
           ? `"${field.defaultValue.replaceAll('"', "'")}"`
@@ -55,11 +67,11 @@ export const dbmlEmitter: Emitter = {
             `note: "${noteParts.join(" | ").replaceAll('"', "'")}"`,
         ].filter((c): c is string => Boolean(c));
         lines.push(
-          `  ${names.fieldId(field)} ${typeLabel}${constraints.length > 0 ? " [" + constraints.join(", ") + "]" : ""}`,
+          `  ${quoteIdent(names.fieldId(field))} ${typeLabel}${constraints.length > 0 ? " [" + constraints.join(", ") + "]" : ""}`,
         );
 
-        if (field.enumValues && field.enumValues.length > 0) {
-          enumsByName.set(toCase(field.nativeType, caseMode), field.enumValues);
+        if (enumTypeName && field.enumValues) {
+          enumsByName.set(enumTypeName, field.enumValues);
         }
       }
 
@@ -68,7 +80,7 @@ export const dbmlEmitter: Emitter = {
       // through the same map the field declarations above used, so a
       // composite key doesn't silently keep model names under --names table.
       const resolveNames = (fields: string[]) =>
-        fields.map((f) => names.fieldIdByName(entity, f));
+        fields.map((f) => quoteIdent(names.fieldIdByName(entity, f)));
 
       // Composite PK / multi-column uniques / plain indexes → DBML native
       // indexes block. A single-column index is a bare field name; multiple
@@ -137,14 +149,16 @@ export const dbmlEmitter: Emitter = {
       ].filter((a): a is string => Boolean(a));
       const fromEntity = model.entities.find((e) => e.name === rel.from);
       const toEntity = model.entities.find((e) => e.name === rel.to);
-      const fromColumnId = fromEntity
-        ? names.fieldIdByName(fromEntity, rel.fromColumn)
-        : rel.fromColumn;
-      const toColumnId = toEntity
-        ? names.fieldIdByName(toEntity, rel.toColumn)
-        : rel.toColumn;
+      const fromColumnId = quoteIdent(
+        fromEntity
+          ? names.fieldIdByName(fromEntity, rel.fromColumn)
+          : rel.fromColumn,
+      );
+      const toColumnId = quoteIdent(
+        toEntity ? names.fieldIdByName(toEntity, rel.toColumn) : rel.toColumn,
+      );
       lines.push(
-        `Ref: ${names.entityId(rel.from)}.${fromColumnId} ${symbol} ${names.entityId(rel.to)}.${toColumnId}${actions.length > 0 ? " [" + actions.join(", ") + "]" : ""}`,
+        `Ref: ${quoteIdent(names.entityId(rel.from))}.${fromColumnId} ${symbol} ${quoteIdent(names.entityId(rel.to))}.${toColumnId}${actions.length > 0 ? " [" + actions.join(", ") + "]" : ""}`,
       );
     }
 

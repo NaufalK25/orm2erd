@@ -592,4 +592,88 @@ describe("dbmlEmitter", () => {
       expect(output).toContain('note: "alias: fullName"');
     });
   });
+
+  describe("quoting a multi-word identifier", () => {
+    // DBML needs quoting for a bare hyphen too, unlike Mermaid — verified
+    // empirically against a real DBML parser.
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          tableName: "users",
+          fields: [{ name: "id", type: "int", nativeType: "INTEGER" }],
+        },
+        {
+          name: "PostTag",
+          tableName: "post_tag",
+          primaryKey: ["postId", "tagId"],
+          fields: [
+            {
+              name: "postId",
+              columnName: "post_id",
+              type: "int",
+              nativeType: "INTEGER",
+            },
+            {
+              name: "tagId",
+              columnName: "tag_id",
+              type: "int",
+              nativeType: "INTEGER",
+            },
+            {
+              name: "status",
+              type: "enum",
+              nativeType: "PostStatus",
+              enumValues: ["ACTIVE"],
+            },
+          ],
+        },
+      ],
+      relations: [
+        {
+          from: "User",
+          to: "PostTag",
+          type: "1-n",
+          fromColumn: "id",
+          toColumn: "postId",
+        },
+      ],
+    };
+
+    it("quotes the entity, fields, composite key members, enum type, and Ref columns under kebab", () => {
+      const output = dbmlEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+        caseMode: "kebab",
+      });
+      expect(output).toContain('Table "post-tag" {');
+      expect(output).toContain('"post-id" int [not null]');
+      expect(output).toContain('status "post-status" [not null]');
+      expect(output).toContain('("post-id", "tag-id") [pk]');
+      expect(output).toContain('Enum "post-status" {');
+      expect(output).toContain('Ref: users.id < "post-tag"."post-id"');
+    });
+
+    it("quotes under title the same way, with spaces", () => {
+      const output = dbmlEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+        caseMode: "title",
+      });
+      expect(output).toContain('Table "Post Tag" {');
+      expect(output).toContain('"Post Id" int [not null]');
+      expect(output).toContain('Status "Post Status" [not null]');
+      expect(output).toContain('Enum "Post Status" {');
+    });
+
+    it("never quotes a single-word identifier", () => {
+      const output = dbmlEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+        caseMode: "kebab",
+      });
+      expect(output).toContain("Table users {");
+      expect(output).not.toContain('"users"');
+    });
+  });
 });

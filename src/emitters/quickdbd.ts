@@ -1,6 +1,14 @@
 import type { Emitter } from "./types";
 import type { Relation } from "../core/model";
 import { buildNameResolver } from "./names";
+import { hasSpace } from "./quote";
+
+// QuickDBD tolerates a bare hyphen (kebab) unquoted, unlike Mermaid/DBML —
+// only a space (title) forces quoting, verified empirically. One quote
+// character covers both entity and field identifiers here.
+function quoteIdent(id: string): string {
+  return hasSpace(id) ? `"${id}"` : id;
+}
 
 interface InlineFk {
   symbol: string;
@@ -42,7 +50,7 @@ export const quickdbdEmitter: Emitter = {
     const lines = ["# Entities"];
 
     for (const entity of model.entities) {
-      lines.push(`${names.entityId(entity.name)}`, "--");
+      lines.push(`${quoteIdent(names.entityId(entity.name))}`, "--");
       for (const field of entity.fields) {
         let displayType = typeMode === "native" ? field.nativeType : field.type;
         if (field.type === "enum") {
@@ -56,7 +64,7 @@ export const quickdbdEmitter: Emitter = {
         const fk = inlineFks.get(`${entity.name}.${field.name}`);
         const refEntity = fk ? entityByName.get(fk.refEntity) : undefined;
         const fkToken = fk
-          ? `FK ${fk.symbol} ${names.entityId(fk.refEntity)}.${refEntity ? names.fieldIdByName(refEntity, fk.refColumn) : fk.refColumn}`
+          ? `FK ${fk.symbol} ${quoteIdent(names.entityId(fk.refEntity))}.${quoteIdent(refEntity ? names.fieldIdByName(refEntity, fk.refColumn) : fk.refColumn)}`
           : field.isForeignKey && "FK";
 
         const fieldAlias = names.fieldAlias(field);
@@ -74,7 +82,7 @@ export const quickdbdEmitter: Emitter = {
           fieldAlias && `alias: ${fieldAlias}`,
         ].filter((c): c is string => Boolean(c));
 
-        const line = `${names.fieldId(field)} ${typeLabel}${constraints.length > 0 ? " " + constraints.join(" ") : ""}`;
+        const line = `${quoteIdent(names.fieldId(field))} ${typeLabel}${constraints.length > 0 ? " " + constraints.join(" ") : ""}`;
         lines.push(
           comments.length > 0 ? `${line} # ${comments.join(" | ")}` : line,
         );

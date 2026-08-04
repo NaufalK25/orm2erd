@@ -343,4 +343,59 @@ describe("plantumlEmitter", () => {
       expect(output).toContain("-- alias: fullName");
     });
   });
+
+  describe("quoting a multi-word entity name", () => {
+    // PlantUML tolerates a bare hyphen/space on a *field* name, and even
+    // tolerates a bare hyphen on the entity's own `entity X {` declaration
+    // — but not when that same entity name is referenced from a
+    // relationship line, and never a bare space anywhere. Quote the entity
+    // name consistently everywhere it appears rather than relying on that
+    // inconsistent per-position leniency.
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          tableName: "users",
+          fields: [{ name: "id", type: "int", nativeType: "INTEGER" }],
+        },
+        {
+          name: "PostTag",
+          tableName: "post_tag",
+          fields: [
+            {
+              name: "addedAt",
+              columnName: "added_at",
+              type: "datetime",
+              nativeType: "DATETIME",
+            },
+          ],
+        },
+      ],
+      relations: [
+        { from: "User", to: "PostTag", type: "1-n", fieldName: "postTags" },
+      ],
+    };
+
+    it("quotes the entity (declaration + relationship reference) under kebab, but never a field", () => {
+      const output = plantumlEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+        caseMode: "kebab",
+      });
+      expect(output).toContain('entity "post-tag" {');
+      expect(output).toContain("added-at : datetime");
+      expect(output).toContain('users ||--o{ "post-tag" : "post-tags"');
+    });
+
+    it("quotes the entity under title, but never a field", () => {
+      const output = plantumlEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+        caseMode: "title",
+      });
+      expect(output).toContain('entity "Post Tag" {');
+      expect(output).toContain("Added At : datetime");
+      expect(output).toContain('Users ||--o{ "Post Tag" : "Post Tags"');
+    });
+  });
 });

@@ -2,6 +2,20 @@ import type { Emitter } from "./types";
 import { resolveRelationLabel } from "./label";
 import { compositeUniqueMates } from "./uniques";
 import { buildNameResolver } from "./names";
+import { hasSpace } from "./quote";
+
+// Mermaid's erDiagram tolerates a bare hyphen in either an entity or a field
+// identifier — only a space forces quoting, and entities/fields each use a
+// different quote character: an entity name is quoted with `"..."` (same
+// character used for the field-comment string, but never ambiguous since it
+// only ever appears right after the entity id, before ` {`/`["alias"] {`),
+// a field name with `` `...` ``.
+function quoteEntity(id: string): string {
+  return hasSpace(id) ? `"${id}"` : id;
+}
+function quoteField(id: string): string {
+  return hasSpace(id) ? `\`${id}\`` : id;
+}
 
 export const mermaidEmitter: Emitter = {
   format: "mermaid",
@@ -21,7 +35,7 @@ export const mermaidEmitter: Emitter = {
       if (entity.description) {
         lines.push(`  %% ${entity.description}`);
       }
-      const entityId = names.entityId(entity.name);
+      const entityId = quoteEntity(names.entityId(entity.name));
       const entityAlias = names.entityAlias(entity.name);
       lines.push(
         entityAlias ? `  ${entityId}["${entityAlias}"] {` : `  ${entityId} {`,
@@ -51,7 +65,7 @@ export const mermaidEmitter: Emitter = {
           field.description && field.description.replaceAll('"', "'"),
         ].filter((c): c is string => Boolean(c));
         lines.push(
-          `    ${typeLabel} ${names.fieldId(field)}${constraints.length > 0 ? " " + constraints.join(", ") : ""}${comments.length > 0 ? ' "' + comments.join(" | ") + '"' : ""}`,
+          `    ${typeLabel} ${quoteField(names.fieldId(field))}${constraints.length > 0 ? " " + constraints.join(", ") : ""}${comments.length > 0 ? ' "' + comments.join(" | ") + '"' : ""}`,
         );
       }
       lines.push("  }");
@@ -74,7 +88,7 @@ export const mermaidEmitter: Emitter = {
             ? "}o--o{"
             : `${fromMarker}--o|`;
       lines.push(
-        `  ${names.entityId(rel.from)} ${symbol} ${names.entityId(rel.to)} : "${resolveRelationLabel(model, rel, names, relationLabelMode)}"`,
+        `  ${quoteEntity(names.entityId(rel.from))} ${symbol} ${quoteEntity(names.entityId(rel.to))} : "${resolveRelationLabel(model, rel, names, relationLabelMode)}"`,
       );
     }
 

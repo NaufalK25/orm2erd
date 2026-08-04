@@ -389,4 +389,56 @@ describe("mermaidEmitter", () => {
       expect(output).toContain("string full_name");
     });
   });
+
+  describe("quoting a multi-word identifier", () => {
+    // Mermaid's erDiagram tolerates a bare hyphen (kebab) unquoted in both
+    // entity and field position — only a space (title) forces quoting, and
+    // entities/fields each use a different quote character.
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          tableName: "users",
+          fields: [{ name: "id", type: "int", nativeType: "INTEGER" }],
+        },
+        {
+          name: "PostTag",
+          tableName: "post_tag",
+          fields: [
+            {
+              name: "addedAt",
+              columnName: "added_at",
+              type: "datetime",
+              nativeType: "DATETIME",
+            },
+          ],
+        },
+      ],
+      relations: [
+        { from: "User", to: "PostTag", type: "1-n", fieldName: "postTags" },
+      ],
+    };
+
+    it("stays bare under kebab", () => {
+      const output = mermaidEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+        caseMode: "kebab",
+      });
+      expect(output).toContain("post-tag {");
+      expect(output).toContain("datetime added-at");
+      expect(output).toContain('users ||--o{ post-tag : "post-tags"');
+    });
+
+    it("quotes the entity with double quotes and the field with backticks under title", () => {
+      const output = mermaidEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+        caseMode: "title",
+      });
+      expect(output).toContain('"Post Tag" {');
+      expect(output).toContain("datetime `Added At`");
+      expect(output).toContain('Users ||--o{ "Post Tag" : "Post Tags"');
+    });
+  });
 });

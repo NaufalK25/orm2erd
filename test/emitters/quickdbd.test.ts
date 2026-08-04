@@ -283,4 +283,65 @@ describe("quickdbdEmitter", () => {
       expect(output).toContain("full_name string # alias: fullName");
     });
   });
+
+  describe("quoting a multi-word identifier", () => {
+    // QuickDBD tolerates a bare hyphen (kebab) unquoted, unlike Mermaid/DBML
+    // — only a space (title) forces quoting, verified empirically. Also
+    // exercises the inline `table.column` FK reference, where each side is
+    // quoted independently.
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "PostTag",
+          tableName: "post_tag",
+          fields: [{ name: "id", type: "int", nativeType: "INTEGER" }],
+        },
+        {
+          name: "User",
+          tableName: "users",
+          fields: [
+            { name: "id", type: "int", nativeType: "INTEGER" },
+            {
+              name: "postTagId",
+              columnName: "post_tag_id",
+              type: "int",
+              nativeType: "INTEGER",
+              isForeignKey: true,
+            },
+          ],
+        },
+      ],
+      relations: [
+        {
+          from: "PostTag",
+          to: "User",
+          type: "1-n",
+          fromColumn: "id",
+          toColumn: "postTagId",
+        },
+      ],
+    };
+
+    it("stays bare under kebab", () => {
+      const output = quickdbdEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+        caseMode: "kebab",
+      });
+      expect(output).toContain("post-tag\n--");
+      expect(output).toContain("post-tag-id int FK >- post-tag.id");
+    });
+
+    it("quotes only the identifiers containing a space under title", () => {
+      const output = quickdbdEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+        caseMode: "title",
+      });
+      expect(output).toContain('"Post Tag"\n--');
+      // "Post Tag" (the FK's referenced entity) needs quoting; "Id" (the
+      // referenced column) is single-word and doesn't.
+      expect(output).toContain('"Post Tag Id" int FK >- "Post Tag".Id');
+    });
+  });
 });

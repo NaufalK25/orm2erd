@@ -2,6 +2,17 @@ import type { Emitter } from "./types";
 import { resolveRelationLabel } from "./label";
 import { compositeUniqueMates } from "./uniques";
 import { buildNameResolver } from "./names";
+import { hasHyphen, hasSpace } from "./quote";
+
+// Entity names only — never fields, verified empirically (a hyphenated or
+// spaced field name renders fine bare). A hyphenated entity name is
+// tolerated bare in its own `entity X {` declaration but breaks when
+// referenced from a relationship line, so it's quoted everywhere it's used
+// (declaration, note, and every relationship reference) rather than relying
+// on that inconsistent per-position leniency.
+function quoteEntity(id: string): string {
+  return hasHyphen(id) || hasSpace(id) ? `"${id}"` : id;
+}
 
 export const plantumlEmitter: Emitter = {
   format: "plantuml",
@@ -24,7 +35,7 @@ export const plantumlEmitter: Emitter = {
     ];
 
     for (const entity of model.entities) {
-      const entityId = names.entityId(entity.name);
+      const entityId = quoteEntity(names.entityId(entity.name));
       const entityAlias = names.entityAlias(entity.name);
       lines.push(
         entityAlias
@@ -91,7 +102,7 @@ export const plantumlEmitter: Emitter = {
             ? "}o--o{"
             : `${fromMarker}--o|`;
       lines.push(
-        `  ${names.entityId(rel.from)} ${symbol} ${names.entityId(rel.to)} : "${resolveRelationLabel(model, rel, names, relationLabelMode)}"`,
+        `  ${quoteEntity(names.entityId(rel.from))} ${symbol} ${quoteEntity(names.entityId(rel.to))} : "${resolveRelationLabel(model, rel, names, relationLabelMode)}"`,
       );
     }
 
