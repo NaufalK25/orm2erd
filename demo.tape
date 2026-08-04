@@ -54,4 +54,8 @@ Enter
 Sleep 1.5s
 Enter
 
+# ? Entity name pluralization: (preserve pre-selected)
+Sleep 1.5s
+Enter
+
 Sleep 2s

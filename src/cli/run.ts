@@ -8,6 +8,7 @@ import type { ORMAdapter } from "../adapters";
 import { checkOutput } from "../core/check";
 import type {
   CaseMode,
+  InflectMode,
   NameMode,
   OutputFormat,
   RelationLabelMode,
@@ -187,6 +188,7 @@ export async function generateAndWrite(
   nameMode: NameMode,
   relationLabelMode: RelationLabelMode,
   caseMode: CaseMode,
+  inflectMode: InflectMode,
   check: boolean,
   stdoutFlag: boolean,
   copy: boolean,
@@ -215,6 +217,7 @@ export async function generateAndWrite(
         nameMode,
         relationLabelMode,
         caseMode,
+        inflectMode,
       }),
     }));
 

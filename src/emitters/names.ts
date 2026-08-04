@@ -1,6 +1,7 @@
 import type { Entity, ERDModel, Field } from "../core/model";
-import type { CaseMode, NameMode } from "../core/format";
+import type { CaseMode, InflectMode, NameMode } from "../core/format";
 import { toCase } from "../core/case-transform";
+import { applyInflect } from "../core/inflect";
 
 /**
  * Resolves display identifiers for entities/fields under a `NameMode`, built
@@ -10,7 +11,7 @@ import { toCase } from "../core/case-transform";
  * than re-deriving the identifier inline.
  */
 export interface NameResolver {
-  /** The identifier to render/reference for this entity (its ERDModel `name` in "model" mode, else its table name). */
+  /** The identifier to render/reference for this entity (its ERDModel `name` in "model" mode, else its table name) — inflected, then case-transformed. */
   entityId(name: string): string;
   /** The secondary label to show alongside `entityId` in "both" mode — undefined when not in "both" mode or there's nothing extra to show. */
   entityAlias(name: string): string | undefined;
@@ -51,6 +52,7 @@ export function buildNameResolver(
   model: ERDModel,
   mode: NameMode,
   caseMode: CaseMode = "preserve",
+  inflectMode: InflectMode = "preserve",
 ): NameResolver {
   const idFor = new Map<string, string>();
 
@@ -75,7 +77,8 @@ export function buildNameResolver(
   }
 
   return {
-    entityId: (name) => toCase(idFor.get(name) ?? name, caseMode),
+    entityId: (name) =>
+      toCase(applyInflect(idFor.get(name) ?? name, inflectMode), caseMode),
     entityAlias: (name) => {
       if (mode !== "both") return undefined;
       const id = idFor.get(name) ?? name;

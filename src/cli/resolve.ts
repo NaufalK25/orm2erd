@@ -6,6 +6,7 @@ import { emitters, type Emitter } from "../emitters";
 import { gridMultiselect } from "../core/grid-multiselect";
 import type {
   CaseMode,
+  InflectMode,
   NameMode,
   OutputFormat,
   RelationLabelMode,
@@ -279,6 +280,37 @@ export async function resolveCaseMode(
           { value: "title", label: "Title Case" },
           { value: "lower", label: "lowercase" },
           { value: "upper", label: "UPPERCASE" },
+        ],
+        initialValue: "preserve",
+      }),
+    );
+  }
+  return "preserve";
+}
+
+export async function resolveInflectMode(
+  interactive: boolean,
+  inflectModeOpt: InflectMode | undefined,
+): Promise<InflectMode> {
+  if (inflectModeOpt) {
+    return inflectModeOpt;
+  }
+  if (interactive) {
+    return orExit(
+      await select({
+        message: `${icon("🏷️ ")}Entity name pluralization:`,
+        options: [
+          {
+            value: "preserve",
+            label: "Preserve",
+            hint: "keep the source ORM/DB number as-is",
+          },
+          { value: "plural", label: "Plural", hint: "e.g. User -> Users" },
+          {
+            value: "singular",
+            label: "Singular",
+            hint: "e.g. Users -> User",
+          },
         ],
         initialValue: "preserve",
       }),

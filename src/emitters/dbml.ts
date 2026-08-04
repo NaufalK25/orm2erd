@@ -14,8 +14,13 @@ export const dbmlEmitter: Emitter = {
   format: "dbml",
   fileExtension: "dbml",
   emit(model, options) {
-    const { typeMode, nameMode = "model", caseMode = "preserve" } = options;
-    const names = buildNameResolver(model, nameMode, caseMode);
+    const {
+      typeMode,
+      nameMode = "model",
+      caseMode = "preserve",
+      inflectMode = "preserve",
+    } = options;
+    const names = buildNameResolver(model, nameMode, caseMode, inflectMode);
 
     const lines = ["// Entities"];
     const enumsByName = new Map<string, string[]>();

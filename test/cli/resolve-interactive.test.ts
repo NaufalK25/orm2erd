@@ -42,6 +42,7 @@ import {
   resolveCaseMode,
   resolveEntryPath,
   resolveFormats,
+  resolveInflectMode,
   resolveNameMode,
   resolveOutBase,
   resolveORM,
@@ -230,6 +231,21 @@ describe("resolveCaseMode (interactive)", () => {
     const result = await resolveCaseMode(true, "kebab");
     expect(mockSelect).not.toHaveBeenCalled();
     expect(result).toBe("kebab");
+  });
+});
+
+describe("resolveInflectMode (interactive)", () => {
+  it("prompts to choose a pluralization mode", async () => {
+    mockSelect.mockResolvedValueOnce("plural");
+    await expect(resolveInflectMode(true, undefined)).resolves.toBe("plural");
+    expect(mockSelect).toHaveBeenCalledOnce();
+    expect(mockSelect.mock.calls[0][0].initialValue).toBe("preserve");
+  });
+
+  it("skips the prompt entirely when --inflect was already given", async () => {
+    const result = await resolveInflectMode(true, "singular");
+    expect(mockSelect).not.toHaveBeenCalled();
+    expect(result).toBe("singular");
   });
 });
 

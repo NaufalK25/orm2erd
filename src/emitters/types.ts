@@ -1,6 +1,7 @@
 import type { ERDModel } from "../core/model";
 import type {
   CaseMode,
+  InflectMode,
   NameMode,
   OutputFormat,
   RelationLabelMode,
@@ -15,6 +16,8 @@ export interface EmitOptions {
   relationLabelMode?: RelationLabelMode;
   /** Letter-casing applied to rendered identifiers. Defaults to "preserve" (current behavior) when omitted. */
   caseMode?: CaseMode;
+  /** Pluralization/singularization applied to entity/table identifiers only. Defaults to "preserve" (current behavior) when omitted. */
+  inflectMode?: InflectMode;
 }
 
 export interface Emitter {

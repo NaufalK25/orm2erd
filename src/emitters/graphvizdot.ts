@@ -27,8 +27,13 @@ export const graphvizdotEmitter: Emitter = {
   format: "graphvizdot",
   fileExtension: "gv",
   emit(model, options) {
-    const { typeMode, nameMode = "model", caseMode = "preserve" } = options;
-    const names = buildNameResolver(model, nameMode, caseMode);
+    const {
+      typeMode,
+      nameMode = "model",
+      caseMode = "preserve",
+      inflectMode = "preserve",
+    } = options;
+    const names = buildNameResolver(model, nameMode, caseMode, inflectMode);
 
     const lines = [
       "digraph ERD {",

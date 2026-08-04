@@ -226,6 +226,16 @@ either fixed vocabulary or meant to show the real ORM identifier unmodified:
 npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --case screaming_snake
 ```
 
+If your ORM/DB convention doesn't already give entity names the plural/singular form you want,
+`--inflect <plural|singular>` forces one — **entity/table names only**, never field names or the
+`--names both` alias, since pluralizing a field like `email` or `createdAt` doesn't make sense the
+way pluralizing a whole entity does. It runs before `--case`, so `--inflect plural --case kebab` on
+an entity `PostTag` produces `post-tags`, not `post-tag-s`:
+
+```bash
+npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --inflect plural
+```
+
 ### Keeping the ERD in sync (CI)
 
 Commit your generated ERD, then use `--check` to fail CI whenever the committed file no longer
@@ -242,8 +252,9 @@ npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --out .
 
 `--check` never touches the filesystem, so it's safe in a pre-commit hook or a pull-request check.
 It's flag-driven and non-interactive by design: pass it the **same** output-affecting flags you
-generated with (`--format`, `--out`, and `--type-mode`/`--names`/`--relation-label`/`--case` if you
-use them), or it will report drift against a differently-rendered file.
+generated with (`--format`, `--out`, and
+`--type-mode`/`--names`/`--relation-label`/`--case`/`--inflect` if you use them), or it will report
+drift against a differently-rendered file.
 
 Drop it into a workflow:
 
@@ -317,6 +328,7 @@ erDiagram
 | `--names <mode>` | Entity/field identifiers to emit: `table` (physical table/column names, default), `model` (ORM model/field names), or `both` (physical name, with the ORM name as an alias where the format supports one). |
 | `--relation-label <mode>` | Relation edge label: `both` (association alias, plus the FK column when it disambiguates two relations between the same entity pair — default), `alias`, or `column`. |
 | `--case <mode>` | Letter-casing for rendered identifiers: `preserve` (source casing as-is, default), `snake`, `screaming_snake`, `camel`, `pascal`, `kebab`, `title`, `lower`, or `upper`. |
+| `--inflect <mode>` | Pluralization for entity/table identifiers only: `preserve` (source number as-is, default), `plural`, or `singular`. |
 | `--check` | Verify the committed ERD file(s) are up to date instead of writing. Exits non-zero on drift or if a file is missing; writes nothing. See [Keeping the ERD in sync](#keeping-the-erd-in-sync-ci). |
 | `--stdout` | Print the diagram to stdout instead of writing a file — requires exactly one `--format`. Status output goes to stderr, so the diagram can be piped cleanly (e.g. `orm2erd ... --stdout > erd.mmd` or into another tool). |
 | `--copy` | Copy the diagram to the clipboard instead of writing a file — requires exactly one `--format`. |

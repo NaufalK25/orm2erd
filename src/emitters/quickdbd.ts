@@ -40,10 +40,15 @@ export const quickdbdEmitter: Emitter = {
   format: "quickdbd",
   fileExtension: "txt",
   emit(model, options) {
-    const { typeMode, nameMode = "model", caseMode = "preserve" } = options;
+    const {
+      typeMode,
+      nameMode = "model",
+      caseMode = "preserve",
+      inflectMode = "preserve",
+    } = options;
     // quickdbd has no entity alias syntax, so "both" mode falls back to the
     // physical identifier alone, same as "table" mode.
-    const names = buildNameResolver(model, nameMode, caseMode);
+    const names = buildNameResolver(model, nameMode, caseMode, inflectMode);
     const inlineFks = buildInlineFkMap(model.relations);
     const entityByName = new Map(model.entities.map((e) => [e.name, e]));
 

@@ -26,8 +26,9 @@ export const mermaidEmitter: Emitter = {
       nameMode = "model",
       relationLabelMode = "both",
       caseMode = "preserve",
+      inflectMode = "preserve",
     } = options;
-    const names = buildNameResolver(model, nameMode, caseMode);
+    const names = buildNameResolver(model, nameMode, caseMode, inflectMode);
 
     const lines = ["erDiagram", "", "  %% Entities"];
 

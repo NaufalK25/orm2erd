@@ -441,4 +441,90 @@ describe("mermaidEmitter", () => {
       expect(output).toContain('Users ||--o{ "Post Tag" : "Post Tags"');
     });
   });
+
+  describe("inflectMode", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          fields: [{ name: "id", type: "int", nativeType: "INTEGER" }],
+        },
+        {
+          name: "PostTag",
+          fields: [{ name: "id", type: "int", nativeType: "INTEGER" }],
+        },
+      ],
+      relations: [
+        { from: "User", to: "PostTag", type: "1-n", fieldName: "postTags" },
+      ],
+    };
+
+    it("pluralizes entity identifiers, including relationship references", () => {
+      const output = mermaidEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "model",
+        inflectMode: "plural",
+      });
+      expect(output).toContain("Users {");
+      expect(output).toContain("PostTags {");
+      expect(output).toContain('Users ||--o{ PostTags : "postTags"');
+    });
+
+    it("singularizes entity identifiers", () => {
+      const output = mermaidEmitter.emit(
+        {
+          entities: [
+            { name: "Users", fields: [] },
+            { name: "PostTags", fields: [] },
+          ],
+          relations: [],
+        },
+        {
+          typeMode: "canonical",
+          nameMode: "model",
+          inflectMode: "singular",
+        },
+      );
+      expect(output).toContain("User {");
+      expect(output).toContain("PostTag {");
+    });
+
+    it("never inflects field identifiers or the --names both alias", () => {
+      const withField: ERDModel = {
+        entities: [
+          {
+            name: "User",
+            tableName: "users",
+            fields: [
+              { name: "id", type: "int", nativeType: "INTEGER" },
+              {
+                name: "tags",
+                type: "string",
+                nativeType: "STRING",
+                isList: true,
+              },
+            ],
+          },
+        ],
+        relations: [],
+      };
+      const output = mermaidEmitter.emit(withField, {
+        typeMode: "canonical",
+        nameMode: "both",
+        inflectMode: "plural",
+      });
+      expect(output).toContain('users["User"]');
+      expect(output).toContain("string[] tags");
+    });
+
+    it("inflects before case-transforming: PostTag -> PostTags -> post-tags", () => {
+      const output = mermaidEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "model",
+        inflectMode: "plural",
+        caseMode: "kebab",
+      });
+      expect(output).toContain("post-tags {");
+    });
+  });
 });

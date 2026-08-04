@@ -5,6 +5,7 @@ import {
   resolveCaseMode,
   resolveEntryPath,
   resolveFormats,
+  resolveInflectMode,
   resolveNameMode,
   resolveOutBase,
   resolveORM,
@@ -171,6 +172,18 @@ describe("resolveCaseMode", () => {
 
   it("defaults to preserve non-interactively", async () => {
     await expect(resolveCaseMode(false, undefined)).resolves.toBe("preserve");
+  });
+});
+
+describe("resolveInflectMode", () => {
+  it("returns the explicit --inflect value", async () => {
+    await expect(resolveInflectMode(false, "plural")).resolves.toBe("plural");
+  });
+
+  it("defaults to preserve non-interactively", async () => {
+    await expect(resolveInflectMode(false, undefined)).resolves.toBe(
+      "preserve",
+    );
   });
 });
 

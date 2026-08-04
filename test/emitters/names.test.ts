@@ -151,3 +151,51 @@ describe("buildNameResolver (caseMode)", () => {
     expect(names.applyCase("fullName")).toBe("full-name");
   });
 });
+
+describe("buildNameResolver (inflectMode)", () => {
+  it("defaults to preserve when inflectMode is omitted", () => {
+    const names = buildNameResolver(model, "model");
+    expect(names.entityId("User")).toBe("User");
+  });
+
+  it("pluralizes/singularizes entityId only", () => {
+    const plural = buildNameResolver(model, "model", "preserve", "plural");
+    expect(plural.entityId("User")).toBe("Users");
+    expect(plural.entityId("Tag")).toBe("Tags");
+
+    const singular = buildNameResolver(
+      { entities: [{ name: "Users", fields: [] }], relations: [] },
+      "model",
+      "preserve",
+      "singular",
+    );
+    expect(singular.entityId("Users")).toBe("User");
+  });
+
+  it("is idempotent on an entity name already in the requested number", () => {
+    const names = buildNameResolver(model, "table", "preserve", "plural");
+    // "users" (User's tableName) is already plural.
+    expect(names.entityId("User")).toBe("users");
+  });
+
+  it("never inflects entityAlias/fieldId/fieldAlias/fieldIdByName", () => {
+    const names = buildNameResolver(model, "both", "preserve", "plural");
+    expect(names.entityAlias("User")).toBe("User");
+    expect(names.fieldId(model.entities[0].fields[1])).toBe("full_name");
+    expect(names.fieldAlias(model.entities[0].fields[1])).toBe("fullName");
+    expect(names.fieldIdByName(model.entities[0], "fullName")).toBe(
+      "full_name",
+    );
+  });
+
+  it("inflects before case-transforming, per the documented ordering", () => {
+    const postTagModel: ERDModel = {
+      entities: [{ name: "PostTag", fields: [] }],
+      relations: [],
+    };
+    const names = buildNameResolver(postTagModel, "model", "kebab", "plural");
+    // "PostTag" -> inflect -> "PostTags" -> case -> "post-tags" (not
+    // "post-tag-s" or any artifact of casing before inflecting).
+    expect(names.entityId("PostTag")).toBe("post-tags");
+  });
+});

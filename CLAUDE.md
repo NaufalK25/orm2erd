@@ -43,9 +43,12 @@ src/
     import-hints.ts      # maps common import failures to actionable hints
     grid-multiselect.ts   # custom @clack/core prompt for the format multi-select
     package.ts             # package.json reading helper
+    case-transform.ts       # toCase(): letter-casing for --case, source-casing-agnostic
+    inflect.ts                # applyInflect(): pluralize/singularize for --inflect (via `inflection`)
   emitters/          # types.ts (Emitter/EmitOptions) + index.ts (registry) + one file per format
                       # (mermaid.ts, dbml.ts, plantuml.ts, d2.ts, etc)
                       # + label.ts/uniques.ts/names.ts (shared rendering helpers)
+                      # + quote.ts (hasSpace/hasHyphen — per-emitter conditional quoting)
 bin/
   orm2erd.js       # shebang wrapper: #!/usr/bin/env node → import('../dist/cli.js')
 test/              # vitest, mirrors src/ (detect/, adapters/, core/, emitters/) + test/e2e/
@@ -154,6 +157,7 @@ interface EmitOptions {
   nameMode?: NameMode; // "model" | "table" | "both" — defaults to "model" when omitted
   relationLabelMode?: RelationLabelMode; // "alias" | "column" | "both" — defaults to "both" when omitted
   caseMode?: CaseMode; // letter-casing for rendered identifiers — defaults to "preserve" when omitted
+  inflectMode?: InflectMode; // pluralization for entity/table identifiers only — defaults to "preserve" when omitted
 }
 
 interface Emitter {
@@ -243,7 +247,8 @@ orm2erd --orm prisma --entry ./schema.prisma --format mermaid,dbml --out ./erd
 | `--type-mode <mode>` | `canonical` (default, portable) or `native` (ORM-specific type names) field-type labels. |
 | `--names <mode>` | `table` (default, physical table/column names), `model` (ORM model/field names), or `both` (physical name + ORM name as an alias where the format supports one) — see `src/emitters/names.ts`. |
 | `--relation-label <mode>` | `both` (default — alias, plus the FK column when it disambiguates two relations between the same entity pair), `alias`, or `column` — see `src/emitters/label.ts`. |
-| `--case <mode>` | Letter-casing for rendered identifiers: `preserve` (default, source casing as-is), `snake`, `screaming_snake`, `camel`, `pascal`, `kebab`, `title`, `lower`, or `upper`. Only touches identifiers (entity/field/enum-type names) — never type labels, enum member values, or the `--names both` alias — see `src/core/case-transform.ts`. |
+| `--case <mode>` | Letter-casing for rendered identifiers: `preserve` (default, source casing as-is), `snake`, `screaming_snake`, `camel`, `pascal`, `kebab`, `title`, `lower`, or `upper`. Only touches identifiers (entity/field/enum-type names) — never type labels, enum member values, or the `--names both` alias — see `src/core/case-transform.ts`. Some emitters conditionally quote an identifier that becomes syntactically unsafe after casing (a bare hyphen/space) — see `src/emitters/quote.ts`. |
+| `--inflect <mode>` | Pluralization for **entity/table identifiers only** (never fields, never the `--names both` alias): `preserve` (default, source number as-is), `plural`, or `singular` — via the `inflection` package, applied before `--case` (`--inflect plural --case kebab` on `PostTag` → `post-tags`) — see `src/core/inflect.ts`. |
 | `--check` | Regenerate in-memory and diff against the file(s) already on disk; writes nothing, exits non-zero on drift/missing — see `src/core/check.ts`. Forces non-interactive. |
 | `--stdout` | Print the diagram to stdout instead of writing a file; requires exactly one `--format`. Forces non-interactive, same as `--check`; status/log lines are routed to stderr so the stdout stream stays clean for piping. |
 | `--copy` | Copy the diagram to the clipboard instead of writing a file; requires exactly one `--format`. Uses `clipboardy`; stays interactive (spinner/intro/outro) since it never touches stdout. |

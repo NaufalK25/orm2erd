@@ -7,6 +7,7 @@ import { getAdapter } from "./adapters";
 import { getEmitter } from "./emitters";
 import type {
   CaseMode,
+  InflectMode,
   NameMode,
   RelationLabelMode,
   TypeMode,
@@ -20,6 +21,7 @@ import {
   resolveCaseMode,
   resolveEntryPath,
   resolveFormats,
+  resolveInflectMode,
   resolveNameMode,
   resolveORM,
   resolveOutBase,
@@ -41,6 +43,7 @@ interface ProgramOptions {
   names: NameMode;
   relationLabel: RelationLabelMode;
   case: CaseMode;
+  inflect: InflectMode;
   check: boolean;
   stdout: boolean;
   copy: boolean;
@@ -96,6 +99,12 @@ program
       "upper",
     ]),
   )
+  .addOption(
+    new Option(
+      "--inflect <mode>",
+      "pluralization for entity/table identifiers only: preserve (source number, default), plural, or singular",
+    ).choices(["preserve", "plural", "singular"]),
+  )
   .option(
     "--check",
     "verify committed ERD file(s) are up to date; exit non-zero on drift or if missing (writes nothing)",
@@ -120,7 +129,8 @@ ${pc.bold("Examples:")}
   $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid,dbml --out ./erd
   $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --type-mode native
   $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --names both
-  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --case screaming_snake`,
+  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --case screaming_snake
+  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --inflect plural`,
   )
   .configureHelp({
     styleTitle: (str) => pc.bold(pc.underline(str)),
@@ -198,6 +208,7 @@ async function main() {
     opts.relationLabel,
   );
   const caseMode = await resolveCaseMode(interactive, opts.case);
+  const inflectMode = await resolveInflectMode(interactive, opts.inflect);
 
   await generateAndWrite(
     cwd,
@@ -209,6 +220,7 @@ async function main() {
     nameMode,
     relationLabelMode,
     caseMode,
+    inflectMode,
     opts.check,
     opts.stdout,
     opts.copy,

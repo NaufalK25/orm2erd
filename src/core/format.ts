@@ -37,3 +37,11 @@ export type CaseMode =
   | "title"
   | "lower"
   | "upper";
+
+/**
+ * Pluralizes/singularizes rendered *entity/table* identifiers only — never
+ * field names, the `--names both` alias, or relation/FK column references.
+ * `"preserve"` (default) keeps whatever number the source ORM/DB already
+ * uses.
+ */
+export type InflectMode = "preserve" | "plural" | "singular";
