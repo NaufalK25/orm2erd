@@ -153,6 +153,7 @@ ${pc.bold("Examples:")}
     styleArgumentText: (str) => pc.yellow(str),
     styleSubcommandText: (str) => pc.cyan(str),
   })
+  .showHelpAfterError("(run with --help to see all flags)")
   .parse();
 
 const opts = program.opts<ProgramOptions>();
