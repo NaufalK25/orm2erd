@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { relationLabel } from "../../src/emitters/label";
-import type { Relation } from "../../src/core/model";
+import { relationLabel, resolveRelationLabel } from "../../src/emitters/label";
+import { buildNameResolver } from "../../src/emitters/names";
+import type { ERDModel, Relation } from "../../src/core/model";
 
 const base: Relation = { from: "A", to: "B", type: "1-n" };
 
@@ -61,5 +62,58 @@ describe("relationLabel", () => {
         "posts",
       );
     });
+  });
+});
+
+describe("resolveRelationLabel", () => {
+  const model: ERDModel = {
+    entities: [
+      { name: "User", fields: [] },
+      {
+        name: "Post",
+        fields: [
+          {
+            name: "authorId",
+            columnName: "author_id",
+            type: "int",
+            nativeType: "INTEGER",
+          },
+        ],
+      },
+    ],
+    relations: [],
+  };
+  const rel: Relation = { from: "User", to: "Post", type: "1-n" };
+
+  it("resolves toColumn via the same entity/field lookup as fromColumn/primaryKey", () => {
+    const names = buildNameResolver(model, "table");
+    const label = resolveRelationLabel(
+      model,
+      { ...rel, fieldName: "posts", toColumn: "authorId" },
+      names,
+    );
+    expect(label).toBe("posts (author_id)");
+  });
+
+  it("case-transforms both the alias and the resolved column", () => {
+    const names = buildNameResolver(model, "table", "screaming_snake");
+    const label = resolveRelationLabel(
+      model,
+      { ...rel, fieldName: "posts", toColumn: "authorId" },
+      names,
+    );
+    expect(label).toBe("POSTS (AUTHOR_ID)");
+  });
+
+  it("case-transforms a fieldName that doesn't match any field on either entity", () => {
+    // rel.fieldName is the association alias, not necessarily a real field —
+    // it must still go through the case transform, just not fieldIdByName.
+    const names = buildNameResolver(model, "table", "pascal");
+    const label = resolveRelationLabel(
+      model,
+      { ...rel, fieldName: "posts" },
+      names,
+    );
+    expect(label).toBe("Posts");
   });
 });

@@ -125,3 +125,29 @@ describe("buildNameResolver.fieldIdByName", () => {
     );
   });
 });
+
+describe("buildNameResolver (caseMode)", () => {
+  it("defaults to preserve when caseMode is omitted", () => {
+    const names = buildNameResolver(model, "table");
+    expect(names.entityId("User")).toBe("users");
+    expect(names.fieldId(model.entities[0].fields[1])).toBe("full_name");
+  });
+
+  it("case-transforms entityId/fieldId/fieldIdByName", () => {
+    const names = buildNameResolver(model, "table", "pascal");
+    expect(names.entityId("User")).toBe("Users");
+    expect(names.fieldId(model.entities[0].fields[1])).toBe("FullName");
+    expect(names.fieldIdByName(model.entities[0], "fullName")).toBe("FullName");
+  });
+
+  it("never case-transforms entityAlias/fieldAlias", () => {
+    const names = buildNameResolver(model, "both", "screaming_snake");
+    expect(names.entityAlias("User")).toBe("User");
+    expect(names.fieldAlias(model.entities[0].fields[1])).toBe("fullName");
+  });
+
+  it("applyCase transforms an arbitrary identifier the same way", () => {
+    const names = buildNameResolver(model, "table", "kebab");
+    expect(names.applyCase("fullName")).toBe("full-name");
+  });
+});

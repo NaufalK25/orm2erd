@@ -1,5 +1,6 @@
 import type { ERDModel } from "../core/model";
 import type {
+  CaseMode,
   NameMode,
   OutputFormat,
   RelationLabelMode,
@@ -12,6 +13,8 @@ export interface EmitOptions {
   nameMode?: NameMode;
   /** Relation edge label mode. Defaults to "both" (current alias+column disambiguation) when omitted. */
   relationLabelMode?: RelationLabelMode;
+  /** Letter-casing applied to rendered identifiers. Defaults to "preserve" (current behavior) when omitted. */
+  caseMode?: CaseMode;
 }
 
 export interface Emitter {

@@ -50,4 +50,8 @@ Enter
 Sleep 1.5s
 Enter
 
+# ? Identifier casing: (preserve pre-selected)
+Sleep 1.5s
+Enter
+
 Sleep 2s

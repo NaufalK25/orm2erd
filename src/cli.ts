@@ -5,13 +5,19 @@ import { intro, isCI, isTTY } from "@clack/prompts";
 import { detectORMs } from "./detect";
 import { getAdapter } from "./adapters";
 import { getEmitter } from "./emitters";
-import type { NameMode, RelationLabelMode, TypeMode } from "./core/format";
+import type {
+  CaseMode,
+  NameMode,
+  RelationLabelMode,
+  TypeMode,
+} from "./core/format";
 import type { ORMName } from "./core/orm";
 import type { PackageJson } from "./core/package";
 import { expandOutDir } from "./core/out-path";
 import { icon } from "./cli/render";
 import {
   ALL_ORM_NAMES,
+  resolveCaseMode,
   resolveEntryPath,
   resolveFormats,
   resolveNameMode,
@@ -34,6 +40,7 @@ interface ProgramOptions {
   typeMode: TypeMode;
   names: NameMode;
   relationLabel: RelationLabelMode;
+  case: CaseMode;
   check: boolean;
   stdout: boolean;
   copy: boolean;
@@ -73,6 +80,22 @@ program
       "relation edge label: both (alias + disambiguating FK column, default), alias, or column",
     ).choices(["both", "alias", "column"]),
   )
+  .addOption(
+    new Option(
+      "--case <mode>",
+      "letter-casing for rendered identifiers: preserve (source casing, default), snake, screaming_snake, camel, pascal, kebab, title, lower, or upper",
+    ).choices([
+      "preserve",
+      "snake",
+      "screaming_snake",
+      "camel",
+      "pascal",
+      "kebab",
+      "title",
+      "lower",
+      "upper",
+    ]),
+  )
   .option(
     "--check",
     "verify committed ERD file(s) are up to date; exit non-zero on drift or if missing (writes nothing)",
@@ -96,7 +119,8 @@ ${pc.bold("Examples:")}
   $ orm2erd
   $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid,dbml --out ./erd
   $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --type-mode native
-  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --names both`,
+  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --names both
+  $ orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --case screaming_snake`,
   )
   .configureHelp({
     styleTitle: (str) => pc.bold(pc.underline(str)),
@@ -173,6 +197,7 @@ async function main() {
     interactive,
     opts.relationLabel,
   );
+  const caseMode = await resolveCaseMode(interactive, opts.case);
 
   await generateAndWrite(
     cwd,
@@ -183,6 +208,7 @@ async function main() {
     typeMode,
     nameMode,
     relationLabelMode,
+    caseMode,
     opts.check,
     opts.stdout,
     opts.copy,

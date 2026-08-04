@@ -5,10 +5,10 @@ export const nomnomlEmitter: Emitter = {
   format: "nomnoml",
   fileExtension: "noml",
   emit(model, options) {
-    const { typeMode, nameMode = "model" } = options;
+    const { typeMode, nameMode = "model", caseMode = "preserve" } = options;
     // nomnoml has no entity alias syntax, so "both" mode falls back to the
     // physical identifier alone, same as "table" mode.
-    const names = buildNameResolver(model, nameMode);
+    const names = buildNameResolver(model, nameMode, caseMode);
 
     const lines = ["#direction: right", "", "// Entities"];
 

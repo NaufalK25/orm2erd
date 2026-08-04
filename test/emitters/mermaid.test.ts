@@ -327,4 +327,66 @@ describe("mermaidEmitter", () => {
       expect(output).toContain('User ||--o{ Post : "authorId"');
     });
   });
+
+  describe("caseMode", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "User",
+          tableName: "users",
+          fields: [
+            {
+              name: "fullName",
+              columnName: "full_name",
+              type: "string",
+              nativeType: "STRING",
+            },
+          ],
+        },
+        { name: "Post", tableName: "posts", fields: [] },
+      ],
+      relations: [
+        {
+          from: "User",
+          to: "Post",
+          type: "1-n",
+          fieldName: "posts",
+          toColumn: "authorId",
+        },
+      ],
+    };
+
+    it("case-transforms entity/field identifiers and the relation label", () => {
+      const output = mermaidEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+        caseMode: "screaming_snake",
+      });
+      expect(output).toContain("USERS {");
+      expect(output).toContain("string FULL_NAME");
+      // toColumn ("authorId") doesn't match any field on Post (empty fields
+      // here), so fieldIdByName falls back to case-transforming it directly
+      // — still consistent casing, just not a real column resolution.
+      expect(output).toContain('USERS ||--o{ POSTS : "POSTS (AUTHOR_ID)"');
+    });
+
+    it("never case-transforms the --names both alias", () => {
+      const output = mermaidEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "both",
+        caseMode: "screaming_snake",
+      });
+      expect(output).toContain('USERS["User"]');
+      expect(output).toContain('"alias: fullName"');
+    });
+
+    it("defaults to preserve when caseMode is omitted", () => {
+      const output = mermaidEmitter.emit(model, {
+        typeMode: "canonical",
+        nameMode: "table",
+      });
+      expect(output).toContain("users {");
+      expect(output).toContain("string full_name");
+    });
+  });
 });

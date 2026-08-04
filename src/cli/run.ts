@@ -7,6 +7,7 @@ import { outro, spinner } from "@clack/prompts";
 import type { ORMAdapter } from "../adapters";
 import { checkOutput } from "../core/check";
 import type {
+  CaseMode,
   NameMode,
   OutputFormat,
   RelationLabelMode,
@@ -185,6 +186,7 @@ export async function generateAndWrite(
   typeMode: TypeMode,
   nameMode: NameMode,
   relationLabelMode: RelationLabelMode,
+  caseMode: CaseMode,
   check: boolean,
   stdoutFlag: boolean,
   copy: boolean,
@@ -208,7 +210,12 @@ export async function generateAndWrite(
     const allExtensions = selectedEmitters.map((e) => e.fileExtension);
     const outputs: Output[] = selectedEmitters.map((emitter) => ({
       path: resolveOutPath(outBase, emitter.fileExtension, allExtensions),
-      content: emitter.emit(model, { typeMode, nameMode, relationLabelMode }),
+      content: emitter.emit(model, {
+        typeMode,
+        nameMode,
+        relationLabelMode,
+        caseMode,
+      }),
     }));
 
     if (check) {

@@ -1,5 +1,5 @@
 import type { Emitter } from "./types";
-import { relationLabel } from "./label";
+import { resolveRelationLabel } from "./label";
 import { compositeUniqueMates } from "./uniques";
 import { buildNameResolver } from "./names";
 
@@ -11,8 +11,9 @@ export const plantumlEmitter: Emitter = {
       typeMode,
       nameMode = "model",
       relationLabelMode = "both",
+      caseMode = "preserve",
     } = options;
-    const names = buildNameResolver(model, nameMode);
+    const names = buildNameResolver(model, nameMode, caseMode);
 
     const lines = [
       "@startuml",
@@ -90,7 +91,7 @@ export const plantumlEmitter: Emitter = {
             ? "}o--o{"
             : `${fromMarker}--o|`;
       lines.push(
-        `  ${names.entityId(rel.from)} ${symbol} ${names.entityId(rel.to)} : "${relationLabel(rel, relationLabelMode)}"`,
+        `  ${names.entityId(rel.from)} ${symbol} ${names.entityId(rel.to)} : "${resolveRelationLabel(model, rel, names, relationLabelMode)}"`,
       );
     }
 

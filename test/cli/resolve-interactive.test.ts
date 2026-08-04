@@ -39,6 +39,7 @@ vi.mock("../../src/core/grid-multiselect", () => ({
 import { select, text } from "@clack/prompts";
 import { gridMultiselect } from "../../src/core/grid-multiselect";
 import {
+  resolveCaseMode,
   resolveEntryPath,
   resolveFormats,
   resolveNameMode,
@@ -212,6 +213,23 @@ describe("resolveRelationLabelMode (interactive)", () => {
     const result = await resolveRelationLabelMode(true, "column");
     expect(mockSelect).not.toHaveBeenCalled();
     expect(result).toBe("column");
+  });
+});
+
+describe("resolveCaseMode (interactive)", () => {
+  it("prompts to choose an identifier casing", async () => {
+    mockSelect.mockResolvedValueOnce("screaming_snake");
+    await expect(resolveCaseMode(true, undefined)).resolves.toBe(
+      "screaming_snake",
+    );
+    expect(mockSelect).toHaveBeenCalledOnce();
+    expect(mockSelect.mock.calls[0][0].initialValue).toBe("preserve");
+  });
+
+  it("skips the prompt entirely when --case was already given", async () => {
+    const result = await resolveCaseMode(true, "kebab");
+    expect(mockSelect).not.toHaveBeenCalled();
+    expect(result).toBe("kebab");
   });
 });
 

@@ -92,6 +92,54 @@ describe("dbmlEmitter", () => {
     expect(output).toContain('  "published"');
   });
 
+  it("case-transforms an enum's nativeType consistently between the field reference and its Enum block, but never the member values", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "Post",
+          fields: [
+            {
+              name: "status",
+              type: "enum",
+              nativeType: "enum_Post_status",
+              enumValues: ["draft", "published"],
+            },
+          ],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = dbmlEmitter.emit(model, {
+      typeMode: "canonical",
+      caseMode: "pascal",
+    });
+
+    expect(output).toContain("Status EnumPostStatus");
+    expect(output).toContain("Enum EnumPostStatus {");
+    expect(output).toContain('  "draft"');
+    expect(output).toContain('  "published"');
+  });
+
+  it("never case-transforms a non-enum native type label", () => {
+    const model: ERDModel = {
+      entities: [
+        {
+          name: "Post",
+          fields: [{ name: "id", type: "int", nativeType: "INTEGER" }],
+        },
+      ],
+      relations: [],
+    };
+
+    const output = dbmlEmitter.emit(model, {
+      typeMode: "native",
+      caseMode: "snake",
+    });
+
+    expect(output).toContain("id INTEGER");
+  });
+
   it("dedupes an enum shared by multiple fields into a single Enum block", () => {
     const model: ERDModel = {
       entities: [

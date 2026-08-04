@@ -153,6 +153,7 @@ interface EmitOptions {
   typeMode: TypeMode; // "canonical" | "native"
   nameMode?: NameMode; // "model" | "table" | "both" — defaults to "model" when omitted
   relationLabelMode?: RelationLabelMode; // "alias" | "column" | "both" — defaults to "both" when omitted
+  caseMode?: CaseMode; // letter-casing for rendered identifiers — defaults to "preserve" when omitted
 }
 
 interface Emitter {
@@ -242,6 +243,7 @@ orm2erd --orm prisma --entry ./schema.prisma --format mermaid,dbml --out ./erd
 | `--type-mode <mode>` | `canonical` (default, portable) or `native` (ORM-specific type names) field-type labels. |
 | `--names <mode>` | `table` (default, physical table/column names), `model` (ORM model/field names), or `both` (physical name + ORM name as an alias where the format supports one) — see `src/emitters/names.ts`. |
 | `--relation-label <mode>` | `both` (default — alias, plus the FK column when it disambiguates two relations between the same entity pair), `alias`, or `column` — see `src/emitters/label.ts`. |
+| `--case <mode>` | Letter-casing for rendered identifiers: `preserve` (default, source casing as-is), `snake`, `screaming_snake`, `camel`, `pascal`, `kebab`, `title`, `lower`, or `upper`. Only touches identifiers (entity/field/enum-type names) — never type labels, enum member values, or the `--names both` alias — see `src/core/case-transform.ts`. |
 | `--check` | Regenerate in-memory and diff against the file(s) already on disk; writes nothing, exits non-zero on drift/missing — see `src/core/check.ts`. Forces non-interactive. |
 | `--stdout` | Print the diagram to stdout instead of writing a file; requires exactly one `--format`. Forces non-interactive, same as `--check`; status/log lines are routed to stderr so the stdout stream stays clean for piping. |
 | `--copy` | Copy the diagram to the clipboard instead of writing a file; requires exactly one `--format`. Uses `clipboardy`; stays interactive (spinner/intro/outro) since it never touches stdout. |

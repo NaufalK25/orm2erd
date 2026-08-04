@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import type { DetectedORM } from "../../src/detect";
 import { emitters } from "../../src/emitters";
 import {
+  resolveCaseMode,
   resolveEntryPath,
   resolveFormats,
   resolveNameMode,
@@ -160,6 +161,16 @@ describe("resolveRelationLabelMode", () => {
     await expect(resolveRelationLabelMode(false, undefined)).resolves.toBe(
       "both",
     );
+  });
+});
+
+describe("resolveCaseMode", () => {
+  it("returns the explicit --case value", async () => {
+    await expect(resolveCaseMode(false, "snake")).resolves.toBe("snake");
+  });
+
+  it("defaults to preserve non-interactively", async () => {
+    await expect(resolveCaseMode(false, undefined)).resolves.toBe("preserve");
   });
 });
 

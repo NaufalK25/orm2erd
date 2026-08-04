@@ -5,6 +5,7 @@ import type { DetectedORM } from "../detect";
 import { emitters, type Emitter } from "../emitters";
 import { gridMultiselect } from "../core/grid-multiselect";
 import type {
+  CaseMode,
   NameMode,
   OutputFormat,
   RelationLabelMode,
@@ -251,6 +252,39 @@ export async function resolveRelationLabelMode(
     );
   }
   return "both";
+}
+
+export async function resolveCaseMode(
+  interactive: boolean,
+  caseModeOpt: CaseMode | undefined,
+): Promise<CaseMode> {
+  if (caseModeOpt) {
+    return caseModeOpt;
+  }
+  if (interactive) {
+    return orExit(
+      await select({
+        message: `${icon("🏷️ ")}Identifier casing:`,
+        options: [
+          {
+            value: "preserve",
+            label: "Preserve",
+            hint: "keep the source ORM/DB casing as-is",
+          },
+          { value: "snake", label: "snake_case" },
+          { value: "screaming_snake", label: "SCREAMING_SNAKE" },
+          { value: "camel", label: "camelCase" },
+          { value: "pascal", label: "PascalCase" },
+          { value: "kebab", label: "kebab-case" },
+          { value: "title", label: "Title Case" },
+          { value: "lower", label: "lowercase" },
+          { value: "upper", label: "UPPERCASE" },
+        ],
+        initialValue: "preserve",
+      }),
+    );
+  }
+  return "preserve";
 }
 
 export async function resolveOutBase(

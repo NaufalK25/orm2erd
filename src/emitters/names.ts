@@ -1,5 +1,6 @@
 import type { Entity, ERDModel, Field } from "../core/model";
-import type { NameMode } from "../core/format";
+import type { CaseMode, NameMode } from "../core/format";
+import { toCase } from "../core/case-transform";
 
 /**
  * Resolves display identifiers for entities/fields under a `NameMode`, built
@@ -26,6 +27,15 @@ export interface NameResolver {
    * (shouldn't happen — defensive only).
    */
   fieldIdByName(entity: Entity, fieldName: string): string;
+  /**
+   * Applies this resolver's `CaseMode` to an arbitrary identifier that isn't
+   * tied to an entity/field lookup — e.g. a relation's association alias
+   * (`Relation.fieldName`), which doesn't necessarily match any `Field.name`.
+   * Callers that already have a `Field`/entity-name should go through
+   * `entityId`/`fieldId`/`fieldIdByName` instead so name resolution and case
+   * transformation happen together in one step.
+   */
+  applyCase(identifier: string): string;
 }
 
 /**
@@ -40,6 +50,7 @@ export interface NameResolver {
 export function buildNameResolver(
   model: ERDModel,
   mode: NameMode,
+  caseMode: CaseMode = "preserve",
 ): NameResolver {
   const idFor = new Map<string, string>();
 
@@ -64,14 +75,17 @@ export function buildNameResolver(
   }
 
   return {
-    entityId: (name) => idFor.get(name) ?? name,
+    entityId: (name) => toCase(idFor.get(name) ?? name, caseMode),
     entityAlias: (name) => {
       if (mode !== "both") return undefined;
       const id = idFor.get(name) ?? name;
       return id !== name ? name : undefined;
     },
     fieldId: (field) =>
-      mode === "model" ? field.name : (field.columnName ?? field.name),
+      toCase(
+        mode === "model" ? field.name : (field.columnName ?? field.name),
+        caseMode,
+      ),
     fieldAlias: (field) => {
       if (mode !== "both") return undefined;
       return field.columnName && field.columnName !== field.name
@@ -80,8 +94,12 @@ export function buildNameResolver(
     },
     fieldIdByName: (entity, fieldName) => {
       const field = entity.fields.find((f) => f.name === fieldName);
-      if (!field) return fieldName;
-      return mode === "model" ? field.name : (field.columnName ?? field.name);
+      if (!field) return toCase(fieldName, caseMode);
+      return toCase(
+        mode === "model" ? field.name : (field.columnName ?? field.name),
+        caseMode,
+      );
     },
+    applyCase: (identifier) => toCase(identifier, caseMode),
   };
 }

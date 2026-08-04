@@ -1,12 +1,13 @@
 import type { Emitter } from "./types";
 import { buildNameResolver } from "./names";
+import { toCase } from "../core/case-transform";
 
 export const dbmlEmitter: Emitter = {
   format: "dbml",
   fileExtension: "dbml",
   emit(model, options) {
-    const { typeMode, nameMode = "model" } = options;
-    const names = buildNameResolver(model, nameMode);
+    const { typeMode, nameMode = "model", caseMode = "preserve" } = options;
+    const names = buildNameResolver(model, nameMode, caseMode);
 
     const lines = ["// Entities"];
     const enumsByName = new Map<string, string[]>();
@@ -21,9 +22,16 @@ export const dbmlEmitter: Emitter = {
       // also tagging each field `[pk]` would double-define the primary key.
       const compositePkMembers = new Set(entity.primaryKey ?? []);
       for (const field of entity.fields) {
-        const displayType =
-          typeMode === "native" ||
-          (field.enumValues && field.enumValues.length > 0)
+        const isEnum = Boolean(field.enumValues && field.enumValues.length > 0);
+        // An enum's nativeType is a real schema identifier here — it's the
+        // name of the `Enum` block declared below and referenced by every
+        // field of that type — so it gets case-transformed like any other
+        // identifier. A plain native type label (typeMode: "native" on a
+        // non-enum field, e.g. "VARCHAR2") is fixed driver vocabulary, not a
+        // naming convention, and must never be case-transformed.
+        const displayType = isEnum
+          ? toCase(field.nativeType, caseMode)
+          : typeMode === "native"
             ? field.nativeType
             : field.type;
         const typeLabel = `${displayType}${field.isList ? "[]" : ""}`;
@@ -51,7 +59,7 @@ export const dbmlEmitter: Emitter = {
         );
 
         if (field.enumValues && field.enumValues.length > 0) {
-          enumsByName.set(field.nativeType, field.enumValues);
+          enumsByName.set(toCase(field.nativeType, caseMode), field.enumValues);
         }
       }
 

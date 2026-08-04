@@ -215,6 +215,17 @@ default) shows the association alias and appends the FK column only when it disa
 relations between the same entity pair (e.g. `posts (authorId)`); `alias`/`column` pin the label to
 just one.
 
+If your source names don't already use the letter-casing you want in the diagram, `--case <mode>`
+rewrites every rendered identifier (entity/field names, relation labels, enum type names) into
+`snake`, `screaming_snake`, `camel`, `pascal`, `kebab`, `title`, `lower`, or `upper` — regardless of
+whether the source is `snake_case`, `camelCase`, or `PascalCase` to begin with. It never touches
+type labels, enum member values, or the secondary alias shown by `--names both`, since those are
+either fixed vocabulary or meant to show the real ORM identifier unmodified:
+
+```bash
+npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --case screaming_snake
+```
+
 ### Keeping the ERD in sync (CI)
 
 Commit your generated ERD, then use `--check` to fail CI whenever the committed file no longer
@@ -231,8 +242,8 @@ npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --out .
 
 `--check` never touches the filesystem, so it's safe in a pre-commit hook or a pull-request check.
 It's flag-driven and non-interactive by design: pass it the **same** output-affecting flags you
-generated with (`--format`, `--out`, and `--type-mode`/`--names`/`--relation-label` if you use
-them), or it will report drift against a differently-rendered file.
+generated with (`--format`, `--out`, and `--type-mode`/`--names`/`--relation-label`/`--case` if you
+use them), or it will report drift against a differently-rendered file.
 
 Drop it into a workflow:
 
@@ -305,6 +316,7 @@ erDiagram
 | `--type-mode <mode>` | Type labels to emit: `canonical` (portable, default) or `native` (ORM-specific). |
 | `--names <mode>` | Entity/field identifiers to emit: `table` (physical table/column names, default), `model` (ORM model/field names), or `both` (physical name, with the ORM name as an alias where the format supports one). |
 | `--relation-label <mode>` | Relation edge label: `both` (association alias, plus the FK column when it disambiguates two relations between the same entity pair — default), `alias`, or `column`. |
+| `--case <mode>` | Letter-casing for rendered identifiers: `preserve` (source casing as-is, default), `snake`, `screaming_snake`, `camel`, `pascal`, `kebab`, `title`, `lower`, or `upper`. |
 | `--check` | Verify the committed ERD file(s) are up to date instead of writing. Exits non-zero on drift or if a file is missing; writes nothing. See [Keeping the ERD in sync](#keeping-the-erd-in-sync-ci). |
 | `--stdout` | Print the diagram to stdout instead of writing a file — requires exactly one `--format`. Status output goes to stderr, so the diagram can be piped cleanly (e.g. `orm2erd ... --stdout > erd.mmd` or into another tool). |
 | `--copy` | Copy the diagram to the clipboard instead of writing a file — requires exactly one `--format`. |

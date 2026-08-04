@@ -1,5 +1,5 @@
 import type { Emitter } from "./types";
-import { relationLabel } from "./label";
+import { resolveRelationLabel } from "./label";
 import { compositeUniqueMates } from "./uniques";
 import { buildNameResolver } from "./names";
 
@@ -19,8 +19,9 @@ export const d2Emitter: Emitter = {
       typeMode,
       nameMode = "model",
       relationLabelMode = "both",
+      caseMode = "preserve",
     } = options;
-    const names = buildNameResolver(model, nameMode);
+    const names = buildNameResolver(model, nameMode, caseMode);
 
     const lines = ["# Entities"];
 
@@ -87,7 +88,12 @@ export const d2Emitter: Emitter = {
             ? "cf-one"
             : "cf-one-required";
       const targetShape = rel.type === "1-1" ? "cf-one" : "cf-many";
-      const resolvedLabel = relationLabel(rel, relationLabelMode);
+      const resolvedLabel = resolveRelationLabel(
+        model,
+        rel,
+        names,
+        relationLabelMode,
+      );
       const label = resolvedLabel ? `: ${resolvedLabel}` : "";
       // fromColumn/toColumn are attribute (model-level) names, same as
       // entity.primaryKey/uniques — resolve them the same way so the
