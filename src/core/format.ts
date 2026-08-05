@@ -5,7 +5,8 @@ export type OutputFormat =
   | "d2"
   | "nomnoml"
   | "quickdbd"
-  | "graphvizdot";
+  | "graphvizdot"
+  | "structurizr";
 
 export type TypeMode = "canonical" | "native";
 
