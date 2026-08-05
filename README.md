@@ -41,30 +41,32 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 
 | | ORM | Status |
 | --- | --- | --- |
-| <img src="./.github/assets/prisma.svg" width="16" height="16" alt="Prisma Icon" style="vertical-align:middle;"> | Prisma | ✅ Supported |
-| <img src="./.github/assets/sequelize.svg" width="16" height="16" alt="Sequelize Icon" style="vertical-align:middle;"> | Sequelize | ✅ Supported |
-| <img src="./.github/assets/mongoose.svg" width="16" height="16" alt="Mongoose Icon" style="vertical-align:middle;"> | Mongoose | ✅ Supported |
-| <img src="./.github/assets/typeorm.svg" width="16" height="16" alt="TypeORM Icon" style="vertical-align:middle;"> | TypeORM | ✅ Supported |
-| <img src="./.github/assets/drizzle.svg" width="16" height="16" alt="Drizzle Icon" style="vertical-align:middle;"> | Drizzle | ✅ Supported |
-| <img src="./.github/assets/mikroorm.svg" width="16" height="16" alt="MikroORM Icon" style="vertical-align:middle;"> | MikroORM | ✅ Supported |
-| | BookShelf.js | 🚧 Planned |
-| | Waterline | 🚧 Planned |
-| | Objection.js | 🚧 Planned |
+| <img src="./.github/assets/prisma.svg" width="16" height="16" alt="Prisma Icon" style="vertical-align:middle;"> | [Prisma](https://www.prisma.io/) | ✅ Supported |
+| <img src="./.github/assets/sequelize.svg" width="16" height="16" alt="Sequelize Icon" style="vertical-align:middle;"> | [Sequelize](https://sequelize.org/) | ✅ Supported |
+| <img src="./.github/assets/mongoose.svg" width="16" height="16" alt="Mongoose Icon" style="vertical-align:middle;"> | [Mongoose](https://mongoosejs.com/) | ✅ Supported |
+| <img src="./.github/assets/typeorm.svg" width="16" height="16" alt="TypeORM Icon" style="vertical-align:middle;"> | [TypeORM](https://typeorm.io/) | ✅ Supported |
+| <img src="./.github/assets/drizzle.svg" width="16" height="16" alt="Drizzle Icon" style="vertical-align:middle;"> | [Drizzle](https://orm.drizzle.team/) | ✅ Supported |
+| <img src="./.github/assets/mikroorm.svg" width="16" height="16" alt="MikroORM Icon" style="vertical-align:middle;"> | [MikroORM](https://mikro-orm.io/) | ✅ Supported |
+| | [BookShelf.js](https://bookshelfjs.org/) | 🚧 Planned |
+| | [Waterline](https://waterlinejs.org/) | 🚧 Planned |
+| | [Objection.js](https://vincit.github.io/objection.js/) | 🚧 Planned |
 
 
 ## Output formats
 
 | | Format | Status |
 | --- | --- | --- |
-| <img src="./.github/assets/mermaid.svg" width="16" height="16" alt="Mermaid Icon" style="vertical-align:middle;"> | Mermaid | ✅ Supported |
-| <img src="./.github/assets/dbml.svg" width="16" height="16" alt="DBML Icon" style="vertical-align:middle;"> | DBML | ✅ Supported |
-| <img src="./.github/assets/plantuml.svg" width="16" height="16" alt="PlantUML Icon" style="vertical-align:middle;"> | PlantUML | ✅ Supported |
-| <img src="./.github/assets/d2.svg" width="16" height="16" alt="D2 Icon" style="vertical-align:middle;"> | D2 | ✅ Supported |
-| <img src="./.github/assets/nomnoml.svg" width="16" height="16" alt="nomnoml Icon" style="vertical-align:middle;"> | nomnoml | ✅ Supported |
-| <img src="./.github/assets/quickdbd.svg" width="16" height="16" alt="QuickDBD Icon" style="vertical-align:middle;"> | QuickDBD | ✅ Supported |
-| <img src="./.github/assets/graphvizdot.svg" width="16" height="16" alt="Graphviz DOT Icon" style="vertical-align:middle;"> | Graphviz DOT | ✅ Supported |
-| <img src="./.github/assets/structurizr.svg" width="16" height="16" alt="Structurizr Icon" style="vertical-align:middle;"> | Structurizr | ✅ Supported |
-| | Pikchr | 🚧 Planned |
+| <img src="./.github/assets/mermaid.svg" width="16" height="16" alt="Mermaid Icon" style="vertical-align:middle;"> | [Mermaid](https://mermaid.js.org/) | ✅ Supported |
+| <img src="./.github/assets/dbml.svg" width="16" height="16" alt="DBML Icon" style="vertical-align:middle;"> | [DBML](https://dbml.dbdiagram.io/home/) | ✅ Supported |
+| <img src="./.github/assets/plantuml.svg" width="16" height="16" alt="PlantUML Icon" style="vertical-align:middle;"> | [PlantUML](https://plantuml.com/) | ✅ Supported |
+| <img src="./.github/assets/d2.svg" width="16" height="16" alt="D2 Icon" style="vertical-align:middle;"> | [D2](https://d2lang.com/) | ✅ Supported |
+| <img src="./.github/assets/nomnoml.svg" width="16" height="16" alt="nomnoml Icon" style="vertical-align:middle;"> | [nomnoml](https://nomnoml.com/) | ✅ Supported |
+| <img src="./.github/assets/quickdbd.svg" width="16" height="16" alt="QuickDBD Icon" style="vertical-align:middle;"> | [QuickDBD](https://www.quickdatabasediagrams.com/) | ✅ Supported |
+| <img src="./.github/assets/graphvizdot.svg" width="16" height="16" alt="Graphviz DOT Icon" style="vertical-align:middle;"> | [Graphviz DOT](https://graphviz.org/) | ✅ Supported |
+| <img src="./.github/assets/structurizr.svg" width="16" height="16" alt="Structurizr Icon" style="vertical-align:middle;"> | [Structurizr](https://structurizr.com/dsl) | ✅ Supported |
+| | [Pikchr](https://pikchr.org/) | 🚧 Planned |
+| | [erd (BurntSushi)](https://github.com/BurntSushi/erd) | 🚧 Planned |
+| | [draw.io](https://www.drawio.com/) | 🚧 Planned |
 
 ## Requirements
 
