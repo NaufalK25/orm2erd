@@ -6,7 +6,8 @@ export type OutputFormat =
   | "nomnoml"
   | "quickdbd"
   | "graphvizdot"
-  | "structurizr";
+  | "structurizr"
+  | "pikchr";
 
 export type TypeMode = "canonical" | "native";
 

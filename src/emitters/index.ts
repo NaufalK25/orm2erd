@@ -8,6 +8,7 @@ import { nomnomlEmitter } from "./nomnoml";
 import { quickdbdEmitter } from "./quickdbd";
 import { graphvizdotEmitter } from "./graphvizdot";
 import { structurizrEmitter } from "./structurizr";
+import { pikchrEmitter } from "./pikchr";
 
 export type { Emitter, EmitOptions } from "./types";
 
@@ -20,6 +21,7 @@ export const emitters: Partial<Record<OutputFormat, Emitter>> = {
   quickdbd: quickdbdEmitter,
   graphvizdot: graphvizdotEmitter,
   structurizr: structurizrEmitter,
+  pikchr: pikchrEmitter,
 };
 
 /** Looks up the emitter for `format`. Throws if that format has no emitter implemented yet. */
