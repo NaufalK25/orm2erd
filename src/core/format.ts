@@ -7,7 +7,8 @@ export type OutputFormat =
   | "quickdbd"
   | "graphvizdot"
   | "structurizr"
-  | "pikchr";
+  | "pikchr"
+  | "er";
 
 export type TypeMode = "canonical" | "native";
 

@@ -65,7 +65,7 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 | <img src="./.github/assets/graphvizdot.svg" width="16" height="16" alt="Graphviz DOT Icon" style="vertical-align:middle;"> | [Graphviz DOT](https://graphviz.org/) | ✅ Supported |
 | <img src="./.github/assets/structurizr.svg" width="16" height="16" alt="Structurizr Icon" style="vertical-align:middle;"> | [Structurizr](https://structurizr.com/dsl) | ✅ Supported |
 | | [Pikchr](https://pikchr.org/) | ✅ Supported |
-| | [erd (BurntSushi)](https://github.com/BurntSushi/erd) | 🚧 Planned |
+| | [erd (BurntSushi)](https://github.com/BurntSushi/erd) | ✅ Supported |
 | | [draw.io](https://www.drawio.com/) | 🚧 Planned |
 
 ## Requirements
