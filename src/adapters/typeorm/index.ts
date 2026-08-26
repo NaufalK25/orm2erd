@@ -530,12 +530,16 @@ function buildRelation(
       // this to know which end's cardinality marker is fixed-optional
       // (the FK holder) vs which one varies with FK nullability (the
       // referenced side).
+      // `fieldName` follows that swap: it names the alias on `from`, which
+      // is the inverse side. Falls back to this side's own property name
+      // when no inverse is declared — the only alias that exists then.
       if (!relation.isOwning) return undefined;
       return {
         from: relatedName,
         to: entityMetadata.name,
         type: "1-1",
-        fieldName: relation.propertyName,
+        fieldName:
+          relation.inverseRelation?.propertyName ?? relation.propertyName,
         fromColumn:
           relation.inverseEntityMetadata.primaryColumns[0]?.propertyName,
         toColumn: relation.joinColumns[0]?.propertyName,

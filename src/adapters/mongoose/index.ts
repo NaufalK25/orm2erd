@@ -320,12 +320,14 @@ function buildPairedRelation(a: RefSide, b: RefSide): Relation {
   // Swapped so the FK-like ref field lands on `to`, matching the "FK
   // always lives on `to`" convention every other relation shape uses
   // (both sides here physically store a pointer, so `from`/`to` is an
-  // arbitrary tie-break either way — swapping costs nothing).
+  // arbitrary tie-break either way — swapping costs nothing). `fieldName`
+  // follows the swap: it names the alias on the relation's `from` side,
+  // which after swapping is the side held in `to`.
   return {
     from: to.modelName,
     to: from.modelName,
     type: "1-1",
-    fieldName: from.fieldName,
+    fieldName: to.fieldName,
     fromColumn: "_id",
     toColumn: from.fieldName,
     isFromOptional: !from.isRequired,

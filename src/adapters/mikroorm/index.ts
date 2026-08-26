@@ -347,13 +347,16 @@ function buildRelation(
     }
     case "1:1": {
       // Owning side carries the join column — swapped into `to` so the FK
-      // always lives there, matching the 1-n cases above.
+      // always lives there, matching the 1-n cases above. `fieldName`
+      // follows that swap: it names the alias on `from`, which is the
+      // inverse property. Falls back to this side's own name when no
+      // inverse is declared — the only alias that exists then.
       if (!prop.owner) return undefined;
       return {
         from: relatedName,
         to: meta.className,
         type: "1-1",
-        fieldName: prop.name,
+        fieldName: prop.inversedBy ?? prop.name,
         fromColumn: prop.targetMeta?.primaryKeys[0],
         toColumn: prop.fieldNames?.[0],
         isFromOptional: prop.nullable,

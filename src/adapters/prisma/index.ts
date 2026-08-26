@@ -250,14 +250,15 @@ export const prismaAdapter: ORMAdapter = {
       // 1-1: the side holding the FK column becomes `to`, matching the
       // "FK always lives on `to`" convention every other relation shape
       // uses — `owner`'s own field's isRequired mirrors its FK column's
-      // nullability.
+      // nullability. `fieldName` follows that swap: it names the alias on
+      // `from`, so it comes from `referenced`, not `owner`.
       const owner = a.hasFK ? a : b;
       const referenced = owner === a ? b : a;
       return {
         from: referenced.modelName,
         to: owner.modelName,
         type: "1-1" as const,
-        fieldName: owner.fieldName,
+        fieldName: referenced.fieldName,
         fromColumn: owner.refColumn,
         toColumn: owner.fkColumn,
         isFromOptional: !owner.isRequired,

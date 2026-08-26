@@ -303,6 +303,21 @@ describe("prismaAdapter.extract — 1-1 relations, FK on `to` (#1)", () => {
     expect(rel.toColumn).toBe("userId");
   });
 
+  it("names the alias on `from`, not the FK-holding side swapped into `to`", async () => {
+    const entry = await prismaAdapter.resolveEntry(
+      join(fixturesDir, "one-to-one/schema.prisma"),
+      fixturesDir,
+    );
+    const model = await prismaAdapter.extract(entry);
+    const rel = model.relations.find(
+      (r) => r.type === "1-1" && r.to === "Profile",
+    )!;
+
+    // `User.profile`, not `Profile.user` — the label reads left-to-right
+    // along the edge, and `from` is User.
+    expect(rel.fieldName).toBe("profile");
+  });
+
   it("sets isFromOptional false when the owning side's relation field is required", async () => {
     const entry = await prismaAdapter.resolveEntry(
       join(fixturesDir, "one-to-one/schema.prisma"),

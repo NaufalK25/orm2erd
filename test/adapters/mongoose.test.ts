@@ -262,6 +262,17 @@ describe("mongooseAdapter.extract — relations", () => {
     expect(rel).toHaveLength(1);
   });
 
+  it("names the reciprocal 1-1 after the alias on `from`, not the swapped `to`", () => {
+    const rel = model.relations.find(
+      (r) => r.type === "1-1" && r.from === "User" && r.to === "Profile",
+    )!;
+
+    // `User.profile`, not `Profile.user` — the label reads left-to-right
+    // along the edge, and `from` is User.
+    expect(rel.fieldName).toBe("profile");
+    expect(rel.toColumn).toBe("user");
+  });
+
   it("treats a standalone unique singular ref as 1-1, referenced model as 'from'", () => {
     const rel = model.relations.find(
       (r) => r.from === "Customer" && r.to === "Product",
