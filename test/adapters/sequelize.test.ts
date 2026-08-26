@@ -515,3 +515,34 @@ describe("sequelizeAdapter.extract — isFromOptional (#1)", () => {
     expect(rel.isFromOptional).toBe(false);
   });
 });
+
+describe("sequelizeAdapter.extract — overlapping BelongsToMany through one junction", () => {
+  it("drops isUnique on the attribute stranded by the clobbered unique group", async () => {
+    const model = await extractFixture("overlapping-belongs-to-many.js");
+    const junction = model.entities.find((e) => e.name === "PostTag")!;
+    const userId = junction.fields.find((f) => f.name === "userId")!;
+
+    // Its `unique` string survives on the attribute, but the group it names
+    // was left holding one column — rendering UK would read as "globally
+    // unique", i.e. one row per user.
+    expect(userId.isUnique).toBe(false);
+  });
+
+  it("keeps isUnique on a genuine single-column unique", async () => {
+    const model = await extractFixture("overlapping-belongs-to-many.js");
+    const junction = model.entities.find((e) => e.name === "PostTag")!;
+    const slug = junction.fields.find((f) => f.name === "slug")!;
+
+    expect(slug.isUnique).toBe(true);
+  });
+
+  it("keeps the surviving composite unique intact", async () => {
+    const model = await extractFixture("overlapping-belongs-to-many.js");
+    const junction = model.entities.find((e) => e.name === "PostTag")!;
+
+    expect(junction.uniques).toEqual([["postId", "tagId"]]);
+    expect(
+      junction.fields.filter((f) => f.isUnique).map((f) => f.name),
+    ).toEqual(["slug", "postId", "tagId"]);
+  });
+});

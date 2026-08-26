@@ -220,22 +220,60 @@ function findForeignKeyActions(
 // `options.indexes: [{ unique: true, fields: [...] }]` only ever surfaces
 // there. Merge both, deduping by sorted field list in case the same group
 // is (redundantly) declared through both mechanisms.
-function extractCompositeKeys(model: SequelizeModel): {
-  primaryKey?: string[];
-  uniques?: string[][];
-} {
-  const pkAttrs = model.primaryKeyAttributes ?? [];
-
-  // uniqueKeys' `fields` are physical column names (`definition.field`),
-  // unlike options.indexes' `fields`, which are whatever the caller wrote
-  // (attribute names) — map back so both sources agree with the field
-  // identifiers used everywhere else in the IR.
-  const columnToAttrName = new Map(
+// uniqueKeys' `fields` are physical column names (`definition.field`),
+// unlike options.indexes' `fields`, which are whatever the caller wrote
+// (attribute names) — map back so both sources agree with the field
+// identifiers used everywhere else in the IR.
+function columnToAttrNameMap(model: SequelizeModel): Map<string, string> {
+  return new Map(
     Object.entries(model.rawAttributes).map(([attrName, attr]) => [
       attr.field ?? attrName,
       attrName,
     ]),
   );
+}
+
+// Two BelongsToMany declared through the same junction fight over the FK
+// attribute they share: belongs-to-many.js writes `unique: <groupName>`
+// onto both of its FK attributes, and the second pair's `Object.assign`
+// overwrites the first's. That strands one attribute as the lone member of
+// a group whose generated name still names two columns. The attribute
+// keeps a truthy `unique` string, so `isUnique` would render a bare `UK`
+// reading as "globally unique" — false, and the opposite of what a
+// junction table means.
+//
+// Sequelize generates these as `${tableName}_${foreignKey}_${otherKey}_unique`
+// (belongs-to-many.js), so a one-field group whose name ends in
+// `_<attrA>_<attrB>_unique` for two distinct attributes of this model is the
+// stranded case. A hand-written `unique: 'groupName'` never matches that
+// shape, and a genuine single-column unique is named `${tableName}_${col}_unique`
+// — one attribute, not two.
+function strandedUniqueAttributes(model: SequelizeModel): Set<string> {
+  const attrNames = Object.keys(model.rawAttributes);
+  const columnToAttrName = columnToAttrNameMap(model);
+  const stranded = new Set<string>();
+
+  for (const [groupKey, uk] of Object.entries(model.uniqueKeys ?? {})) {
+    if (uk.fields.length !== 1) continue;
+    const groupName = uk.name ?? groupKey;
+    const namesTwoAttributes = attrNames.some((a) =>
+      attrNames.some((b) => a !== b && groupName.endsWith(`_${a}_${b}_unique`)),
+    );
+    if (namesTwoAttributes) {
+      const [column] = uk.fields;
+      stranded.add(columnToAttrName.get(column) ?? column);
+    }
+  }
+
+  return stranded;
+}
+
+function extractCompositeKeys(model: SequelizeModel): {
+  primaryKey?: string[];
+  uniques?: string[][];
+} {
+  const pkAttrs = model.primaryKeyAttributes ?? [];
+  const columnToAttrName = columnToAttrNameMap(model);
 
   const fromUniqueKeys = Object.values(model.uniqueKeys ?? {}).map((uk) =>
     uk.fields.map((f) => columnToAttrName.get(f) ?? f),
@@ -335,41 +373,44 @@ export const sequelizeAdapter: ORMAdapter = {
       );
     }
 
-    const entities = Object.entries(sequelize.models).map(([name, model]) => ({
-      name,
-      tableName:
-        model.tableName && model.tableName !== name
-          ? model.tableName
-          : undefined,
-      ...extractCompositeKeys(model),
-      indexes: extractIndexes(model),
-      description: model.options?.comment,
-      fields: Object.entries(model.rawAttributes).map(([fieldName, attr]) => {
-        const { key: typeName, isList, values } = resolveAttributeType(attr);
-        return {
-          name: fieldName,
-          columnName:
-            attr.field && attr.field !== fieldName ? attr.field : undefined,
-          type: toCanonicalType(typeName),
-          nativeType:
-            typeName === "ENUM" ? `enum_${name}_${fieldName}` : typeName,
-          isList,
-          isPrimaryKey: !!attr.primaryKey,
-          // Reading the attribute's own resolved `references` (rather than
-          // reconstructing FK-ness from association direction) is accurate
-          // regardless of which side — BelongsTo vs HasMany/HasOne/
-          // BelongsToMany — declared the association; see SequelizeAttribute.
-          isForeignKey: attr.references != null,
-          // rawAttributes doesn't set allowNull on primary keys, even
-          // though they're always NOT NULL.
-          isNullable: attr.primaryKey ? false : attr.allowNull !== false,
-          isUnique: !!attr.unique,
-          defaultValue: resolveDefaultValue(attr.defaultValue),
-          enumValues: typeName === "ENUM" ? values : undefined,
-          description: attr.comment,
-        };
-      }),
-    }));
+    const entities = Object.entries(sequelize.models).map(([name, model]) => {
+      const stranded = strandedUniqueAttributes(model);
+      return {
+        name,
+        tableName:
+          model.tableName && model.tableName !== name
+            ? model.tableName
+            : undefined,
+        ...extractCompositeKeys(model),
+        indexes: extractIndexes(model),
+        description: model.options?.comment,
+        fields: Object.entries(model.rawAttributes).map(([fieldName, attr]) => {
+          const { key: typeName, isList, values } = resolveAttributeType(attr);
+          return {
+            name: fieldName,
+            columnName:
+              attr.field && attr.field !== fieldName ? attr.field : undefined,
+            type: toCanonicalType(typeName),
+            nativeType:
+              typeName === "ENUM" ? `enum_${name}_${fieldName}` : typeName,
+            isList,
+            isPrimaryKey: !!attr.primaryKey,
+            // Reading the attribute's own resolved `references` (rather than
+            // reconstructing FK-ness from association direction) is accurate
+            // regardless of which side — BelongsTo vs HasMany/HasOne/
+            // BelongsToMany — declared the association; see SequelizeAttribute.
+            isForeignKey: attr.references != null,
+            // rawAttributes doesn't set allowNull on primary keys, even
+            // though they're always NOT NULL.
+            isNullable: attr.primaryKey ? false : attr.allowNull !== false,
+            isUnique: !!attr.unique && !stranded.has(fieldName),
+            defaultValue: resolveDefaultValue(attr.defaultValue),
+            enumValues: typeName === "ENUM" ? values : undefined,
+            description: attr.comment,
+          };
+        }),
+      };
+    });
 
     const sidesByKey = new Map<string, RelationSide[]>();
     for (const model of Object.values(sequelize.models)) {
