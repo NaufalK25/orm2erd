@@ -453,6 +453,13 @@ export const sequelizeAdapter: ORMAdapter = {
           // table, not the derived crossing. Only suppress when the junction
           // is actually an entity we render; an implicit string-named join
           // table isn't emitted, so keep the n-n there or the link is lost.
+          //
+          // The BelongsToMany's own `as` aliases are dropped with the edge,
+          // deliberately: they're ORM collection accessors
+          // (`sparepart.racks`), not field-to-field mappings, so there's no
+          // column pair to hang them on. The junction's own BelongsTo edges
+          // carry the schema fact. Don't reintroduce them as an entity
+          // `description` — that puts ORM API surface in a database diagram.
           if (
             belongsToMany.throughModel &&
             entityNames.has(belongsToMany.throughModel)
@@ -502,6 +509,15 @@ export const sequelizeAdapter: ORMAdapter = {
         // Parent-on-left, same convention as HasMany above. The FK column
         // always lives with the BelongsTo declarer; a lone HasOne side (no
         // inverse BelongsTo registered) has it on its target instead.
+        //
+        // The `hasOne ?? belongsTo` order below is deliberate and is NOT the
+        // "label names the wrong side" bug fixed in the other adapters:
+        // `fieldName` should name the alias on `from`, so HasOne (declared on
+        // the parent) wins. Falling back to BelongsTo's alias only happens
+        // when no HasOne exists, and then the child's alias is the ONLY alias
+        // in the schema — the choice is showing it or showing nothing. It
+        // reads oddly (`spareparts ||--o{ stock_cards : "sparepart"`) but
+        // beats dropping the one name the developer wrote.
         const hasOne = sides.find((s) => s.associationType === "HasOne");
         const belongsTo = sides.find((s) => s.associationType === "BelongsTo");
         const fkOwner = belongsTo ?? hasOne ?? sides[0];
