@@ -262,3 +262,21 @@ interactive `@clack/prompts` flow instead of a hard default — including `--out
 whose prompt (unlike a plain write's) has no pre-fillable default, so it can't be satisfied by
 blindly hitting Enter. See [README.md](./README.md#flags) for the full flag reference and CI
 examples.
+
+## Versioning
+
+**Which changes are MAJOR: could a reasonable user want the old behavior back?**
+
+- **Yes → MAJOR.** 2.0.0's two breaking items both pass: `--names model` exists precisely because
+  the pre-2.0 default was legitimate, and `--out` resolving inside an existing directory moves
+  *where the file lands*, which regenerating can't repair. Shipping an escape hatch is an admission
+  the old behavior was defensible.
+- **No → `### 💊 Fixed`, PATCH.** Corrections of wrong output aren't contract changes — no format,
+  filename, flag, or default moves. Precedent: `fba2390` flipped relation direction and cardinality
+  in 1.7.0, `a63af11` changed identifier quoting in 2.1.0, and even 2.0.0 filed `7857da1`'s DBML
+  operator flip under Fixed rather than Breaking.
+
+`--check` drift happens in **both** cases, so drift alone doesn't decide it — but it always earns an
+explicit call-out in the CHANGELOG entry, since CI fails until the committed diagram is regenerated.
+
+New user-facing flags/features are MINOR, never PATCH.
