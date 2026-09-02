@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🏷️ [2.2.0] - 2026-09-02
+
+### 🚀 Added
+
+- **[erd (BurntSushi)](https://github.com/BurntSushi/erd) support**, rendering each entity as an
+  `[Entity]` header followed by one line per field (`*` marks a primary key, `+` a foreign key,
+  with type/nullability/default carried in the field's `{label: "..."}`), and each relation as a
+  `?--1` / `*--1` cardinality expression. Identifiers outside erd's `[A-Za-z_][A-Za-z0-9_]*`
+  grammar are backtick-quoted.
+  ([0d0984a](https://github.com/NaufalK25/orm2erd/commit/0d0984a))
+- **[draw.io](https://www.drawio.com/) support**, emitting a `.drawio` file you open and edit in
+  draw.io / diagrams.net directly, instead of a text diagram language you render. Each entity
+  becomes a real draw.io table shape (header + one row per field, with PK/FK marker cells) and each
+  relation an edge with the matching ER cardinality markers. Since `.drawio` is absolute-positioned
+  XML with no auto-layout, the emitter lays the tables out on a grid itself.
+  ([72ab38e](https://github.com/NaufalK25/orm2erd/commit/72ab38e))
+
+### 💊 Fixed
+
+- **1-1 relation labels named the wrong side.** `Relation.to` is always the FK-holding side, so a
+  1-1 swaps the two sides to put the FK on `to` — but `fieldName` kept coming from the FK-holding
+  side instead of following the swap, so the edge label showed the alias belonging to `to` while
+  labelling the relation from `from`. Fixed across the Prisma, Mongoose, TypeORM, and MikroORM
+  adapters; TypeORM and MikroORM fall back to the owning side's own property name when no inverse
+  is declared, since that's the only alias that exists then. `--check` will report drift on any
+  committed diagram with a 1-1 relation — regenerate and recommit to clear it.
+  ([8ac1758](https://github.com/NaufalK25/orm2erd/commit/8ac1758))
+- **A bare `UK` on a Sequelize column stranded by two overlapping `belongsToMany`.** Two
+  `belongsToMany` declared through the same junction table fight over the FK attribute they share,
+  and the second pair's `Object.assign` overwrites the first's `unique` group — stranding one
+  attribute as the lone member of a group whose generated name still names two columns. The
+  attribute kept a truthy `unique`, so it rendered as a bare `UK` reading "globally unique", the
+  opposite of what a junction table means. Such attributes are now detected by Sequelize's own
+  `${tableName}_${foreignKey}_${otherKey}_unique` naming and excluded, leaving the composite unique
+  intact. `--check` will report drift on affected Sequelize diagrams — regenerate and recommit.
+  ([d4764a4](https://github.com/NaufalK25/orm2erd/commit/d4764a4))
+
 ## 🏷️ [2.1.0] - 2026-08-06
 
 ### 🚀 Added

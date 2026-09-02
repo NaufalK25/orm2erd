@@ -1,6 +1,6 @@
 {
   "name": "orm2erd",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Generate ERD diagrams (Mermaid, DBML, PlantUML, D2, and more) straight from your ORM's models/schema — no manual diagramming.",
   "main": "./dist/index.js",
   "bin": {
