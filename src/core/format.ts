@@ -8,7 +8,8 @@ export type OutputFormat =
   | "graphvizdot"
   | "structurizr"
   | "pikchr"
-  | "er";
+  | "er"
+  | "drawio";
 
 export type TypeMode = "canonical" | "native";
 

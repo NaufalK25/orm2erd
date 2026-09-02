@@ -66,7 +66,7 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 | <img src="./.github/assets/structurizr.svg" width="16" height="16" alt="Structurizr Icon" style="vertical-align:middle;"> | [Structurizr](https://structurizr.com/dsl) | ✅ Supported |
 | | [Pikchr](https://pikchr.org/) | ✅ Supported |
 | | [erd (BurntSushi)](https://github.com/BurntSushi/erd) | ✅ Supported |
-| | [draw.io](https://www.drawio.com/) | 🚧 Planned |
+| <img src="./.github/assets/drawio.svg" width="16" height="16" alt="draw.io Icon" style="vertical-align:middle;"> | [draw.io](https://www.drawio.com/) | ✅ Supported |
 | | [Excalidraw](https://excalidraw.com/) | 🚧 Planned |
 
 ## Requirements
