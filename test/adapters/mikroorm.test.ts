@@ -269,15 +269,13 @@ describe("mikroormAdapter.extract — error cases", () => {
   // MikroORM's own `MetadataError.noEntityDiscovered()` fires here (not a
   // check of orm2erd's own) — this just verifies it propagates cleanly
   // through the adapter. Spawns a real `tsc` process (an empty `entitiesTs`
-  // dir still triggers the compile step), which is close enough to the
-  // default 5s budget to flake under a loaded test run — same reasoning as
-  // any other test here that exercises `runTargetTsc`, just closer to the
-  // edge since there's no other work to amortize the spawn cost against.
+  // dir still triggers the compile step); the global testTimeout in
+  // vitest.config.ts covers that.
   it("propagates MikroORM's own error when no entities are discovered", async () => {
     await expect(
       extractFixture("no-entities", "mikro-orm.config.ts"),
     ).rejects.toThrow(/No entities were discovered/);
-  }, 15_000);
+  });
 
   it("throws a clear error when no tsconfig.json can be found for an entitiesTs directory", async () => {
     const cwd = mkdtempSync(join(tmpdir(), "orm2erd-mikroorm-no-tsconfig-"));
