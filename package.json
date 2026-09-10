@@ -82,7 +82,7 @@
     "@mikro-orm/core": "^6.6.16",
     "@mikro-orm/sqlite": "^6.6.16",
     "@types/node": "^26.1.1",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^5.0.0",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "mongoose": "^9.7.4",
@@ -95,6 +95,6 @@
     "tsup": "^8.5.1",
     "typeorm": "^1.1.0",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.0"
   }
 }
