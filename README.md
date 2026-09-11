@@ -67,7 +67,7 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 | | [Pikchr](https://pikchr.org/) | ✅ Supported |
 | | [erd (BurntSushi)](https://github.com/BurntSushi/erd) | ✅ Supported |
 | <img src="./.github/assets/drawio.svg" width="16" height="16" alt="draw.io Icon" style="vertical-align:middle;"> | [draw.io](https://www.drawio.com/) | ✅ Supported |
-| | [Excalidraw](https://excalidraw.com/) | 🚧 Planned |
+| <img src="./.github/assets/excalidraw.svg" width="16" height="16" alt="Excalidraw Icon" style="vertical-align:middle;"> | [Excalidraw](https://excalidraw.com/) | ✅ Supported |
 
 ## Requirements
 

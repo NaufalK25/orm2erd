@@ -11,6 +11,7 @@ import { structurizrEmitter } from "./structurizr";
 import { pikchrEmitter } from "./pikchr";
 import { erEmitter } from "./er";
 import { drawioEmitter } from "./drawio";
+import { excalidrawEmitter } from "./excalidraw";
 
 export type { Emitter, EmitOptions } from "./types";
 
@@ -26,6 +27,7 @@ export const emitters: Partial<Record<OutputFormat, Emitter>> = {
   pikchr: pikchrEmitter,
   er: erEmitter,
   drawio: drawioEmitter,
+  excalidraw: excalidrawEmitter,
 };
 
 /** Looks up the emitter for `format`. Throws if that format has no emitter implemented yet. */

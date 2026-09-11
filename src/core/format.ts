@@ -9,7 +9,8 @@ export type OutputFormat =
   | "structurizr"
   | "pikchr"
   | "er"
-  | "drawio";
+  | "drawio"
+  | "excalidraw";
 
 export type TypeMode = "canonical" | "native";
 
