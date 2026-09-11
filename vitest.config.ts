@@ -8,8 +8,10 @@ export default defineConfig({
     // real tsc spawn keeps them honest without hiding an actual hang. CI
     // runners aren't memory-starved, so they keep the full worker count.
     maxWorkers: process.env.CI ? undefined : "50%",
-    testTimeout: 30_000,
-    hookTimeout: 30_000,
+    // Slowest test is ~3.4s idle; the headroom is for a loaded box, not for
+    // legitimately slow tests. A real hang never finishes and still fails.
+    testTimeout: 120_000,
+    hookTimeout: 120_000,
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
