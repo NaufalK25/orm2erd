@@ -1,12 +1,9 @@
 import type { Entity, Field } from "../core/model";
 
 /**
- * The other columns in the composite unique group `field` belongs to (per
- * `entity.uniques`), or `undefined` if it isn't part of one. A field can be
- * unique two different ways: its own `isUnique` (single-column) or
- * membership in one of `entity.uniques`' multi-column groups, and callers
- * need both the "is it unique at all" signal and the group's other members
- * to disambiguate it from an independent single-column unique.
+ * The other members of `field`'s composite unique group, or `undefined` if it
+ * has none. Lets emitters tell a composite-unique member apart from a
+ * single-column `isUnique`.
  */
 export function compositeUniqueMates(
   entity: Entity,

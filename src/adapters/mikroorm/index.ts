@@ -250,17 +250,10 @@ function extractMultiColumnUniques(
   return uniques.length > 0 ? uniques : undefined;
 }
 
-// MikroORM flattens `@Embedded()` properties into `meta.props` itself before
-// the adapter ever sees them, but the two embedding modes leave opposite
-// traces: an inline embeddable (the default) has no column of its own
-// (`columnTypes: []`). Only its already-flattened leaf properties
-// (`kind: "scalar"`, real prefixed `fieldNames`) are physical, so the plain
-// `kind === "scalar"` filter already picks those up correctly. An
-// `{ object: true }` embeddable is the reverse: the wrapper prop itself
-// (`kind: "embedded"`, `object: true`) is the one physical JSON column, and
-// MikroORM additionally synthesizes a `persist: false` scalar mirror per
-// embedded field (named `wrapper~field`) purely for JSON-path querying.
-// Those must be excluded or they'd show up as bogus extra columns.
+// MikroORM pre-flattens `@Embedded()` props. Inline embeddables need nothing
+// extra: their leaf props are already `kind: "scalar"`. An `{ object: true }`
+// embeddable is one JSON column (the `kind: "embedded"` wrapper), plus
+// `persist: false` scalar mirrors (`wrapper~field`) that must be skipped.
 function buildEntity(meta: MikroOrmEntityMetadata): Entity {
   const singleColumnUniqueNames = collectSingleColumnUniqueNames(meta);
   const scalarFields = meta.props

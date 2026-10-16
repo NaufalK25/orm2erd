@@ -248,14 +248,9 @@ function toCanonicalType(rawColumn: DrizzleColumn): CanonicalType {
   }
 }
 
-// Only Postgres's `pgEnum()` backs a real, named, reusable DB enum type:
-// `getSQLType()` returns that name directly (e.g. "role"), which the DBML
-// emitter keys its `Enum` block off of via `nativeType`. MySQL/SQLite enums
-// are always inline/anonymous instead: `getSQLType()` there returns the
-// full definition (e.g. "enum('admin','author')"), which has no stable
-// per-enum identity and would collide across every enum column if used as
-// a block name. So those get a synthesized name instead, the same fix the
-// Sequelize adapter applies for its own dialect-agnostic ENUM type.
+// Only Postgres `pgEnum()` gives a named enum type (getSQLType() returns "role").
+// MySQL/SQLite return the inline definition, which would collide as a DBML
+// Enum name, so those get a synthesized name (same as the Sequelize adapter).
 function resolveNativeType(
   rawColumn: DrizzleColumn,
   tableName: string,

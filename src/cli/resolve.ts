@@ -17,17 +17,9 @@ import { icon, orExit } from "./render";
 
 export const ALL_ORM_NAMES = Object.keys(adapters) as ORMName[];
 
-// --check has no memory of what --out was used on the run that created the
-// committed file, so there's no safe default to guess (e.g. "erd"): make
-// --out mandatory whenever --check is passed, rather than silently checking
-// the wrong path. Non-interactively (CI, -y, no TTY) this is a hard error:
-// there's no one to ask, and it's checked before any prompting starts so a
-// run doesn't walk through ORM/entry selection only to reject it at the very
-// end for a flag that was missing from the start. Interactively, resolving
-// --out is deferred to resolveOutBase's own check-aware prompt instead (see
-// its `check` param): that prompt has no pre-fillable default to guess at
-// and requires explicit typed input, so it doesn't reintroduce the risky
-// silent-guess this guard exists to rule out.
+// --check can't know which --out made the committed file, so it's required.
+// Non-interactive runs fail up front, before any prompting; interactive runs
+// get resolveOutBase's prompt, which has no default to accept by accident.
 export function validateCheckRequiresOut(
   check: boolean,
   out: string | undefined,

@@ -126,14 +126,10 @@ function columnPropertyValue(
 }
 
 /**
- * Builds the ordered `"key" "value"` property pairs for one entity: an
- * (aliasing) `model` name, composite PK/uniques/indexes: mirroring what
- * DBML puts in its `indexes` block, single-column PK/unique stay on the
- * per-column line instead, then one `column.<physical name>` entry per
- * field. Column keys are always the physical column name regardless of
- * `nameMode`, so they stay a stable lookup key independent of display
- * preference; the resolved display name still shows up in the value as
- * `alias: ...` under `--names both`.
+ * `"key" "value"` property pairs for one entity: the `model` alias, composite
+ * PK/uniques/indexes (single-column ones stay on the column line), then one
+ * `column.<physical name>` per field. Keys always use the physical name so
+ * they stay stable across `--names`.
  */
 function entityProperties(
   entity: Entity,

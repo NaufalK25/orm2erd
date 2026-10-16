@@ -4,17 +4,12 @@ import { resolveRelationLabel } from "./label";
 import { buildNameResolver } from "./names";
 import type { RelationLabelMode, TypeMode } from "../core/format";
 
-// Pikchr has no "table with rows" primitive, no grouping/namespace construct,
-// a hard 5-text-term-per-object cap, and no auto-layout engine: every
-// object's position is either implicit flow or an explicit coordinate this
-// emitter has to compute itself. See docs/samples/pikchr-erd-reference.pikchr
-// for the hand-written, parser-validated (pikchr.org/home/pikchrshow) sample
-// this mapping is based on, including every syntax gotcha discovered there
-// (object labels need a capital initial, bare `x = ...` variables need a
-// lowercase initial, `at (x,y)` comes right after `to`/`behind` but before
-// `width`/`height` on a `box` line, and a single object can carry at most 5
-// text terms, which is why every entity is a field container + a separate
-// background box, never one box with a field per text term).
+// Pikchr has no table primitive, grouping, or auto-layout, and caps an object
+// at 5 text terms, so each entity is a field container plus a background box,
+// placed by explicit coordinates. Syntax rules come from the validated sample
+// in docs/samples/pikchr-erd-reference.pikchr: object labels need a capital
+// initial, `x = ...` variables a lowercase one, and `at (x,y)` goes after
+// `to`/`behind` but before `width`/`height`.
 
 // Pikchr's string-literal escaping rules aren't documented clearly enough to
 // rely on; substituting a straight quote for an apostrophe (same approach as
@@ -112,14 +107,9 @@ interface RenderLine {
   kind: LineKind;
 }
 
-// Per-character/per-line size estimates used only for this emitter's own
-// grid-spacing math (never emitted as literal `width`/`height` attributes,
-// those stay dynamically computed from the real container, same as the
-// reference sample's `Container.width+0.3in`). Calibrated against the
-// reference's own postmortem: a ~100-char mono/small field line rendered a
-// box topping out ~6.0in wide, i.e. ~0.055in/char including the 0.3in pad.
-// Rounded up here since under-estimating overlaps boxes and over-estimating
-// only adds whitespace.
+// Size estimates for grid spacing only (emitted widths come from the real
+// container). ~0.055in/char measured from the reference render, rounded up:
+// overestimating only adds whitespace, underestimating overlaps boxes.
 const CHAR_W: Record<LineKind, number> = {
   header: 0.1,
   italic: 0.05,
@@ -134,15 +124,9 @@ const LINE_H: Record<LineKind, number> = {
 };
 const BOX_PAD_IN = 0.3;
 
-// Arrow labels are centered on the arrow itself, not fitted into a lane:
-// a short arrow with a long "below" FK-detail string (often 60-90 chars)
-// spills past both connected boxes unless the gap between grid cells is
-// wide enough to hold that label's own estimated width. No live-render
-// calibration point exists for this proportional italic/small text (unlike
-// CHAR_W.mono above, which was checked against a real rendered SVG), so
-// this sits at the top of the plausible band inferred from that same SVG:
-// a 72-char label overlapping a 2.23in gap implies >=0.031in/char, and
-// mono (monospace, wider per glyph than proportional) measured ~0.0497.
+// Gap must fit the longest arrow label, which is centered on the arrow and
+// spills over both boxes otherwise. Not calibrated directly: a rendered SVG
+// put proportional text above 0.031in/char and mono at ~0.05, so use the top.
 const LABEL_CHAR_W_IN = 0.05;
 const MIN_GAP_IN = 1.0;
 
@@ -169,13 +153,9 @@ function cumulativeCenters(sizes: number[], gap: number): number[] {
 }
 
 /**
- * Straight-line edge choice for the first relation drawn between a given
- * entity pair, from each side's relative grid cell: the exiting side favors
- * the column relationship (leaving east/west toward the target's column),
- * the entering side favors the row relationship (arriving from north/south
- * of the target's row): matches every straight (non-bent) arrow in the
- * reference sample, e.g. `User.e to Profile.w` (same row) and `User.s to
- * Post.n` (same column, Post one row down).
+ * Straight-arrow edges for the first relation between a pair: exit east/west
+ * toward the target's column, enter north/south from its row, as in the
+ * reference sample (`User.e to Profile.w`, `User.s to Post.n`).
  */
 function pickEdges(
   fromCol: number,
@@ -197,12 +177,9 @@ function pairKey(a: string, b: string): string {
 }
 
 /**
- * The two arrow-label strings for one relation: cardinality+alias
- * ("above") and FK detail ("below"), same composition structurizr.ts uses
- * for its `description`/`technology` pair. Called once in a pre-pass (to
- * size the grid gap around the longest label) and again during emission;
- * kept as one function so the two call sites can't drift onto different
- * strings for the same relation.
+ * The "above" (cardinality + alias) and "below" (FK detail) labels for a
+ * relation. Shared by the gap-sizing pre-pass and emission so both use the
+ * same strings.
  */
 function computeLabels(
   model: ERDModel,
@@ -378,15 +355,9 @@ export const pikchrEmitter: Emitter = {
       colWidths[col] = Math.max(colWidths[col], size.width);
       rowHeights[row] = Math.max(rowHeights[row], size.height);
     }
-    // A relation's label is centered on the arrow itself, not fitted into
-    // whatever gap surrounds it. A same-row/same-column pair with a short
-    // arrow and a long FK-detail label otherwise overlaps both boxes it
-    // connects (confirmed against a real rendered SVG: a 72-char label on
-    // a 2.23in gap spilled into both neighbors). Sizing the gap from the
-    // longest label in the whole model fixes every adjacent-cell relation;
-    // it does NOT fix a label on a long diagonal arrow that happens to
-    // cross near an unrelated box in between: same collision-unaware
-    // limitation the reference sample already discloses for plain lines.
+    // Size the grid gap from the longest label in the model, so labels on
+    // adjacent-cell arrows don't overlap the boxes they connect. Labels on long
+    // diagonal arrows can still cross unrelated boxes (known limitation).
     let maxLabelChars = 0;
     for (const rel of model.relations) {
       if (!ids.get(rel.from) || !ids.get(rel.to)) continue;
@@ -495,16 +466,9 @@ export const pikchrEmitter: Emitter = {
           // idea as the reference's "posts (last edited)" relation.
           const offset = fmt(0.5 * occurrence);
           if (fromEdge === "e" || fromEdge === "w") {
-            // The "until even with" leg must move SIDEWAYS (matching the
-            // target's x), not vertically again (matching its y): `.n` sits
-            // on the box's own horizontal center-line, so a second vertical
-            // move at that same x re-enters the source box whenever the
-            // target's own top edge is lower than the source's (a shorter
-            // target box, same row). Confirmed against a real render where
-            // this clipped straight through the top of the source entity.
-            // Moving sideways first leaves that center-line before any
-            // further vertical travel, so the final drop into the target
-            // can't clip back through the source.
+            // Move sideways before dropping into the target: a second vertical move at
+            // `.n`'s x re-enters the source box when the target is shorter on the same
+            // row (seen clipping through the source in a real render).
             const dir = toCell.col >= fromCell.col ? "right" : "left";
             path = `from ${fromIds.boxId}.n then up ${offset}in then ${dir} until even with ${toIds.boxId}.n then to ${toIds.boxId}.n`;
           } else {

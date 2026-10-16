@@ -1,12 +1,7 @@
-// Local shapes for the @mikro-orm/core runtime metadata this adapter reads.
-// Not imported from `@mikro-orm/core` itself for TYPES: every value at
-// runtime is obtained via the TARGET project's own installed copy (see
-// `createRequire` usage in index.ts), same "use the target's own install"
-// principle as the Drizzle/TypeORM adapters. Trimmed to the v6 shape this
-// adapter actually reads (verified against a real `@mikro-orm/core@6.6.16`
-// install, not assumed from the package's own .d.ts, which in a couple of
-// places doesn't match its own runtime, see the comments on
-// `MikroOrmMetadataStorage.getAll` and `EntityProperty.type` below).
+// Local shapes for the @mikro-orm/core v6 metadata this adapter reads; values
+// come from the target project's own install. Checked against a real 6.6.16
+// runtime, since its .d.ts is wrong in places (see `getAll` and
+// `EntityProperty.type` below).
 
 export type MikroOrmReferenceKind =
   "scalar" | "1:1" | "1:m" | "m:1" | "m:n" | "embedded";

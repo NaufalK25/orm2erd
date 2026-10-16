@@ -169,20 +169,10 @@ function findForeignKeyActions(
   };
 }
 
-// Multi-column key/unique groupings a per-attribute flag can't express.
-// Single-column PK/unique stay on the field's isPrimaryKey/isUnique.
-//
-// Composite uniques can reach a model two different ways, and both need
-// reading: the idiomatic `unique: 'groupName'` shorthand on the attribute
-// itself only ever surfaces via `model.uniqueKeys` (never `options.indexes`,
-// which stays empty for that declaration style), while an explicit
-// `options.indexes: [{ unique: true, fields: [...] }]` only ever surfaces
-// there. Merge both, deduping by sorted field list in case the same group
-// is (redundantly) declared through both mechanisms.
-// uniqueKeys' `fields` are physical column names (`definition.field`),
-// unlike options.indexes' `fields`, which are whatever the caller wrote
-// (attribute names): map back so both sources agree with the field
-// identifiers used everywhere else in the IR.
+// Composite PK/unique groupings; single-column ones stay on the field flags.
+// `unique: 'group'` on an attribute only shows up in `model.uniqueKeys`, and
+// `options.indexes` uniques only show up there, so merge both (deduped).
+// uniqueKeys lists physical column names, so map them back to attribute names.
 function columnToAttrNameMap(model: SequelizeModel): Map<string, string> {
   return new Map(
     Object.entries(model.rawAttributes).map(([attrName, attr]) => [
@@ -192,21 +182,10 @@ function columnToAttrNameMap(model: SequelizeModel): Map<string, string> {
   );
 }
 
-// Two BelongsToMany declared through the same junction fight over the FK
-// attribute they share: belongs-to-many.js writes `unique: <groupName>`
-// onto both of its FK attributes, and the second pair's `Object.assign`
-// overwrites the first's. That strands one attribute as the lone member of
-// a group whose generated name still names two columns. The attribute
-// keeps a truthy `unique` string, so `isUnique` would render a bare `UK`
-// reading as "globally unique": false, and the opposite of what a
-// junction table means.
-//
-// Sequelize generates these as `${tableName}_${foreignKey}_${otherKey}_unique`
-// (belongs-to-many.js), so a one-field group whose name ends in
-// `_<attrA>_<attrB>_unique` for two distinct attributes of this model is the
-// stranded case. A hand-written `unique: 'groupName'` never matches that
-// shape, and a genuine single-column unique is named `${tableName}_${col}_unique`.
-// One attribute, not two.
+// Two BelongsToMany through the same junction overwrite each other's
+// `unique: <group>` on the shared FK, stranding one attribute alone in a group
+// still named `..._<attrA>_<attrB>_unique` (belongs-to-many.js). Detect that
+// shape so the stranded attribute isn't rendered as globally unique.
 function strandedUniqueAttributes(model: SequelizeModel): Set<string> {
   const attrNames = Object.keys(model.rawAttributes);
   const columnToAttrName = columnToAttrNameMap(model);
@@ -407,20 +386,11 @@ export const sequelizeAdapter: ORMAdapter = {
           (s) => s.associationType === "BelongsToMany",
         );
         if (belongsToMany) {
-          // When the `through` junction is itself an emitted entity, the two
-          // 1-n relations to it (from each side's HasMany/BelongsTo) already
-          // convey this m-n. Emitting the derived n-n edge on top is
-          // redundant, so drop it: standard ERD practice keeps the junction
-          // table, not the derived crossing. Only suppress when the junction
-          // is actually an entity we render; an implicit string-named join
-          // table isn't emitted, so keep the n-n there or the link is lost.
-          //
-          // The BelongsToMany's own `as` aliases are dropped with the edge,
-          // deliberately: they're ORM collection accessors
-          // (`sparepart.racks`), not field-to-field mappings, so there's no
-          // column pair to hang them on. The junction's own BelongsTo edges
-          // carry the schema fact. Don't reintroduce them as an entity
-          // `description`: that puts ORM API surface in a database diagram.
+          // When the `through` junction is a rendered entity, its two 1-n edges already
+          // show this m-n, so skip the derived n-n edge (keep it for an implicit
+          // string-named join table, which isn't rendered). The BelongsToMany `as`
+          // aliases are ORM accessors with no column pair, so they're dropped too;
+          // don't move them into an entity `description`.
           if (
             belongsToMany.throughModel &&
             entityNames.has(belongsToMany.throughModel)
@@ -467,18 +437,10 @@ export const sequelizeAdapter: ORMAdapter = {
           ];
         }
 
-        // Parent-on-left, same convention as HasMany above. The FK column
-        // always lives with the BelongsTo declarer; a lone HasOne side (no
-        // inverse BelongsTo registered) has it on its target instead.
-        //
-        // The `hasOne ?? belongsTo` order below is deliberate and is NOT the
-        // "label names the wrong side" bug fixed in the other adapters:
-        // `fieldName` should name the alias on `from`, so HasOne (declared on
-        // the parent) wins. Falling back to BelongsTo's alias only happens
-        // when no HasOne exists, and then the child's alias is the ONLY alias
-        // in the schema: the choice is showing it or showing nothing. It
-        // reads oddly (`spareparts ||--o{ stock_cards : "sparepart"`) but
-        // beats dropping the one name the developer wrote.
+        // Parent on the left, as with HasMany. The FK lives with the BelongsTo
+        // declarer, or on the target for a lone HasOne. `hasOne ?? belongsTo` is
+        // deliberate: `fieldName` names the alias on `from`, and BelongsTo's alias is
+        // used only when it's the sole alias in the schema (odd label beats none).
         const hasOne = sides.find((s) => s.associationType === "HasOne");
         const belongsTo = sides.find((s) => s.associationType === "BelongsTo");
         const fkOwner = belongsTo ?? hasOne ?? sides[0];

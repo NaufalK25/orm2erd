@@ -160,18 +160,9 @@ const opts = program.opts<ProgramOptions>();
 
 async function main() {
   const cwd = process.cwd();
-  // isCI() is also checked because some CI runners still report a TTY.
-  // --check does NOT force non-interactive on its own: run locally from a
-  // TTY, it should still prompt for ORM/entry/--out/etc. ambiguity like any
-  // other run. --out is still required either way (see
-  // validateCheckRequiresOut / resolveOutBase's `check` param): non-
-  // interactively that's a hard error, interactively it's a prompt with no
-  // pre-fillable default, so it's never satisfied by a silently-accepted
-  // guess in either mode.
-  // --stdout forces non-interactive so status/prompt chrome never lands on
-  // the stream the diagram is printed to. -y/--yes forces the same
-  // non-interactive resolution path on demand, so a TTY user can skip
-  // prompts and fall back to defaults without CI env vars.
+  // isCI() too: some CI runners still report a TTY. --stdout and -y force
+  // non-interactive (keeping prompt chrome off the piped diagram stream);
+  // --check doesn't, but still never guesses --out (see validateCheckRequiresOut).
   const interactive =
     isTTY(process.stdout) && !isCI() && !opts.stdout && !opts.yes;
 

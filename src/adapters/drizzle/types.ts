@@ -1,12 +1,6 @@
-// Local shapes for the drizzle-orm runtime metadata this adapter reads. Not
-// imported from `drizzle-orm` itself for TYPES: every value at runtime is
-// obtained via the TARGET project's own installed copy (see
-// `requireFromTarget` in index.ts), the same "use the target's own install"
-// approach the TypeORM adapter takes for its internal metadata builder.
-// Unlike TypeORM's private internals though, everything read here
-// (`is`, `getTableConfig`, the per-dialect `*Table`/`*Dialect` classes) is
-// drizzle-orm's own public, documented API surface: the same surface
-// drizzle-kit itself is built on (verified against its compiled CLI).
+// Local shapes for the drizzle-orm metadata this adapter reads. Values come
+// from the target project's own drizzle-orm (see `requireFromTarget`), and all
+// of it is drizzle-orm's public API, the same surface drizzle-kit uses.
 
 export type DrizzleDialectName =
   "postgresql" | "mysql" | "sqlite" | "turso" | "singlestore" | "gel";

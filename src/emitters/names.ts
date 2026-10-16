@@ -20,33 +20,21 @@ export interface NameResolver {
   /** The secondary label to show alongside `fieldId` in "both" mode: undefined when not in "both" mode or there's nothing extra to show. */
   fieldAlias(field: Field): string | undefined;
   /**
-   * Resolves a field referenced by its model-level `name` rather than a
-   * `Field` object: for `entity.primaryKey`/`entity.uniques`/`Index.fields`,
-   * which the IR always keys by attribute name (see each adapter's
-   * `extractCompositeKeys`-equivalent), never by physical column name.
-   * Falls back to `fieldName` itself if the entity has no such field
-   * (shouldn't happen, defensive only).
+   * For `primaryKey`/`uniques`/`Index.fields`, which the IR keys by attribute
+   * name. Falls back to `fieldName` if the entity has no such field.
    */
   fieldIdByName(entity: Entity, fieldName: string): string;
   /**
-   * Applies this resolver's `CaseMode` to an arbitrary identifier that isn't
-   * tied to an entity/field lookup: e.g. a relation's association alias
-   * (`Relation.fieldName`), which doesn't necessarily match any `Field.name`.
-   * Callers that already have a `Field`/entity-name should go through
-   * `entityId`/`fieldId`/`fieldIdByName` instead so name resolution and case
-   * transformation happen together in one step.
+   * Applies the `CaseMode` to an identifier with no field behind it, e.g. a
+   * relation alias. Prefer `entityId`/`fieldId`/`fieldIdByName` when you have one.
    */
   applyCase(identifier: string): string;
 }
 
 /**
- * Builds a `Map<Entity.name, resolved identifier>` up front so a table-name
- * collision between two distinct models (e.g. both mapping to `tbl_customer`
- * via a bug or a legacy rename) can be detected across the whole model
- * instead of resolved independently per entity. On collision both entities
- * fall back to their model name and a warning is logged: silently merging
- * two distinct entities under one identifier would be worse than the
- * physical name this mode exists to surface.
+ * Resolves every entity id up front so two models mapping to the same table
+ * are caught: both then keep their model names and a warning is logged,
+ * rather than merging into one identifier.
  */
 export function buildNameResolver(
   model: ERDModel,

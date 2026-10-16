@@ -4,21 +4,10 @@ import type { TypeMode } from "../core/format";
 import { resolveRelationLabel } from "./label";
 import { buildNameResolver, type NameResolver } from "./names";
 
-// .excalidraw is a GUI editor's save format, not a diagram-as-code DSL: like
-// the .drawio emitter this one places everything itself, but Excalidraw has
-// no table/entity shape at all (its whole vocabulary is rectangle/text/arrow/
-// frame/...), so the entity convention below (one `frame` per entity whose
-// `name` floats above it as the header, one `rectangle` per row, two floating
-// `text` elements per row) is orm2erd's own invention, per
-// docs/excalidraw-format-reference.md §2. The `cardinality_*` arrowheads are
-// the format's own, verified against Excalidraw's source (§7.1).
-//
-// Two rules the format enforces that draw.io doesn't:
-//   - every x/y is absolute, `frameId` is pure membership with no coordinate
-//     meaning (§3), so row positions are computed from the entity offset here;
-//   - `boundElements` on a shape is the reciprocal of an arrow's
-//     start/endBinding and is NOT reconstructed on load (§5), so arrows are
-//     computed before any row rectangle is built.
+// Excalidraw has no table shape, so each entity is orm2erd's own convention:
+// a `frame` (name as header), a `rectangle` per row, two `text`s per row (see
+// docs/excalidraw-format-reference.md §2). Coordinates are absolute (§3), and
+// arrows are built before rows because `boundElements` isn't rebuilt on load (§5).
 
 const ROW_H = 30;
 const KEY_W = 30;
@@ -223,12 +212,9 @@ export const excalidrawEmitter: Emitter = {
       model.entities.map((entity, i) => [entity.name, frames[i]]),
     );
     /**
-     * Arrows dock to a specific *row* rectangle, never the frame or a text
-     * element (§7), so an endpoint resolves to the row of its FK/referenced
-     * column. `fromColumn`/`toColumn` are model-level attribute names (never
-     * physical column names), so they match on `Row.fieldName`. Falls back to
-     * the PK row, then the first row: an entity with no rows at all has no
-     * rectangle to bind to, so the relation is dropped.
+     * Arrows bind to a row rectangle (§7): the row of the FK/referenced column,
+     * matched by model-level name, else the PK row, else the first row. An entity
+     * with no rows has nothing to bind to, so the relation is dropped.
      */
     const anchor = (
       entityName: string,

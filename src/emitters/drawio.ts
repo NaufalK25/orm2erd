@@ -4,14 +4,10 @@ import type { TypeMode } from "../core/format";
 import { resolveRelationLabel } from "./label";
 import { buildNameResolver, type NameResolver } from "./names";
 
-// .drawio is the native save format of a GUI editor, not a diagram-as-code
-// DSL: it's absolute-positioned XML with no auto-layout, so this emitter also
-// has to place every entity itself (see the grid pass in emit()). Every style
-// string, the three-level table/row/cell nesting and the six ER cardinality
-// markers below are copied verbatim from docs/drawio-format-reference.md,
-// which was verified against real app-generated files and draw.io's own
-// mxER.js: don't "tidy" them, the table shape only renders with this exact
-// set of style keys.
+// .drawio is absolute-positioned XML with no auto-layout, so emit() places
+// every entity. Style strings, table/row/cell nesting and cardinality markers
+// are copied from docs/drawio-format-reference.md: the table shape only
+// renders with exactly these keys, so don't tidy them.
 
 const HEADER_H = 30;
 const ROW_H = 30;

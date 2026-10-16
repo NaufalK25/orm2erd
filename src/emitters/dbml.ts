@@ -36,15 +36,9 @@ export const dbmlEmitter: Emitter = {
       const compositePkMembers = new Set(entity.primaryKey ?? []);
       for (const field of entity.fields) {
         const isEnum = Boolean(field.enumValues && field.enumValues.length > 0);
-        // An enum's nativeType is a real schema identifier here (it's the
-        // name of the `Enum` block declared below and referenced by every
-        // field of that type) so it gets case-transformed (and quoted if
-        // needed) like any other identifier. Computed once and reused for
-        // both the field's type reference below and the `Enum` block header
-        // further down, so they can never end up mismatched. A plain native
-        // type label (typeMode: "native" on a non-enum field, e.g.
-        // "VARCHAR2") is fixed driver vocabulary, not a naming convention,
-        // and must never be case-transformed or quoted.
+        // An enum's nativeType names the `Enum` block, so it's cased and quoted like
+        // any identifier, computed once so the field and block can't mismatch. Plain
+        // native type labels (e.g. "VARCHAR2") are never cased or quoted.
         const enumTypeName = isEnum
           ? quoteIdent(toCase(field.nativeType, caseMode))
           : undefined;

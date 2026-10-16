@@ -19,16 +19,9 @@ function findNearestTsconfig(fromDir: string): string | undefined {
   }
 }
 
-// TypeORM's and MikroORM's classic decorators expect TypeScript's legacy
-// `experimentalDecorators` calling convention and often rely on
-// `emitDecoratorMetadata`-emitted design:type reflection to infer column
-// types. esbuild (which tsImport uses under the hood) doesn't support
-// emitDecoratorMetadata at all (deliberately out of scope, per the esbuild
-// maintainers) and doesn't correctly emulate the legacy calling convention
-// either, so importing raw decorated .ts crashes inside the ORM's own
-// decorator code. Compiling with the target project's own installed
-// `typescript` + its own tsconfig.json first (real tsc, not orm2erd's
-// lightweight transform) sidesteps this entirely.
+// TypeORM/MikroORM classic decorators need `experimentalDecorators` and
+// `emitDecoratorMetadata`, which esbuild (inside tsImport) doesn't support,
+// so decorated .ts is compiled with the target's own tsc + tsconfig first.
 export function runTargetTsc(
   fromDir: string,
   orm: "TypeORM" | "MikroORM",

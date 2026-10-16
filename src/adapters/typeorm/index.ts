@@ -211,15 +211,10 @@ function createUnconnectedInstance(
   return new Ctor(options);
 }
 
-// ConnectionMetadataBuilder builds full entity/column/relation metadata
-// purely from decorator args, with no DB connection involved: the same
-// internal building block TypeORM itself uses inside
-// DataSource#initialize()/Connection#connect() before it ever opens a real
-// connection. It isn't part of the public API, so it's deep-imported by
-// resolved absolute path (bypassing the installed package's "exports" map
-// entirely, since that only governs bare-specifier resolution) rather than
-// via a "typeorm/connection/..." specifier. Same class name and constructor
-// shape across 0.2.x–1.x: verified against the published source for each.
+// ConnectionMetadataBuilder builds entity metadata from decorators with no DB
+// connection. It's internal, so it's loaded by resolved absolute path (the
+// "exports" map only governs bare specifiers). Same class and constructor
+// across 0.2.x to 1.x.
 function loadConnectionMetadataBuilderClass(
   fromPath: string,
 ): TypeOrmConnectionMetadataBuilderCtor {
@@ -399,15 +394,10 @@ function buildRelation(
       };
     }
     case "one-to-one": {
-      // Owning side carries @JoinColumn. Swapped into `to` here so the FK
-      // always lives on `to`, matching the 1-n cases above and the
-      // Sequelize/Drizzle adapters' 1-1 convention: the emitters rely on
-      // this to know which end's cardinality marker is fixed-optional
-      // (the FK holder) vs which one varies with FK nullability (the
-      // referenced side).
-      // `fieldName` follows that swap: it names the alias on `from`, which
-      // is the inverse side. Falls back to this side's own property name
-      // when no inverse is declared: the only alias that exists then.
+      // Owning side holds @JoinColumn, so it becomes `to` (FK always on `to`, which
+      // the emitters rely on for cardinality markers). `fieldName` names the alias
+      // on `from` (the inverse side), falling back to this side's property name
+      // when no inverse is declared.
       if (!relation.isOwning) return undefined;
       return {
         from: relatedName,

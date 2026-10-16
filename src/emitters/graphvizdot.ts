@@ -100,15 +100,8 @@ export const graphvizdotEmitter: Emitter = {
       // bare "TableA -> TableB", which would anchor to whole nodes.
       if (!rel.fromColumn || !rel.toColumn) continue;
 
-      // Graphviz has no inline cardinality symbol like Mermaid/DBML:
-      // crow's-foot notation is set via arrowhead/arrowtail shapes on the
-      // edge. `from` is the "one" side and `to` is the "many"/FK-holding
-      // side (see Relation.type in core/model.ts). `arrowhead` (at `to`)
-      // stays the plain "odot" (optional) form unconditionally (nothing
-      // in a FK model forces a parent row to have a matching row on the
-      // FK-holding side) while `arrowtail` (at `from`) varies with
-      // isFromOptional: "tee" (required) unless the FK column is
-      // nullable, in which case it downgrades to "teeodot" (optional).
+      // Crow's-foot via arrowhead/arrowtail. `arrowhead` (the FK side) is always
+      // "odot"; `arrowtail` is "tee", or "teeodot" when the FK is nullable.
       const arrowtail = rel.isFromOptional ? "teeodot" : "tee";
       const relationDetails =
         rel.type === "1-n"

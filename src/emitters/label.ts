@@ -3,12 +3,9 @@ import type { RelationLabelMode } from "../core/format";
 import type { NameResolver } from "./names";
 
 /**
- * Two relations sharing the same alias but different FK columns (e.g. two
- * FKs from the same entity pair) otherwise render identical edge labels.
- * Appending the column disambiguates them without touching the alias itself.
- * `mode` lets a caller opt out of that disambiguation and pin the label to
- * just the alias or just the column; defaults to the smart "both" behavior
- * described above.
+ * Edge label for a relation. In "both" mode the FK column is appended when it
+ * differs from the alias, so two FKs between the same pair don't render
+ * identical labels; "alias"/"column" pin it to one.
  */
 export function relationLabel(
   rel: Relation,
@@ -24,15 +21,9 @@ export function relationLabel(
 }
 
 /**
- * `relationLabel` reads `fieldName`/`toColumn` straight off the raw
- * `Relation`: neither goes through `NameResolver`, so a `caseMode` other
- * than "preserve" would otherwise leave edge labels in their original
- * casing while every other identifier in the diagram changed underneath
- * them. `toColumn` is an attribute (model-level) name, resolved the same
- * way `fromColumn`/`primaryKey`/`uniques` members are (`fieldIdByName`);
- * `fieldName` is the relation's own association alias: it doesn't
- * necessarily match any field on either entity, so it's case-transformed
- * directly rather than looked up.
+ * `relationLabel` with --case applied. `toColumn` is an attribute name, so it
+ * resolves like other field references; the `fieldName` alias may match no
+ * field, so it's case-transformed directly.
  */
 export function resolveRelationLabel(
   model: ERDModel,
