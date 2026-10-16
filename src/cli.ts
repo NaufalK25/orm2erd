@@ -58,7 +58,7 @@ const program = new Command();
 program
   .name("orm2erd")
   .description(
-    "Generate an ERD from your ORM's models/schema, no manual diagramming.",
+    "Generate an ERD from your ORM's models/schema.",
   )
   .version(version, "-v, --version", "output the current version")
   .option("--orm <name>", `ORM to use (${ALL_ORM_NAMES.join(", ")})`)

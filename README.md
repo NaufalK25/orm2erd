@@ -28,8 +28,8 @@ ERD (Entity-Relationship Diagram) for you, instead of you drawing and maintainin
 ## What it does
 
 `orm2erd` scans your project, figures out which ORM you're using, and turns your existing
-models/schema into diagram code: Mermaid, DBML, PlantUML, D2, and more. No manual diagramming,
-no drift between your code and your docs.
+models/schema into diagram code: Mermaid, DBML, PlantUML, D2, and more. Rerun it when your models
+change, or use `--check` to fail CI when the committed diagram falls behind.
 
 ```
 detect ORM → resolve entry point(s) → parse/introspect → normalize to IR → emit diagram code(s) → write file(s)
