@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🏷️ [2.3.0] - 2026-10-16
+
+### 🚀 Added
+
+- **[Excalidraw](https://excalidraw.com/) support**, emitting a `.excalidraw` file you open and
+  edit in Excalidraw directly. Excalidraw has no table shape, so each entity becomes a frame named
+  after the entity with one rectangle per field, and each relation an arrow docked to the FK and
+  referenced column rows, using Excalidraw's own crow's-foot cardinality arrowheads. Like
+  `.drawio`, the format has no auto-layout, so the emitter lays the entities out on a grid itself.
+  ([eea51b7](https://github.com/NaufalK25/orm2erd/commit/eea51b7))
+
+### 💊 Fixed
+
+- **draw.io, Excalidraw, Structurizr, and Pikchr diagrams no longer contain em dashes.** Field and
+  entity descriptions, and `--names both` aliases, were separated with `—`. draw.io, Excalidraw,
+  and Pikchr now use `·`, and Structurizr uses `, alias:` / `, description:` to match its other
+  comma-joined column properties. `--check` will report drift on committed diagrams in these four
+  formats that include descriptions or aliases. Regenerate and recommit to clear it.
+  ([26cfca7](https://github.com/NaufalK25/orm2erd/commit/26cfca7))
+
 ## 🏷️ [2.2.0] - 2026-09-02
 
 ### 🚀 Added
