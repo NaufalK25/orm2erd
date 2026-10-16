@@ -9,8 +9,6 @@
 You already built the app: your ORM models are the schema. `orm2erd` reads them and generates an
 ERD (Entity-Relationship Diagram) for you, instead of you drawing and maintaining one by hand.
 
-> **Status:** early development. See the tables below for what's supported today vs. planned.
-
 ![orm2erd demo](./.github/assets/demo.gif)
 
 ## Table of Contents

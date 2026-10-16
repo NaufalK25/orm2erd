@@ -2,8 +2,7 @@
 
 ## Supported Versions
 
-`orm2erd` is in early development. Only the latest version published on npm receives security
-fixes. Please upgrade before reporting an issue to confirm it still reproduces.
+Only the latest version of `orm2erd` published on npm receives security fixes. Please upgrade before reporting an issue to confirm it still reproduces.
 
 ## Reporting a Vulnerability
 
