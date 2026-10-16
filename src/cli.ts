@@ -228,33 +228,31 @@ async function main() {
             opts.check,
           )),
   );
-  const typeMode = await resolveTypeMode(interactive, opts.typeMode);
-  const nameMode = await resolveNameMode(interactive, opts.names);
-  const relationLabelMode = await resolveRelationLabelMode(
-    interactive,
-    opts.relationLabel,
-  );
-  const caseMode = await resolveCaseMode(interactive, opts.case);
-  const inflectMode = await resolveInflectMode(interactive, opts.inflect);
+  const emitOptions = {
+    typeMode: await resolveTypeMode(interactive, opts.typeMode),
+    nameMode: await resolveNameMode(interactive, opts.names),
+    relationLabelMode: await resolveRelationLabelMode(
+      interactive,
+      opts.relationLabel,
+    ),
+    caseMode: await resolveCaseMode(interactive, opts.case),
+    inflectMode: await resolveInflectMode(interactive, opts.inflect),
+  };
 
-  await generateAndWrite(
+  await generateAndWrite({
     cwd,
     adapter,
     entryPath,
     selectedEmitters,
     outBase,
-    typeMode,
-    nameMode,
-    relationLabelMode,
-    caseMode,
-    inflectMode,
-    opts.check,
-    opts.summary,
-    opts.stdout,
-    opts.copy,
-    opts.verbose,
+    emitOptions,
+    check: opts.check,
+    summary: opts.summary,
+    stdout: opts.stdout,
+    copy: opts.copy,
+    verbose: opts.verbose,
     interactive,
-  );
+  });
 }
 
 main();

@@ -6,14 +6,7 @@ import pc from "picocolors";
 import { outro, spinner } from "@clack/prompts";
 import type { ORMAdapter } from "../adapters";
 import { checkOutput } from "../core/check";
-import type {
-  CaseMode,
-  InflectMode,
-  NameMode,
-  OutputFormat,
-  RelationLabelMode,
-  TypeMode,
-} from "../core/format";
+import type { OutputFormat } from "../core/format";
 import { withGuardedExit } from "../core/guard-exit";
 import { friendlyImportHint } from "../core/import-hints";
 import type { ERDModel } from "../core/model";
@@ -27,7 +20,7 @@ import {
 } from "../core/model-diff";
 import { resolveOutPath } from "../core/out-path";
 import { withSuppressedOutput } from "../core/suppress-output";
-import type { Emitter } from "../emitters";
+import type { EmitOptions, Emitter } from "../emitters";
 import { icon, renderDiff } from "./render";
 
 export interface Output {
@@ -242,24 +235,35 @@ export async function writeFiles(
   phase.succeed(`Written to ${written.join(", ")}`);
 }
 
-export async function generateAndWrite(
-  cwd: string,
-  adapter: ORMAdapter,
-  entryPath: string,
-  selectedEmitters: Emitter[],
-  outBase: string,
-  typeMode: TypeMode,
-  nameMode: NameMode,
-  relationLabelMode: RelationLabelMode,
-  caseMode: CaseMode,
-  inflectMode: InflectMode,
-  check: boolean,
-  summary: boolean,
-  stdoutFlag: boolean,
-  copy: boolean,
-  verbose: boolean,
-  interactive: boolean,
-): Promise<void> {
+export interface RunOptions {
+  cwd: string;
+  adapter: ORMAdapter;
+  entryPath: string;
+  selectedEmitters: Emitter[];
+  outBase: string;
+  emitOptions: EmitOptions;
+  check: boolean;
+  summary: boolean;
+  stdout: boolean;
+  copy: boolean;
+  verbose: boolean;
+  interactive: boolean;
+}
+
+export async function generateAndWrite({
+  cwd,
+  adapter,
+  entryPath,
+  selectedEmitters,
+  outBase,
+  emitOptions,
+  check,
+  summary,
+  stdout: stdoutFlag,
+  copy,
+  verbose,
+  interactive,
+}: RunOptions): Promise<void> {
   const phase = createPhaseReporter(interactive, stdoutFlag);
 
   try {
@@ -277,13 +281,7 @@ export async function generateAndWrite(
     const allExtensions = selectedEmitters.map((e) => e.fileExtension);
     const outputs: Output[] = selectedEmitters.map((emitter) => ({
       path: resolveOutPath(outBase, emitter.fileExtension, allExtensions),
-      content: emitter.emit(model, {
-        typeMode,
-        nameMode,
-        relationLabelMode,
-        caseMode,
-        inflectMode,
-      }),
+      content: emitter.emit(model, emitOptions),
     }));
 
     if (check) {
