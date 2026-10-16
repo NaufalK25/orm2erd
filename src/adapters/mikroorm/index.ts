@@ -1,11 +1,4 @@
-import { execFileSync } from "node:child_process";
-import {
-  existsSync,
-  mkdtempSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
+import { rmSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -21,6 +14,8 @@ import type {
   RelationAction,
 } from "../../core/model";
 import { loadDotEnvFiles } from "../../core/dotenv";
+import { importTarget } from "../../core/target-import";
+import { runTargetTsc, type TscBuild } from "../../core/target-tsc";
 import type {
   MikroOrmCoreModule,
   MikroOrmEntityMetadata,
@@ -441,11 +436,7 @@ function isThenable(value: unknown): value is Promise<unknown> {
 // Tolerates one level of double-wrapped default export, same as the
 // Drizzle adapter's config loader (`src/adapters/drizzle/index.ts`).
 async function resolveConfigExport(entryPath: string): Promise<unknown> {
-  globalThis.require = createRequire(entryPath);
-  globalThis.__filename = entryPath;
-  globalThis.__dirname = dirname(entryPath);
-
-  const mod = await tsImport(pathToFileURL(entryPath).href, import.meta.url);
+  const mod = await importTarget(entryPath);
   const outer = (mod as { default?: unknown }).default ?? mod;
   let resolved = isThenable(outer) ? await outer : outer;
 
@@ -458,96 +449,6 @@ async function resolveConfigExport(entryPath: string): Promise<unknown> {
   }
 
   return resolved;
-}
-
-function findNearestTsconfig(fromDir: string): string | undefined {
-  let dir = fromDir;
-  while (true) {
-    const candidate = join(dir, "tsconfig.json");
-    if (existsSync(candidate)) return candidate;
-    const parent = dirname(dir);
-    if (parent === dir) return undefined;
-    dir = parent;
-  }
-}
-
-interface TscBuild {
-  outDir: string;
-  projectRoot: string;
-}
-
-// MikroORM's classic decorators (`@Property`, `@ManyToOne`, ...) expect
-// TypeScript's legacy `experimentalDecorators` calling convention, and any
-// property without an explicit `type`/`entity` option relies on
-// `emitDecoratorMetadata`-emitted `design:type` reflection to infer it
-// (MikroORM's default `ReflectMetadataProvider`) — esbuild (which `tsImport`
-// uses) doesn't emit that metadata at all, so MikroORM throws a clear
-// "provide either 'type' or 'entity' attribute" error for exactly those
-// properties. Compiling with the target's own installed `typescript` + its
-// tsconfig.json first (real `tsc`, forcing both flags on) sidesteps this —
-// same fix, and same reasoning, as the TypeORM adapter's `runTargetTsc`.
-// Harmless to run even for decorator-free `defineEntity()`/`EntitySchema`
-// code, which has no decorators to reinterpret.
-function runTargetTsc(fromDir: string): TscBuild {
-  const tsconfigPath = findNearestTsconfig(fromDir);
-  if (!tsconfigPath) {
-    throw new Error(
-      `Could not find a tsconfig.json above "${fromDir}" to compile MikroORM's decorated entities with — needed because MikroORM's decorators don't run correctly under orm2erd's lightweight TS transform (it can't emit "emitDecoratorMetadata"). Add a tsconfig.json, or point --entry at already-compiled JS entities instead.`,
-    );
-  }
-  const projectRoot = dirname(tsconfigPath);
-
-  const targetRequire = createRequire(fromDir + "/");
-  let tscBinPath: string;
-  try {
-    tscBinPath = join(
-      dirname(targetRequire.resolve("typescript/package.json")),
-      "bin",
-      "tsc",
-    );
-  } catch (err) {
-    throw new Error(
-      `Could not resolve "typescript" from "${fromDir}" — it's needed to compile MikroORM's decorated entities correctly. Install it in the target project, or point --entry at already-compiled JS entities instead.`,
-      { cause: err },
-    );
-  }
-
-  // Created inside the target project (not the system temp dir) so Node's
-  // usual upward node_modules search still finds the target's own installed
-  // packages (@mikro-orm/core, reflect-metadata, ...) once the compiled
-  // output is discovered/imported.
-  const outDir = mkdtempSync(join(projectRoot, ".orm2erd-mikroorm-build-"));
-  // Force CommonJS output and pin it with our own package.json, regardless
-  // of what the nearest real ancestor package.json says — same reasoning as
-  // the TypeORM adapter's identical fix.
-  writeFileSync(join(outDir, "package.json"), '{"type":"commonjs"}');
-
-  try {
-    execFileSync(
-      process.execPath,
-      [
-        tscBinPath,
-        "-p",
-        tsconfigPath,
-        "--outDir",
-        outDir,
-        "--rootDir",
-        projectRoot,
-        "--module",
-        "commonjs",
-        "--experimentalDecorators",
-        "--emitDecoratorMetadata",
-      ],
-      { stdio: "pipe" },
-    );
-  } catch (err) {
-    // noEmitOnError defaults to false, so tsc still emits output even when
-    // the target project has unrelated type errors elsewhere — best-effort,
-    // same as the TypeORM adapter.
-    void err;
-  }
-
-  return { outDir, projectRoot };
 }
 
 function mapDirToCompiledPath(originalDir: string, build: TscBuild): string {
@@ -625,7 +526,10 @@ export const mikroormAdapter: ORMAdapter = {
 
       try {
         if (tsEntries.length > 0) {
-          tscBuild = runTargetTsc(resolve(baseDir, tsEntries[0]));
+          tscBuild = runTargetTsc(resolve(baseDir, tsEntries[0]), "MikroORM", [
+            "--experimentalDecorators",
+            "--emitDecoratorMetadata",
+          ]);
           try {
             targetRequire("reflect-metadata");
           } catch {

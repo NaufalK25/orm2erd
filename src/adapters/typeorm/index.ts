@@ -1,16 +1,6 @@
-import { execFileSync } from "node:child_process";
-import {
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, readFileSync, rmSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { basename, dirname, extname, join, relative, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
-import { tsImport } from "tsx/esm/api";
 import type { ORMAdapter, ResolvedEntry } from "../types";
 import type {
   CanonicalType,
@@ -22,6 +12,8 @@ import type {
   RelationAction,
 } from "../../core/model";
 import { loadDotEnvFiles } from "../../core/dotenv";
+import { findExport, importTarget } from "../../core/target-import";
+import { runTargetTsc, type TscBuild } from "../../core/target-tsc";
 import type {
   TypeOrmColumnMetadata,
   TypeOrmConnectionMetadataBuilderCtor,
@@ -139,37 +131,13 @@ function looksLikeTypeOrmDataSource(
   );
 }
 
-// Export shapes vary (named export, default export, CJS interop), so search
-// a few levels deep instead of guessing paths — same approach as the
-// Sequelize adapter's findSequelizeInstance.
-const MAX_DATASOURCE_SEARCH_DEPTH = 3;
-
-function findDataSourceInstance(
-  value: unknown,
-  depth = 0,
-): TypeOrmDataSourceInstance | undefined {
-  if (looksLikeTypeOrmDataSource(value)) return value;
-  if (depth >= MAX_DATASOURCE_SEARCH_DEPTH) return undefined;
-  if (typeof value !== "object" || value === null) return undefined;
-
-  for (const nested of Object.values(value)) {
-    const found = findDataSourceInstance(nested, depth + 1);
-    if (found) return found;
-  }
-  return undefined;
-}
-
 async function loadDataSourceInstance(
   path: string,
 ): Promise<TypeOrmDataSourceInstance> {
-  // Polyfill CJS globals (tsImport loads files as ESM, where none of these
-  // exist) — mirrors the Sequelize/Mongoose adapters' own entry loaders.
-  globalThis.require = createRequire(path);
-  globalThis.__filename = path;
-  globalThis.__dirname = dirname(path);
-
-  const mod = await tsImport(pathToFileURL(path).href, import.meta.url);
-  const candidate = findDataSourceInstance(mod);
+  const candidate = findExport(
+    await importTarget(path),
+    looksLikeTypeOrmDataSource,
+  );
   if (!candidate) {
     throw new Error(
       `Could not find a TypeORM DataSource exported from "${path}". Export it (e.g. "export const AppDataSource = new DataSource(...)").`,
@@ -179,99 +147,6 @@ async function loadDataSourceInstance(
 }
 
 const TS_ENTRY_PATTERN = /\.(ts|mts|cts)$/i;
-
-function findNearestTsconfig(fromDir: string): string | undefined {
-  let dir = fromDir;
-  while (true) {
-    const candidate = join(dir, "tsconfig.json");
-    if (existsSync(candidate)) return candidate;
-    const parent = dirname(dir);
-    if (parent === dir) return undefined;
-    dir = parent;
-  }
-}
-
-interface TscBuild {
-  outDir: string;
-  projectRoot: string;
-}
-
-// TypeORM's decorators (@Column, @PrimaryGeneratedColumn, etc.) expect
-// TypeScript's legacy `experimentalDecorators` calling convention and often
-// rely on `emitDecoratorMetadata`-emitted design:type/paramtypes reflection
-// to infer column types. esbuild — which tsImport uses under the hood —
-// doesn't support emitDecoratorMetadata at all (deliberately out of scope,
-// per the esbuild maintainers) and doesn't correctly emulate the legacy
-// calling convention either, so importing a raw .ts entity file directly
-// crashes inside TypeORM's own decorator code. Compiling with the target
-// project's own installed `typescript` + its own tsconfig.json first (real
-// tsc, not orm2erd's lightweight transform) sidesteps this entirely — used
-// both for a .ts entry file itself and for any .ts glob in `entities`
-// (rewriteEntityGlobs below).
-function runTargetTsc(fromPath: string): TscBuild {
-  const tsconfigPath = findNearestTsconfig(dirname(fromPath));
-  if (!tsconfigPath) {
-    throw new Error(
-      `Could not find a tsconfig.json above "${fromPath}" to compile TypeORM's decorated entities with — needed because TypeORM's decorators don't run correctly under orm2erd's lightweight TS transform (it can't emit "emitDecoratorMetadata"). Add a tsconfig.json, or point --entry at already-compiled JS output instead.`,
-    );
-  }
-  const projectRoot = dirname(tsconfigPath);
-
-  const targetRequire = createRequire(fromPath);
-  let tscBinPath: string;
-  try {
-    tscBinPath = join(
-      dirname(targetRequire.resolve("typescript/package.json")),
-      "bin",
-      "tsc",
-    );
-  } catch (err) {
-    throw new Error(
-      `Could not resolve "typescript" from "${fromPath}" — it's needed to compile TypeORM's decorated entities correctly. Install it in the target project, or point --entry at already-compiled JS output instead.`,
-      { cause: err },
-    );
-  }
-
-  // Created inside the target project (not the system temp dir) so Node's
-  // usual upward node_modules search still finds the target's own installed
-  // packages (typeorm, reflect-metadata, ...) when the compiled output is
-  // later imported — a temp dir elsewhere would resolve against nothing.
-  const outDir = mkdtempSync(join(projectRoot, ".orm2erd-typeorm-build-"));
-  // Force CommonJS output (loadDataSourceInstance/TypeORM's own glob
-  // importer both use plain require()) and pin it with our own
-  // package.json, regardless of what the nearest real ancestor package.json
-  // says — outDir has none of its own, so without this, Node would fall
-  // back to whatever "type" the target project (or, for a fixture with no
-  // package.json at all, some further ancestor) happens to declare, and
-  // misinterpret the emitted CJS as ESM if that says "module".
-  writeFileSync(join(outDir, "package.json"), '{"type":"commonjs"}');
-
-  try {
-    execFileSync(
-      process.execPath,
-      [
-        tscBinPath,
-        "-p",
-        tsconfigPath,
-        "--outDir",
-        outDir,
-        "--rootDir",
-        projectRoot,
-        "--module",
-        "commonjs",
-      ],
-      { stdio: "pipe" },
-    );
-  } catch (err) {
-    // noEmitOnError defaults to false, so tsc still emits output even when
-    // the target project has unrelated type errors elsewhere in its
-    // tsconfig's include — treat this as best-effort and let the caller
-    // decide whether what it needed actually got emitted.
-    void err;
-  }
-
-  return { outDir, projectRoot };
-}
 
 function mapToCompiledPath(originalPath: string, build: TscBuild): string {
   return join(build.outDir, relative(build.projectRoot, originalPath)).replace(
@@ -609,7 +484,7 @@ export const typeormAdapter: ORMAdapter = {
           legacyOptions,
         );
       } else if (TS_ENTRY_PATTERN.test(entry.path)) {
-        tscBuild = runTargetTsc(entry.path);
+        tscBuild = runTargetTsc(dirname(entry.path), "TypeORM");
         dataSourceLike = await loadDataSourceInstance(
           mapToCompiledPath(entry.path, tscBuild),
         );
@@ -626,7 +501,7 @@ export const typeormAdapter: ORMAdapter = {
       const needsGlobBuild =
         !tscBuild && rawEntities.some((e) => typeof e === "string");
       if (needsGlobBuild) {
-        tscBuild = runTargetTsc(entry.path);
+        tscBuild = runTargetTsc(dirname(entry.path), "TypeORM");
       }
       const entitiesInput = tscBuild
         ? rewriteEntityGlobs(rawEntities, tscBuild)

@@ -1,8 +1,5 @@
 import { existsSync, statSync } from "node:fs";
-import { createRequire } from "node:module";
-import { dirname, join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
-import { tsImport } from "tsx/esm/api";
+import { join, resolve } from "node:path";
 import type { ORMAdapter, ResolvedEntry } from "../types";
 import type {
   CanonicalType,
@@ -12,6 +9,7 @@ import type {
   RelationAction,
 } from "../../core/model";
 import { loadDotEnvFiles } from "../../core/dotenv";
+import { findExport, importTarget } from "../../core/target-import";
 import type {
   RelationSide,
   SequelizeAttribute,
@@ -118,42 +116,11 @@ function looksLikeSequelizeInstance(
   );
 }
 
-// Export shapes vary a lot in the wild (named export, default export, CJS
-// `db.sequelize`, double-wrapped CJS-in-ESM, a Model class's static
-// `.sequelize`), so search a few levels deep instead of guessing paths.
-const MAX_SEQUELIZE_SEARCH_DEPTH = 3;
-
-function findSequelizeInstance(
-  value: unknown,
-  depth = 0,
-): SequelizeInstance | undefined {
-  if (looksLikeSequelizeInstance(value)) return value;
-  if (depth >= MAX_SEQUELIZE_SEARCH_DEPTH) return undefined;
-  // Model classes are functions but still carry a static `.sequelize`, so
-  // don't skip them here.
-  if (
-    (typeof value !== "object" && typeof value !== "function") ||
-    value === null
-  ) {
-    return undefined;
-  }
-
-  for (const nested of Object.values(value)) {
-    const found = findSequelizeInstance(nested, depth + 1);
-    if (found) return found;
-  }
-  return undefined;
-}
-
 async function loadSequelizeInstance(path: string): Promise<SequelizeInstance> {
-  // Polyfill CJS globals (sequelize-cli's generated index.js uses all three)
-  // since tsImport loads the file as ESM, where none of them exist.
-  globalThis.require = createRequire(path);
-  globalThis.__filename = path;
-  globalThis.__dirname = dirname(path);
-
-  const mod = await tsImport(pathToFileURL(path).href, import.meta.url);
-  const candidate = findSequelizeInstance(mod);
+  const candidate = findExport(
+    await importTarget(path),
+    looksLikeSequelizeInstance,
+  );
   if (!candidate) {
     throw new Error(
       `Could not find a Sequelize instance exported from "${path}". Export it (e.g. "export const sequelize = new Sequelize(...)").`,
@@ -162,13 +129,6 @@ async function loadSequelizeInstance(path: string): Promise<SequelizeInstance> {
   return candidate;
 }
 
-async function loadSequelizeInstanceFromDirectory(
-  path: string,
-): Promise<SequelizeInstance> {
-  throw new Error(
-    `"${path}" is a model directory without a recognized index.js/.ts aggregator, which isn't supported yet. Point --entry at a single entry file that exports a configured Sequelize instance, or add an aggregator (see sequelize-cli's generated models/index.js).`,
-  );
-}
 
 function findPrimaryKeyField(model: SequelizeModel): string | undefined {
   return Object.entries(model.rawAttributes).find(
@@ -355,10 +315,12 @@ export const sequelizeAdapter: ORMAdapter = {
   async extract(entry: ResolvedEntry): Promise<ERDModel> {
     loadDotEnvFiles();
 
-    const stat = statSync(entry.path);
-    const sequelize = stat.isFile()
-      ? await loadSequelizeInstance(entry.path)
-      : await loadSequelizeInstanceFromDirectory(entry.path);
+    if (!statSync(entry.path).isFile()) {
+      throw new Error(
+        `"${entry.path}" is a model directory without a recognized index.js/.ts aggregator, which isn't supported yet. Point --entry at a single entry file that exports a configured Sequelize instance, or add an aggregator (see sequelize-cli's generated models/index.js).`,
+      );
+    }
+    const sequelize = await loadSequelizeInstance(entry.path);
 
     // Sequelize v7 stores `.models` as an iterable Set instead of a plain
     // object, silently yielding zero entities via Object.entries() below.

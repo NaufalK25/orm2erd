@@ -40,6 +40,8 @@ src/
     model-diff.ts        # --check --summary: structural (ERDModel-level) diff + gitignored JSON snapshot read/write
     dotenv.ts          # best-effort .env/.env.local loading before runtime introspection
     guard-exit.ts       # traps a target entry file calling process.exit() during import
+    target-import.ts     # importTarget() (tsx import + CJS-global polyfill) + findExport() (3-level export search)
+    target-tsc.ts         # runTargetTsc(): compile decorated entities with the target's own tsc (TypeORM/MikroORM)
     suppress-output.ts  # silences the target codebase's own console/stdout noise during extract()
     import-hints.ts      # maps common import failures to actionable hints
     grid-multiselect.ts   # custom @clack/core prompt for the format multi-select

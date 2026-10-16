@@ -1,10 +1,11 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { tsImport } from "tsx/esm/api";
 import type { ORMAdapter, ResolvedEntry } from "../types";
 import { loadDotEnvFiles } from "../../core/dotenv";
+import { importTarget } from "../../core/target-import";
 import { looksLikeMongooseSchemaSource } from "./schema-source";
 import type {
   MongooseModel,
@@ -174,15 +175,6 @@ function collectSourceFiles(dir: string): string[] {
   }
 
   return files;
-}
-
-async function importForSideEffects(filePath: string): Promise<void> {
-  // Polyfill CJS globals since tsImport loads files as ESM, where none of
-  // these exist — mirrors the Sequelize adapter's loadSequelizeInstance.
-  globalThis.require = createRequire(filePath);
-  globalThis.__filename = filePath;
-  globalThis.__dirname = dirname(filePath);
-  await tsImport(pathToFileURL(filePath).href, import.meta.url);
 }
 
 function buildField(
@@ -448,7 +440,7 @@ export const mongooseAdapter: ORMAdapter = {
 
     for (const file of filesToImport) {
       try {
-        await importForSideEffects(file);
+        await importTarget(file);
       } catch {
         // Best-effort: a file that isn't actually a model, or throws for an
         // unrelated reason, shouldn't abort the rest of the directory scan.

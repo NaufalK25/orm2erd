@@ -1,9 +1,12 @@
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { globSync } from "node:fs";
+import {
+  existsSync,
+  globSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+} from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, extname, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
-import { tsImport } from "tsx/esm/api";
 import type { ORMAdapter, ResolvedEntry } from "../types";
 import type {
   CanonicalType,
@@ -15,6 +18,7 @@ import type {
   RelationAction,
 } from "../../core/model";
 import { loadDotEnvFiles } from "../../core/dotenv";
+import { importTarget } from "../../core/target-import";
 import type {
   DrizzleCasingModule,
   DrizzleColumn,
@@ -111,13 +115,7 @@ async function loadDrizzleKitConfig(
     return validateDrizzleKitConfig(parsed, configPath);
   }
 
-  // Polyfill CJS globals, same as the Sequelize/TypeORM adapters' own entry
-  // loaders — tsImport loads the file as ESM, where none of these exist.
-  globalThis.require = createRequire(configPath);
-  globalThis.__filename = configPath;
-  globalThis.__dirname = dirname(configPath);
-
-  const mod = await tsImport(pathToFileURL(configPath).href, import.meta.url);
+  const mod = await importTarget(configPath);
   const outer = (mod as { default?: unknown }).default ?? mod;
   // When the nearest ancestor package.json doesn't declare `"type":
   // "module"`, a syntactically-ESM config file can still get run through
@@ -184,12 +182,7 @@ async function loadSchemaExports(
 ): Promise<Record<string, unknown>> {
   const merged: Record<string, unknown> = {};
   for (const file of files) {
-    globalThis.require = createRequire(file);
-    globalThis.__filename = file;
-    globalThis.__dirname = dirname(file);
-
-    const mod = await tsImport(pathToFileURL(file).href, import.meta.url);
-    Object.assign(merged, mod as Record<string, unknown>);
+    Object.assign(merged, await importTarget(file));
   }
   return merged;
 }

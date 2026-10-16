@@ -418,8 +418,7 @@ model.
   worth the complexity, any `.ts` `entitiesTs` directory is unconditionally compiled with the
   target's own `typescript` + nearest `tsconfig.json` (forcing `--experimentalDecorators
   --emitDecoratorMetadata` via CLI flags — safe to force since v6 has no alternative decorator
-  style to conflict with), reusing the same temp-dir-with-pinned-`package.json` approach as the
-  TypeORM adapter's `runTargetTsc`. The compiled directory path is then substituted into `entities`
+  style to conflict with), via the same `runTargetTsc` (`src/core/target-tsc.ts`) the TypeORM adapter uses. The compiled directory path is then substituted into `entities`
   in place of the original `entitiesTs` entry — MikroORM's own scanner does the rest.
 - No standalone public "discover these paths for me" helper exists in v6 (that's a v7 addition,
   `@mikro-orm/core/file-discovery`) — directory-path strings (original or tsc-compiled-mirrored)
