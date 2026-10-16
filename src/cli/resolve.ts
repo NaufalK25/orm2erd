@@ -199,149 +199,122 @@ export async function resolveFormats(
   return ["mermaid"];
 }
 
-export async function resolveTypeMode(
+// Shared shape of every "flag, else prompt, else default" mode option.
+async function resolveChoice<T extends string>(
   interactive: boolean,
-  typeModeOpt: TypeMode | undefined,
-): Promise<TypeMode> {
-  if (typeModeOpt) {
-    return typeModeOpt;
-  }
-  if (interactive) {
-    return orExit(
-      await select({
-        message: `${icon("🏷️ ")}Type labels:`,
-        options: [
-          {
-            value: "canonical",
-            label: "Canonical",
-            hint: "portable across ORMs",
-          },
-          { value: "native", label: "Native", hint: "ORM-specific type names" },
-        ],
-        initialValue: "canonical",
-      }),
-    );
-  }
-  return "canonical";
+  opt: T | undefined,
+  message: string,
+  options: { value: T; label: string; hint?: string }[],
+  initialValue: T,
+): Promise<T> {
+  if (opt) return opt;
+  if (!interactive) return initialValue;
+  return orExit(
+    await select<T>({
+      message: `${icon("🏷️ ")}${message}`,
+      // clack's Option<T> is a conditional type TS can't resolve for a generic T.
+      options: options as Parameters<typeof select<T>>[0]["options"],
+      initialValue,
+    }),
+  );
 }
 
-export async function resolveNameMode(
+export const resolveTypeMode = (
   interactive: boolean,
-  nameModeOpt: NameMode | undefined,
-): Promise<NameMode> {
-  if (nameModeOpt) {
-    return nameModeOpt;
-  }
-  if (interactive) {
-    return orExit(
-      await select({
-        message: `${icon("🏷️ ")}Entity/field names:`,
-        options: [
-          {
-            value: "table",
-            label: "Table",
-            hint: "physical table/column names",
-          },
-          { value: "model", label: "Model", hint: "ORM model/field names" },
-          { value: "both", label: "Both", hint: "physical name + ORM alias" },
-        ],
-        initialValue: "table",
-      }),
-    );
-  }
-  return "table";
-}
+  opt: TypeMode | undefined,
+) =>
+  resolveChoice(
+    interactive,
+    opt,
+    "Type labels:",
+    [
+      { value: "canonical", label: "Canonical", hint: "portable across ORMs" },
+      { value: "native", label: "Native", hint: "ORM-specific type names" },
+    ],
+    "canonical",
+  );
 
-export async function resolveRelationLabelMode(
+export const resolveNameMode = (
   interactive: boolean,
-  relationLabelModeOpt: RelationLabelMode | undefined,
-): Promise<RelationLabelMode> {
-  if (relationLabelModeOpt) {
-    return relationLabelModeOpt;
-  }
-  if (interactive) {
-    return orExit(
-      await select({
-        message: `${icon("🏷️ ")}Relation edge labels:`,
-        options: [
-          {
-            value: "both",
-            label: "Both",
-            hint: "association alias, plus the FK column when it disambiguates",
-          },
-          { value: "alias", label: "Alias", hint: "association alias only" },
-          { value: "column", label: "Column", hint: "FK column name only" },
-        ],
-        initialValue: "both",
-      }),
-    );
-  }
-  return "both";
-}
+  opt: NameMode | undefined,
+) =>
+  resolveChoice(
+    interactive,
+    opt,
+    "Entity/field names:",
+    [
+      { value: "table", label: "Table", hint: "physical table/column names" },
+      { value: "model", label: "Model", hint: "ORM model/field names" },
+      { value: "both", label: "Both", hint: "physical name + ORM alias" },
+    ],
+    "table",
+  );
 
-export async function resolveCaseMode(
+export const resolveRelationLabelMode = (
   interactive: boolean,
-  caseModeOpt: CaseMode | undefined,
-): Promise<CaseMode> {
-  if (caseModeOpt) {
-    return caseModeOpt;
-  }
-  if (interactive) {
-    return orExit(
-      await select({
-        message: `${icon("🏷️ ")}Identifier casing:`,
-        options: [
-          {
-            value: "preserve",
-            label: "Preserve",
-            hint: "keep the source ORM/DB casing as-is",
-          },
-          { value: "snake", label: "snake_case" },
-          { value: "screaming_snake", label: "SCREAMING_SNAKE" },
-          { value: "camel", label: "camelCase" },
-          { value: "pascal", label: "PascalCase" },
-          { value: "kebab", label: "kebab-case" },
-          { value: "title", label: "Title Case" },
-          { value: "lower", label: "lowercase" },
-          { value: "upper", label: "UPPERCASE" },
-        ],
-        initialValue: "preserve",
-      }),
-    );
-  }
-  return "preserve";
-}
+  opt: RelationLabelMode | undefined,
+) =>
+  resolveChoice(
+    interactive,
+    opt,
+    "Relation edge labels:",
+    [
+      {
+        value: "both",
+        label: "Both",
+        hint: "association alias, plus the FK column when it disambiguates",
+      },
+      { value: "alias", label: "Alias", hint: "association alias only" },
+      { value: "column", label: "Column", hint: "FK column name only" },
+    ],
+    "both",
+  );
 
-export async function resolveInflectMode(
+export const resolveCaseMode = (
   interactive: boolean,
-  inflectModeOpt: InflectMode | undefined,
-): Promise<InflectMode> {
-  if (inflectModeOpt) {
-    return inflectModeOpt;
-  }
-  if (interactive) {
-    return orExit(
-      await select({
-        message: `${icon("🏷️ ")}Entity name pluralization:`,
-        options: [
-          {
-            value: "preserve",
-            label: "Preserve",
-            hint: "keep the source ORM/DB number as-is",
-          },
-          { value: "plural", label: "Plural", hint: "e.g. User -> Users" },
-          {
-            value: "singular",
-            label: "Singular",
-            hint: "e.g. Users -> User",
-          },
-        ],
-        initialValue: "preserve",
-      }),
-    );
-  }
-  return "preserve";
-}
+  opt: CaseMode | undefined,
+) =>
+  resolveChoice(
+    interactive,
+    opt,
+    "Identifier casing:",
+    [
+      {
+        value: "preserve",
+        label: "Preserve",
+        hint: "keep the source ORM/DB casing as-is",
+      },
+      { value: "snake", label: "snake_case" },
+      { value: "screaming_snake", label: "SCREAMING_SNAKE" },
+      { value: "camel", label: "camelCase" },
+      { value: "pascal", label: "PascalCase" },
+      { value: "kebab", label: "kebab-case" },
+      { value: "title", label: "Title Case" },
+      { value: "lower", label: "lowercase" },
+      { value: "upper", label: "UPPERCASE" },
+    ],
+    "preserve",
+  );
+
+export const resolveInflectMode = (
+  interactive: boolean,
+  opt: InflectMode | undefined,
+) =>
+  resolveChoice(
+    interactive,
+    opt,
+    "Entity name pluralization:",
+    [
+      {
+        value: "preserve",
+        label: "Preserve",
+        hint: "keep the source ORM/DB number as-is",
+      },
+      { value: "plural", label: "Plural", hint: "e.g. User -> Users" },
+      { value: "singular", label: "Singular", hint: "e.g. Users -> User" },
+    ],
+    "preserve",
+  );
 
 export async function resolveOutBase(
   interactive: boolean,
