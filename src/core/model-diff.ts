@@ -109,16 +109,18 @@ function valuesEqual(a: unknown, b: unknown): boolean {
   return a === b;
 }
 
-function diffFields(before: Field, after: Field): PropertyChange[] {
-  const changes: PropertyChange[] = [];
-  for (const prop of FIELD_DIFF_PROPS) {
-    const beforeValue = before[prop];
-    const afterValue = after[prop];
-    if (!valuesEqual(beforeValue, afterValue)) {
-      changes.push({ property: prop, before: beforeValue, after: afterValue });
-    }
-  }
-  return changes;
+function diffProps<T>(
+  before: T,
+  after: T,
+  props: readonly (keyof T & string)[],
+): PropertyChange[] {
+  return props
+    .filter((prop) => !valuesEqual(before[prop], after[prop]))
+    .map((prop) => ({
+      property: prop,
+      before: before[prop],
+      after: after[prop],
+    }));
 }
 
 function diffEntities(before: Entity, after: Entity): EntityDiff {
@@ -135,7 +137,7 @@ function diffEntities(before: Entity, after: Entity): EntityDiff {
   for (const [name, afterField] of afterFields) {
     const beforeField = beforeFields.get(name);
     if (!beforeField) continue;
-    const changes = diffFields(beforeField, afterField);
+    const changes = diffProps(beforeField, afterField, FIELD_DIFF_PROPS);
     if (changes.length > 0) {
       changedFields.push({ field: name, changes });
     }
@@ -261,28 +263,21 @@ function matchRelationGroup(
   };
 }
 
-function relationGroupKey(rel: Relation): string {
-  return `${rel.from} ${rel.to}`;
+function groupByEndpoints(relations: Relation[]): Map<string, Relation[]> {
+  const groups = new Map<string, Relation[]>();
+  for (const rel of relations) {
+    const key = `${rel.from} ${rel.to}`;
+    groups.set(key, [...(groups.get(key) ?? []), rel]);
+  }
+  return groups;
 }
 
 function diffRelationLists(
   before: Relation[],
   after: Relation[],
 ): RelationDiff[] {
-  const beforeGroups = new Map<string, Relation[]>();
-  const afterGroups = new Map<string, Relation[]>();
-  for (const rel of before) {
-    const key = relationGroupKey(rel);
-    const group = beforeGroups.get(key) ?? [];
-    group.push(rel);
-    beforeGroups.set(key, group);
-  }
-  for (const rel of after) {
-    const key = relationGroupKey(rel);
-    const group = afterGroups.get(key) ?? [];
-    group.push(rel);
-    afterGroups.set(key, group);
-  }
+  const beforeGroups = groupByEndpoints(before);
+  const afterGroups = groupByEndpoints(after);
 
   const diffs: RelationDiff[] = [];
   const allKeys = new Set([...beforeGroups.keys(), ...afterGroups.keys()]);
@@ -294,18 +289,7 @@ function diffRelationLists(
     );
 
     for (const { before: priorRel, after: rel } of pairs) {
-      const changes: PropertyChange[] = [];
-      for (const prop of RELATION_DIFF_PROPS) {
-        const beforeValue = priorRel[prop];
-        const afterValue = rel[prop];
-        if (!valuesEqual(beforeValue, afterValue)) {
-          changes.push({
-            property: prop,
-            before: beforeValue,
-            after: afterValue,
-          });
-        }
-      }
+      const changes = diffProps(priorRel, rel, RELATION_DIFF_PROPS);
       if (changes.length > 0) {
         diffs.push({
           from: rel.from,
