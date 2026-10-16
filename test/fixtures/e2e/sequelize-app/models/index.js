@@ -1,6 +1,6 @@
 // Mirrors sequelize-cli's generated models/index.js aggregator, minus the
 // filesystem auto-discovery (explicit imports instead, for a fixture this
-// small) — builds a real `Sequelize` instance against an in-memory sqlite
+// small): builds a real `Sequelize` instance against an in-memory sqlite
 // store (never actually queried; orm2erd only reads schema metadata).
 import { Sequelize, DataTypes } from "sequelize";
 import defineUser from "./user.js";

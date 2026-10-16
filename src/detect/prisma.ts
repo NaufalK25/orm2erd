@@ -27,7 +27,7 @@ export const prismaDetector: Detector = {
 
     // Config wins by default (it's what Prisma itself would actually use),
     // but a default file left on disk alongside it is still a real,
-    // pickable schema — surface both instead of hiding one.
+    // pickable schema: surface both instead of hiding one.
     const candidates = configCandidate
       ? [
           configCandidate,

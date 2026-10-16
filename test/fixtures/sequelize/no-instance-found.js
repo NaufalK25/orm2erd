@@ -1,4 +1,4 @@
-// No Sequelize instance anywhere in this export tree — findExport must give
+// No Sequelize instance anywhere in this export tree: findExport must give
 // up (rather than loop forever) once MAX_EXPORT_SEARCH_DEPTH is hit, and
 // loadSequelizeInstance must surface a clear error instead of
 // crashing on `undefined`.

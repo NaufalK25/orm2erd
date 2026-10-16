@@ -5,7 +5,7 @@ import { buildNameResolver } from "./names";
 
 // D2 has reserved top-level keywords (shape, classes, near, constraint,
 // style, vars, layers, ...) that break parsing if used unquoted as a map
-// key — quote every identifier unconditionally rather than chasing an
+// key: quote every identifier unconditionally rather than chasing an
 // allowlist of keywords that can change between D2 versions.
 function quoteIdent(name: string): string {
   return `"${name.replaceAll('"', '\\"')}"`;
@@ -68,20 +68,20 @@ export const d2Emitter: Emitter = {
 
     lines.push("# Relationships");
     for (const rel of model.relations) {
-      // A D2 Ref requires a real table.column on both sides — skip
+      // A D2 Ref requires a real table.column on both sides: skip
       // relations we can't resolve columns for (e.g. an implicit
       // many-to-many join table isn't a modeled entity) rather than emit
       // a bare "TableA <-> TableB", which isn't valid D2.
       if (!rel.fromColumn || !rel.toColumn) continue;
 
-      // D2 has no inline cardinality symbol like Mermaid/DBML — crow's-foot
+      // D2 has no inline cardinality symbol like Mermaid/DBML: crow's-foot
       // notation is set via arrowhead shapes on the connection. `from` is
       // the "one" side and `to` is the "many"/FK-holding side (see
       // Relation.type in core/model.ts). D2's `cf-one` already means
       // zero-or-one; the required form is `cf-one-required`. `to` stays
-      // plain `cf-one`/`cf-many` unconditionally — nothing in a FK model
+      // plain `cf-one`/`cf-many` unconditionally (nothing in a FK model
       // forces a parent row to have a matching row on the FK-holding
-      // side — while `from`'s shape varies with isFromOptional.
+      // side) while `from`'s shape varies with isFromOptional.
       const sourceShape =
         rel.type === "n-n"
           ? "cf-many"
@@ -97,7 +97,7 @@ export const d2Emitter: Emitter = {
       );
       const label = resolvedLabel ? `: ${resolvedLabel}` : "";
       // fromColumn/toColumn are attribute (model-level) names, same as
-      // entity.primaryKey/uniques — resolve them the same way so the
+      // entity.primaryKey/uniques: resolve them the same way so the
       // reference matches the field identifier declared above, rather than
       // dangling on a model name that "table"/"both" mode no longer emits.
       const fromEntity = model.entities.find((e) => e.name === rel.from);

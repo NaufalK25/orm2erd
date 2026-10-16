@@ -29,7 +29,7 @@ describe("diffRows", () => {
   });
 
   it("reports an inserted line as an add without offsetting the rest", () => {
-    // Inserting "b" must NOT report a, c as changed — the LCS anchors them.
+    // Inserting "b" must NOT report a, c as changed: the LCS anchors them.
     expect(diffRows("a\nc", "a\nb\nc")).toEqual([{ kind: "add", line: "b" }]);
   });
 
@@ -65,7 +65,7 @@ describe("diffRows", () => {
 
   it("reports trailing lines with nothing left to compare against as removes", () => {
     // "b"/"c" trail past the last line "expected" has at all, not just past
-    // the last *common* line — the tail of the LCS walk, not the main body.
+    // the last *common* line: the tail of the LCS walk, not the main body.
     expect(diffRows("a\nb\nc", "a")).toEqual([
       { kind: "remove", line: "b" },
       { kind: "remove", line: "c" },
@@ -74,7 +74,7 @@ describe("diffRows", () => {
 
   it("treats two blank/whitespace-only lines as a change, not unrelated lines", () => {
     // Both sides tokenize to zero words, so word-similarity is vacuously 1
-    // rather than a divide-by-zero — still above the change threshold.
+    // rather than a divide-by-zero: still above the change threshold.
     expect(diffRows("a\n\nb", "a\n   \nc")).toEqual([
       { kind: "change", before: "", after: "   " },
       { kind: "remove", line: "b" },
@@ -141,7 +141,7 @@ describe("checkOutput", () => {
   });
 
   it("rethrows a non-ENOENT read error instead of reporting missing", async () => {
-    // A directory triggers EISDIR, not ENOENT — checkOutput must only treat
+    // A directory triggers EISDIR, not ENOENT: checkOutput must only treat
     // "doesn't exist" as missing, not swallow every read failure.
     const dir = await mkdtemp(join(tmpdir(), "orm2erd-"));
     await expect(checkOutput(dir, "whatever")).rejects.toMatchObject({

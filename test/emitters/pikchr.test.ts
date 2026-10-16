@@ -143,7 +143,7 @@ describe("pikchrEmitter", () => {
     expect(output).toContain(
       'text "INDEX idx_order_items_order (orderId)" italic mono small',
     );
-    // Single-column PK entity gets no composite PK line — the field-level
+    // Single-column PK entity gets no composite PK line: the field-level
     // "PK" marker on its own field row already says so.
     expect(output).not.toMatch(/text "PK \(id\)"/);
   });

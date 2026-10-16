@@ -51,7 +51,7 @@ describe("sequelizeAdapter.resolveEntry", () => {
       execFileSync("mkfifo", [fifoPath]);
     } catch {
       // mkfifo isn't available on every platform this suite might run on
-      // (e.g. Windows CI) — skip rather than fail the whole run over it.
+      // (e.g. Windows CI): skip rather than fail the whole run over it.
       rmSync(dir, { recursive: true, force: true });
       return;
     }
@@ -65,7 +65,7 @@ describe("sequelizeAdapter.resolveEntry", () => {
   });
 });
 
-describe("sequelizeAdapter.extract — directory without an aggregator", () => {
+describe("sequelizeAdapter.extract: directory without an aggregator", () => {
   it("throws a clear 'not supported yet' error", async () => {
     const entry = await sequelizeAdapter.resolveEntry(
       fixturesDir,
@@ -77,7 +77,7 @@ describe("sequelizeAdapter.extract — directory without an aggregator", () => {
   });
 });
 
-describe("sequelizeAdapter.extract — no Sequelize instance found", () => {
+describe("sequelizeAdapter.extract: no Sequelize instance found", () => {
   it("throws a clear error instead of crashing, once the search depth cap gives up", async () => {
     await expect(extractFixture("no-instance-found.js")).rejects.toThrow(
       /Could not find a Sequelize instance exported from/,
@@ -85,7 +85,7 @@ describe("sequelizeAdapter.extract — no Sequelize instance found", () => {
   });
 });
 
-describe("sequelizeAdapter.extract — export shapes", () => {
+describe("sequelizeAdapter.extract: export shapes", () => {
   it("finds a named export directly (mod.sequelize)", async () => {
     const model = await extractFixture("named-export.js");
     expect(model.entities.map((e) => e.name).toSorted()).toEqual([
@@ -126,7 +126,7 @@ describe("sequelizeAdapter.extract — export shapes", () => {
   });
 });
 
-describe("sequelizeAdapter.extract — field mapping", () => {
+describe("sequelizeAdapter.extract: field mapping", () => {
   it("marks primary keys as non-nullable even without an explicit allowNull", async () => {
     const model = await extractFixture("named-export.js");
     const user = model.entities.find((e) => e.name === "User")!;
@@ -183,7 +183,7 @@ describe("sequelizeAdapter.extract — field mapping", () => {
   });
 });
 
-describe("sequelizeAdapter.extract — default values (function/object/array)", () => {
+describe("sequelizeAdapter.extract: default values (function/object/array)", () => {
   it("resolves a named function default to its function name", async () => {
     const model = await extractFixture("default-values.js");
     const user = model.entities.find((e) => e.name === "User")!;
@@ -217,7 +217,7 @@ describe("sequelizeAdapter.extract — default values (function/object/array)", 
   });
 });
 
-describe("sequelizeAdapter.extract — native type mapping (#5a/#5b)", () => {
+describe("sequelizeAdapter.extract: native type mapping (#5a/#5b)", () => {
   it("reads the DataType's public key, not its internal constructor name (JSONTYPE -> JSON)", async () => {
     const model = await extractFixture("types.js");
     const doc = model.entities.find((e) => e.name === "Product")!;
@@ -261,7 +261,7 @@ describe("sequelizeAdapter.extract — native type mapping (#5a/#5b)", () => {
   });
 });
 
-describe("sequelizeAdapter.extract — relation dedup", () => {
+describe("sequelizeAdapter.extract: relation dedup", () => {
   it("collapses a HasMany/BelongsTo pair into a single 1-n relation", async () => {
     const model = await extractFixture("named-export.js");
     const userToPost = model.relations.filter(
@@ -298,7 +298,7 @@ describe("sequelizeAdapter.extract — relation dedup", () => {
   });
 });
 
-describe("sequelizeAdapter.extract — FK marking respects association direction", () => {
+describe("sequelizeAdapter.extract: FK marking respects association direction", () => {
   it("does not mark a plain column as FK just because a HasMany elsewhere on the model shares its name", async () => {
     const model = await extractFixture("backwards-relations.js");
     const order = model.entities.find((e) => e.name === "Order")!;
@@ -321,7 +321,7 @@ describe("sequelizeAdapter.extract — FK marking respects association direction
   });
 });
 
-describe("sequelizeAdapter.extract — BelongsTo with no reciprocal HasMany/HasOne", () => {
+describe("sequelizeAdapter.extract: BelongsTo with no reciprocal HasMany/HasOne", () => {
   it("puts the parent (not the FK-holding child) on the `from` side", async () => {
     const model = await extractFixture("backwards-relations.js");
     const rel = model.relations.find(
@@ -364,7 +364,7 @@ describe("sequelizeAdapter.extract — BelongsTo with no reciprocal HasMany/HasO
   });
 });
 
-describe("sequelizeAdapter.extract — relation actions", () => {
+describe("sequelizeAdapter.extract: relation actions", () => {
   it("reads onDelete/onUpdate off the FK attribute, not association.options", async () => {
     const model = await extractFixture("named-export.js");
     const userToPost = model.relations.find(
@@ -382,7 +382,7 @@ describe("sequelizeAdapter.extract — relation actions", () => {
   });
 });
 
-describe("sequelizeAdapter.extract — composite keys", () => {
+describe("sequelizeAdapter.extract: composite keys", () => {
   it("carries composite PK and multi-column unique, ignoring single-column and non-unique indexes", async () => {
     const model = await extractFixture("composite-keys.js");
     const postTag = model.entities.find((e) => e.name === "PostTag")!;
@@ -442,7 +442,7 @@ describe("sequelizeAdapter.extract — composite keys", () => {
   });
 });
 
-describe("sequelizeAdapter.extract — physical table/column names (#3a)", () => {
+describe("sequelizeAdapter.extract: physical table/column names (#3a)", () => {
   it("sets entity.tableName when it differs from the model name", async () => {
     const model = await extractFixture("names.js");
     const archive = model.entities.find((e) => e.name === "CustomerArchive")!;
@@ -472,7 +472,7 @@ describe("sequelizeAdapter.extract — physical table/column names (#3a)", () =>
   });
 });
 
-describe("sequelizeAdapter.extract — isFromOptional (#1)", () => {
+describe("sequelizeAdapter.extract: isFromOptional (#1)", () => {
   it("sets isFromOptional false for a HasMany-declared 1-n with a NOT NULL FK", async () => {
     const model = await extractFixture("optional-fk.js");
     const rel = model.relations.find(
@@ -516,14 +516,14 @@ describe("sequelizeAdapter.extract — isFromOptional (#1)", () => {
   });
 });
 
-describe("sequelizeAdapter.extract — overlapping BelongsToMany through one junction", () => {
+describe("sequelizeAdapter.extract: overlapping BelongsToMany through one junction", () => {
   it("drops isUnique on the attribute stranded by the clobbered unique group", async () => {
     const model = await extractFixture("overlapping-belongs-to-many.js");
     const junction = model.entities.find((e) => e.name === "PostTag")!;
     const userId = junction.fields.find((f) => f.name === "userId")!;
 
     // Its `unique` string survives on the attribute, but the group it names
-    // was left holding one column — rendering UK would read as "globally
+    // was left holding one column: rendering UK would read as "globally
     // unique", i.e. one row per user.
     expect(userId.isUnique).toBe(false);
   });

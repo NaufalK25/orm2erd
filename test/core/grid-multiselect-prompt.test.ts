@@ -6,7 +6,7 @@ import {
 } from "../../src/core/grid-multiselect";
 
 // Drives the real @clack/core Prompt through simulated keypresses over a
-// PassThrough pair instead of a real TTY — node's readline still parses
+// PassThrough pair instead of a real TTY: node's readline still parses
 // these into the same "keypress" events it would from an actual terminal.
 function fakeStreams() {
   const input = new PassThrough();
@@ -230,7 +230,7 @@ describe("gridMultiselect", () => {
       input,
       output,
     });
-    // 4 options over 3 columns leaves a single-item second row — rendering
+    // 4 options over 3 columns leaves a single-item second row: rendering
     // it must not crash on the missing 2nd/3rd cells in that row.
     input.write(KEY.space);
     input.write(KEY.enter);

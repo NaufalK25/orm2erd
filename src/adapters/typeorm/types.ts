@@ -1,13 +1,13 @@
 // Local shapes for the TypeORM runtime metadata we read. Not imported from
 // `typeorm` itself, to avoid a dual-package hazard if the target project has
-// its own separate install — these mirror the relevant `.d.ts` shapes across
+// its own separate install: these mirror the relevant `.d.ts` shapes across
 // 0.2.x/0.3.x/1.x closely enough to be treated as version-stable (see
 // index.ts for how each is actually obtained at runtime).
 
 // Mirrors `DataSource`/`Connection`'s public surface, trimmed to what
 // `ConnectionMetadataBuilder` and this adapter read. `initialize` only
 // exists on 0.3+'s DataSource (0.2.x's equivalent is `connect`), but nothing
-// here calls either — its presence is only used as a duck-typing signal to
+// here calls either: its presence is only used as a duck-typing signal to
 // recognize "this looks like a DataSource instance" among a module's exports.
 export interface TypeOrmDataSourceInstance {
   options: { entities?: unknown[] };
@@ -15,7 +15,7 @@ export interface TypeOrmDataSourceInstance {
   initialize?: () => Promise<unknown>;
 }
 
-// Mirrors `connection/ConnectionMetadataBuilder.ts`'s public surface — a
+// Mirrors `connection/ConnectionMetadataBuilder.ts`'s public surface: a
 // class deep-imported from the target project's own installed `typeorm`
 // (see loadConnectionMetadataBuilderClass in index.ts), not part of the
 // package's public API surface but stable across 0.2.x–1.x.
@@ -28,14 +28,14 @@ export interface TypeOrmConnectionMetadataBuilderCtor {
 // Mirrors `metadata/ColumnMetadata.ts`.
 export interface TypeOrmColumnMetadata {
   propertyName: string;
-  // The physical column name after the naming strategy runs — equal to
+  // The physical column name after the naming strategy runs. Equal to
   // `propertyName` unless an explicit `@Column({ name: "..." })` or a
   // custom naming strategy (e.g. snake_case) transforms it.
   databaseName: string;
   type: string | Function;
   isPrimary: boolean;
   isNullable: boolean;
-  isArray?: boolean; // e.g. @Column("text", { array: true }) — Postgres-only
+  isArray?: boolean; // e.g. @Column("text", { array: true }). Postgres-only
   default?: unknown;
   enum?: (string | number)[];
   comment?: string;
@@ -72,12 +72,12 @@ export interface TypeOrmRelationMetadata {
 
 // Mirrors `metadata/EntityMetadata.ts`. `tableType` distinguishes real
 // user-declared entities ("regular"/"view") from tables TypeORM synthesizes
-// itself — "junction" for an implicit @ManyToMany join table, "closure" /
-// "closure-junction" for @Tree("closure-table") — which shouldn't surface
+// itself, "junction" for an implicit @ManyToMany join table, "closure" /
+// "closure-junction" for @Tree("closure-table"), which shouldn't surface
 // as their own Entity since the Relation they back already implies them.
 export interface TypeOrmEntityMetadata {
   name: string;
-  // The physical table name after the naming strategy runs — equal to
+  // The physical table name after the naming strategy runs. Equal to
   // `name` unless an explicit `@Entity("...")`/`@Entity({ name: "..." })`
   // or a custom naming strategy transforms it.
   tableName: string;

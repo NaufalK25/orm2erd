@@ -7,7 +7,7 @@ function dataType(name, values) {
 //
 // 1. Order.orderCode is a plain column that happens to share a name with
 //    OrderItem's actual FK column (also "orderCode"). Only OrderItem's own
-//    BelongsTo association should mark it as FK — not Order's unrelated
+//    BelongsTo association should mark it as FK, not Order's unrelated
 //    HasMany, whose foreignKey names a column on the *target*, not on Order
 //    itself.
 //
@@ -20,8 +20,8 @@ function dataType(name, values) {
 //    - Customer<->Transaction declares an explicit HasOne/BelongsTo pair, so
 //      it stays 1-1 (parent-on-left) even though the FK isn't unique.
 //
-// 3. Warehouse.hasMany(Shipment) has no reciprocal .belongsTo() anywhere —
-//    real Sequelize still writes `references` onto Shipment.warehouseId via
+// 3. Warehouse.hasMany(Shipment) has no reciprocal .belongsTo() anywhere.
+//    Real Sequelize still writes `references` onto Shipment.warehouseId via
 //    HasMany's own _injectAttributes (addForeignKeyConstraints runs for any
 //    association type, not just BelongsTo). FK detection must read that
 //    per-attribute `references`, not reconstruct it from which side declared

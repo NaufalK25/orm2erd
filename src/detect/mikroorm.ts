@@ -6,7 +6,7 @@ import { readPackageJson } from "../core/package";
 
 // MikroORM's own CLI resolution order (`ConfigurationLoader.getConfigPaths()`),
 // minus the `MIKRO_ORM_CLI_CONFIG` env var tier (env-only, no filesystem
-// convention to check) — a single well-known priority chain the tool itself
+// convention to check): a single well-known priority chain the tool itself
 // falls back through, same reasoning as the Drizzle detector's
 // `CONFIG_FILE_PRIORITY`, so only the highest-priority file that actually
 // exists is suggested rather than every sibling convention.

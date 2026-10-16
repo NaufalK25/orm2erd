@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 import { tsImport } from "tsx/esm/api";
 
 // Imports one of the target project's own files via tsx. tsImport loads it
-// as ESM, where the CJS globals don't exist — polyfilled first, since real
+// as ESM, where the CJS globals don't exist: polyfilled first, since real
 // codebases (e.g. sequelize-cli's generated models/index.js) use all three.
 export async function importTarget(path: string): Promise<unknown> {
   globalThis.require = createRequire(path);

@@ -17,7 +17,7 @@ async function extractFixture(dir: string, filename: string) {
 }
 
 // These fixtures import decorators from `@mikro-orm/decorators`, which
-// doesn't exist at all under a v6 install (it's a v7 package split) — kept
+// doesn't exist at all under a v6 install (it's a v7 package split): kept
 // in its own file, separate from mikroorm.test.ts's v6 fixtures, because
 // running both a v6-broken import and a real assertion in the same worker
 // has been observed to corrupt vitest's own error reporting for unrelated
@@ -36,14 +36,14 @@ const isMikroOrmV7 = installedMikroOrmCoreVersion.startsWith("7.");
 
 // MikroORM v7 moved classic decorators out of `@mikro-orm/core` into
 // `@mikro-orm/decorators/legacy`, and `MetadataStorage.getAll()` returns a
-// real `Map` instead of v6's plain `Dictionary` object — these fixtures
+// real `Map` instead of v6's plain `Dictionary` object: these fixtures
 // exercise both of those under a real v7 install. Only a representative
 // subset of the v6 "basic"/"composite" assertions is re-verified here (not
 // full parity): everything else (folder discovery, embedded fields, relation
 // dedup, etc.) is confirmed unchanged between versions and already covered
 // in mikroorm.test.ts.
 describe.skipIf(!isMikroOrmV7)(
-  "mikroormAdapter.extract — MikroORM v7 (@mikro-orm/decorators)",
+  "mikroormAdapter.extract: MikroORM v7 (@mikro-orm/decorators)",
   () => {
     it("discovers every entity and normalizes getAll()'s Map return into the model", async () => {
       const model = await extractFixture("v7-basic", "mikro-orm.config.ts");

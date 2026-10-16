@@ -20,7 +20,7 @@ export async function resolvePrismaConfigSchema(
       return resolve(dirname(configFile), config.schema);
     }
   } catch {
-    // Broken prisma.config.* — treat as if none was found.
+    // Broken prisma.config.*: treat as if none was found.
   }
   return undefined;
 }

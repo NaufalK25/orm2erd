@@ -9,8 +9,8 @@ export default defineConfig({
   splitting: false,
   sourcemap: false,
   minify: true,
-  // Declarations are emitted separately via `tsc` (see tsconfig.build.json)
-  // — tsup's `dts`/`experimentalDts` options both drive the `typescript`
+  // Declarations are emitted separately via `tsc` (see tsconfig.build.json):
+  // tsup's `dts`/`experimentalDts` options both drive the `typescript`
   // package's JS API (rollup-plugin-dts, or tsup's own emit path), and
   // this project's typescript@7 install doesn't expose that classic API
   // surface (crashes on `ts.sys...` / missing `parseJsonConfigFileContent`).

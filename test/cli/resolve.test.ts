@@ -14,7 +14,7 @@ import {
 } from "../../src/cli/resolve";
 
 // resolveORM/resolveEntryPath call process.exit(1) on unresolvable
-// non-interactive states instead of returning — mock it to throw so those
+// non-interactive states instead of returning: mock it to throw so those
 // paths can be asserted without actually killing the test process.
 function mockExit() {
   vi.spyOn(console, "error").mockImplementation(() => {});

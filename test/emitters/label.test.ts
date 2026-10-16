@@ -106,7 +106,7 @@ describe("resolveRelationLabel", () => {
   });
 
   it("case-transforms a fieldName that doesn't match any field on either entity", () => {
-    // rel.fieldName is the association alias, not necessarily a real field —
+    // rel.fieldName is the association alias, not necessarily a real field:
     // it must still go through the case transform, just not fieldIdByName.
     const names = buildNameResolver(model, "table", "pascal");
     const label = resolveRelationLabel(

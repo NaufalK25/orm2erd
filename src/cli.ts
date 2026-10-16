@@ -58,7 +58,7 @@ const program = new Command();
 program
   .name("orm2erd")
   .description(
-    "Generate an ERD from your ORM's models/schema — no manual diagramming.",
+    "Generate an ERD from your ORM's models/schema, no manual diagramming.",
   )
   .version(version, "-v, --version", "output the current version")
   .option("--orm <name>", `ORM to use (${ALL_ORM_NAMES.join(", ")})`)
@@ -66,7 +66,7 @@ program
   .option("--format <formats>", "output format(s), comma-separated (mermaid)")
   .option(
     "--out <path>",
-    "output path — a full filename (e.g. erd.md) is used as-is; a bare name (e.g. erd) gets the format's extension appended",
+    "output path: a full filename (e.g. erd.md) is used as-is; a bare name (e.g. erd) gets the format's extension appended",
   )
   .addOption(
     new Option(
@@ -161,7 +161,7 @@ const opts = program.opts<ProgramOptions>();
 async function main() {
   const cwd = process.cwd();
   // isCI() is also checked because some CI runners still report a TTY.
-  // --check does NOT force non-interactive on its own — run locally from a
+  // --check does NOT force non-interactive on its own: run locally from a
   // TTY, it should still prompt for ORM/entry/--out/etc. ambiguity like any
   // other run. --out is still required either way (see
   // validateCheckRequiresOut / resolveOutBase's `check` param): non-
@@ -216,7 +216,7 @@ async function main() {
       ? "erd"
       : `erd.${selectedEmitters[0].fileExtension}`;
   // --stdout/--copy never write a file, so the output-path prompt would ask
-  // for something that's never used — skip it regardless of `interactive`.
+  // for something that's never used: skip it regardless of `interactive`.
   const outBase = await expandOutDir(
     opts.out ??
       (opts.stdout || opts.copy

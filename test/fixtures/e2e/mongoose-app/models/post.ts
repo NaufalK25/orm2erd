@@ -8,7 +8,7 @@ const PostSchema = new mongoose.Schema({
   tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag" }],
 });
 
-// One title per author — the only multi-column grouping Mongoose expresses.
+// One title per author: the only multi-column grouping Mongoose expresses.
 PostSchema.index({ author: 1, title: 1 }, { unique: true });
 
 export const Post = mongoose.model("Post", PostSchema);

@@ -55,7 +55,7 @@ export interface Entity {
   primaryKey?: string[];
   /** Each inner array is one multi-column unique constraint (length > 1). */
   uniques?: string[][];
-  // Non-unique indexes (single or multi-column) — uniques stay on
+  // Non-unique indexes (single or multi-column): uniques stay on
   // `primaryKey`/`uniques`/per-field `isUnique` above; this only carries
   // plain lookup indexes those can't express.
   indexes?: Index[];
@@ -68,7 +68,7 @@ export interface Relation {
   type: "1-1" | "1-n" | "n-n";
   fieldName?: string;
   // Whether `fromColumn`/`toColumn` land on the FK-holding side or the
-  // referenced side isn't fixed by `type` — each adapter works this out
+  // referenced side isn't fixed by `type`: each adapter works this out
   // per relation (e.g. for 1-n the FK physically lives on `to`, not
   // `from`). See the relation-building logic in each adapter
   // (src/adapters/prisma/index.ts, src/adapters/sequelize/index.ts) for
@@ -80,7 +80,7 @@ export interface Relation {
   // Sequelize, defaults) one. Only meaningful alongside fromColumn/toColumn.
   onDelete?: RelationAction;
   onUpdate?: RelationAction;
-  // Whether the `from` (referenced/parent) end is optional — i.e. the FK
+  // Whether the `from` (referenced/parent) end is optional: i.e. the FK
   // column on the `to` (child) side is nullable, so a child row may exist
   // without a parent. The child end itself is always optional regardless of
   // this flag (nothing in a FK model can force a parent to have a child).

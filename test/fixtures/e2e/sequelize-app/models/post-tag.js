@@ -1,4 +1,4 @@
-// Explicit junction model for Post<->Tag — a composite primary key over its
+// Explicit junction model for Post<->Tag: a composite primary key over its
 // two FK columns, same shape as a real sequelize-cli "join table" migration.
 export default function definePostTag(sequelize, DataTypes) {
   const PostTag = sequelize.define("PostTag", {

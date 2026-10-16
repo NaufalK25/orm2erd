@@ -5,7 +5,7 @@ import { buildNameResolver } from "./names";
 import { hasSpace } from "./quote";
 
 // Mermaid's erDiagram tolerates a bare hyphen in either an entity or a field
-// identifier — only a space forces quoting, and entities/fields each use a
+// identifier. Only a space forces quoting, and entities/fields each use a
 // different quote character: an entity name is quoted with `"..."` (same
 // character used for the field-comment string, but never ambiguous since it
 // only ever appears right after the entity id, before ` {`/`["alias"] {`),
@@ -83,7 +83,7 @@ export const mermaidEmitter: Emitter = {
     for (const rel of model.relations) {
       // Mermaid's crow's-foot notation: ||--o{ = one-to-many, }o--o{ =
       // many-to-many, ||--o| = one-to-one. The `to` end is always
-      // optional (`o`) — nothing in a FK model forces a parent row to
+      // optional (`o`): nothing in a FK model forces a parent row to
       // have a matching row on the FK-holding side. The `from` end's
       // marker varies: `||` (exactly one) unless isFromOptional says the
       // FK column is nullable, in which case it downgrades to `|o`.

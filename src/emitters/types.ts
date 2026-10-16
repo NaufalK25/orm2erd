@@ -24,6 +24,6 @@ export interface Emitter {
   format: OutputFormat;
   /** Extension (without leading dot) used when deriving an output path from a base name. */
   fileExtension: string;
-  /** Renders the IR to this emitter's diagram syntax as a string. Pure — no filesystem access. */
+  /** Renders the IR to this emitter's diagram syntax as a string. Pure: no filesystem access. */
   emit(model: ERDModel, options: EmitOptions): string;
 }

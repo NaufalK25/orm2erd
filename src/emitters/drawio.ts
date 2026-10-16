@@ -10,7 +10,7 @@ import { buildNameResolver, type NameResolver } from "./names";
 // string, the three-level table/row/cell nesting and the six ER cardinality
 // markers below are copied verbatim from docs/drawio-format-reference.md,
 // which was verified against real app-generated files and draw.io's own
-// mxER.js — don't "tidy" them, the table shape only renders with this exact
+// mxER.js: don't "tidy" them, the table shape only renders with this exact
 // set of style keys.
 
 const HEADER_H = 30;
@@ -21,7 +21,7 @@ const GAP_Y = 60;
 const ORIGIN = 40;
 const MIN_TABLE_W = 200;
 // Rows set overflow=hidden, so an under-estimated width clips text invisibly
-// rather than spilling — these round up on purpose (draw.io's default 12px
+// rather than spilling: these round up on purpose (draw.io's default 12px
 // Helvetica averages ~6.6px/char, bold header a little more).
 const CHAR_W = 7;
 const HEADER_CHAR_W = 8;
@@ -42,7 +42,7 @@ const keyStyle = (isPk: boolean): string =>
 const nameStyle = (isPk: boolean): string =>
   `shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;${isPk ? "fontStyle=5;" : ""}overflow=hidden;`;
 
-/** XML attribute-text escaping — `&` first, or the later replacements get double-escaped. */
+/** XML attribute-text escaping: `&` first, or the later replacements get double-escaped. */
 function esc(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -79,7 +79,7 @@ function fieldTextFor(
   if (field.defaultValue) parts.push(`DEFAULT ${field.defaultValue}`);
   const alias = names.fieldAlias(field);
   if (alias) parts.push(`(${alias})`);
-  if (field.description) parts.push(`— ${field.description}`);
+  if (field.description) parts.push(`· ${field.description}`);
   return parts.join(" ");
 }
 
@@ -116,7 +116,7 @@ function buildRows(
   });
 
   // Composite uniques/indexes have no native construct in this format. Rather
-  // than drop them, they ride along as extra marker-less rows — the row
+  // than drop them, they ride along as extra marker-less rows: the row
   // builder and the height formula already handle any row count, and
   // relations anchor by field name so trailing rows can't be hit.
   for (const group of entity.uniques ?? []) {
@@ -182,7 +182,7 @@ export const drawioEmitter: Emitter = {
       const header = [
         names.entityId(entity.name),
         alias && `(${alias})`,
-        entity.description && `— ${entity.description}`,
+        entity.description && `· ${entity.description}`,
       ]
         .filter((p): p is string => Boolean(p))
         .join(" ");
@@ -201,7 +201,7 @@ export const drawioEmitter: Emitter = {
       };
     });
 
-    // Pass 2: naive grid — this format has no auto-layout, and draw.io lets
+    // Pass 2: naive grid. This format has no auto-layout, and draw.io lets
     // the user drag things around, so nothing here tries to avoid edge
     // crossings; it just guarantees no two tables overlap.
     const columns = Math.max(1, Math.ceil(Math.sqrt(tables.length || 1)));

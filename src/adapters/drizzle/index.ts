@@ -31,7 +31,7 @@ import type {
 } from "./types";
 
 // Which `drizzle-orm` dialect-core package backs each `dialect` value in
-// drizzle.config, and the table/dialect class exported from it — verified
+// drizzle.config, and the table/dialect class exported from it: verified
 // against drizzle-kit's own compiled CLI (each dialect's
 // `prepareFrom*Imports`/`generate*Snapshot`). "turso" is SQLite-compatible
 // and authored with the same `sqliteTable`, so it shares sqlite-core.
@@ -71,7 +71,7 @@ const DIALECT_MODULES: Partial<
 const IMPORTABLE_EXTENSION = /\.(ts|mts|cts|js|mjs|cjs)$/i;
 
 // Resolves a bare specifier (e.g. "drizzle-orm/pg-core") against the target
-// project's own installed copy, not orm2erd's — same reasoning as the
+// project's own installed copy, not orm2erd's. Same reasoning as the
 // TypeORM adapter's `loadConnectionMetadataBuilderClass`: table instances
 // are constructed by the target's own `drizzle-orm`, so introspecting them
 // has to go through that same copy, not a separately bundled one.
@@ -81,7 +81,7 @@ function requireFromTarget<T>(fromPath: string, specifier: string): T {
     return targetRequire(specifier) as T;
   } catch (err) {
     throw new Error(
-      `Could not resolve "${specifier}" from "${fromPath}" — is it installed in the target project?`,
+      `Could not resolve "${specifier}" from "${fromPath}". Is it installed in the target project?`,
       { cause: err },
     );
   }
@@ -101,7 +101,7 @@ function validateDrizzleKitConfig(
 ): DrizzleKitConfig {
   if (!hasDialectField(content)) {
     throw new Error(
-      `"${configPath}" doesn't export a valid drizzle-kit config — expected a "dialect" field (e.g. export default defineConfig({ dialect: "postgresql", schema: "./schema.ts" })). See https://orm.drizzle.team/kit-docs/config-reference.`,
+      `"${configPath}" doesn't export a valid drizzle-kit config. Expected a "dialect" field (e.g. export default defineConfig({ dialect: "postgresql", schema: "./schema.ts" })). See https://orm.drizzle.team/kit-docs/config-reference.`,
     );
   }
   return content;
@@ -120,7 +120,7 @@ async function loadDrizzleKitConfig(
   // When the nearest ancestor package.json doesn't declare `"type":
   // "module"`, a syntactically-ESM config file can still get run through
   // CJS interop and come back double-wrapped as `{ default: <config> }`
-  // instead of `<config>` — same "double-wrapped default" shape the
+  // instead of `<config>`. Same "double-wrapped default" shape the
   // Sequelize adapter's own loader has to tolerate. Only one extra level is
   // realistically possible here, so a single conditional unwrap covers it.
   const content = hasDialectField(outer)
@@ -130,7 +130,7 @@ async function loadDrizzleKitConfig(
 }
 
 // `config.schema` globs are resolved relative to the directory containing
-// drizzle.config.* — drizzle-kit itself resolves them against
+// drizzle.config.*: drizzle-kit itself resolves them against
 // `process.cwd()`, which in practice is always the project root the config
 // file also lives in (drizzle-kit is virtually always invoked from there).
 // A matched directory expands to its immediate importable files (not
@@ -142,7 +142,7 @@ function resolveSchemaFiles(
 ): string[] {
   if (!schema) {
     throw new Error(
-      `"${configPath}" has no "schema" field — point it at your schema file(s)/glob(s) (see https://orm.drizzle.team/kit-docs/config-reference#schema).`,
+      `"${configPath}" has no "schema" field. Point it at your schema file(s)/glob(s) (see https://orm.drizzle.team/kit-docs/config-reference#schema).`,
     );
   }
 
@@ -189,7 +189,7 @@ async function loadSchemaExports(
 
 // `column.name` is only the true DB column name when the developer named it
 // explicitly; when it falls back to the JS property key (`keyAsName`), a
-// project-wide `casing` strategy still transforms it at query time — mirrors
+// project-wide `casing` strategy still transforms it at query time: mirrors
 // drizzle-kit's own `getColumnCasing` so FK/index column names line up with
 // what the ORM actually sends to the database.
 function resolveColumnName(
@@ -205,7 +205,7 @@ function resolveColumnName(
 }
 
 // A `.array()` column (`dataType === "array"`) wraps its element column on
-// `.baseColumn` (e.g. pg-core's `PgArray`) — unwrap once so canonical-type,
+// `.baseColumn` (e.g. pg-core's `PgArray`): unwrap once so canonical-type,
 // native-type, and enum handling all key off the element rather than the
 // array wrapper itself, mirroring the Sequelize/Mongoose adapters' own
 // ARRAY-of/Array-of unwrap.
@@ -233,7 +233,7 @@ function toCanonicalType(rawColumn: DrizzleColumn): CanonicalType {
     case "string":
       return "string";
     case "number": {
-      // The generic "number" bucket covers int/float/decimal alike —
+      // The generic "number" bucket covers int/float/decimal alike:
       // `columnType` (e.g. "PgNumeric", "MySqlFloat") is the only signal
       // that tells them apart, since `getSQLType()` strings vary too much
       // per dialect to enumerate reliably.
@@ -248,13 +248,13 @@ function toCanonicalType(rawColumn: DrizzleColumn): CanonicalType {
   }
 }
 
-// Only Postgres's `pgEnum()` backs a real, named, reusable DB enum type —
+// Only Postgres's `pgEnum()` backs a real, named, reusable DB enum type:
 // `getSQLType()` returns that name directly (e.g. "role"), which the DBML
 // emitter keys its `Enum` block off of via `nativeType`. MySQL/SQLite enums
 // are always inline/anonymous instead: `getSQLType()` there returns the
 // full definition (e.g. "enum('admin','author')"), which has no stable
 // per-enum identity and would collide across every enum column if used as
-// a block name — so those get a synthesized name instead, the same fix the
+// a block name. So those get a synthesized name instead, the same fix the
 // Sequelize adapter applies for its own dialect-agnostic ENUM type.
 function resolveNativeType(
   rawColumn: DrizzleColumn,
@@ -269,7 +269,7 @@ function resolveNativeType(
     return `enum_${tableName}_${columnName}`;
   }
   // The element's own SQL type, not the array wrapper's (`PgArray.getSQLType()`
-  // appends "[size]" itself) — emitters already append "[]" via `isList`.
+  // appends "[size]" itself): emitters already append "[]" via `isList`.
   return column.getSQLType();
 }
 
@@ -281,7 +281,7 @@ function resolveDefaultValue(
   if (column.default === undefined) return undefined;
   if (isSQL(column.default)) {
     // drizzle-kit itself only supports param-free `sql` default expressions
-    // ("we don't support params for `sql` default values") — swallow
+    // ("we don't support params for `sql` default values"): swallow
     // anything that doesn't stringify cleanly rather than surfacing a
     // confusing internal error for a display-only default value.
     try {
@@ -342,7 +342,7 @@ function extractCompositeKeys(
   };
 }
 
-// Plain (non-unique) indexes — unique ones are already carried via
+// Plain (non-unique) indexes: unique ones are already carried via
 // extractCompositeKeys/the per-field isUnique flag. A functional index's
 // column entry is a raw SQL expression rather than an actual column.
 function extractIndexes(
@@ -368,7 +368,7 @@ function extractIndexes(
 // `name`/`getColumnName` below already resolve the physical SQL table/column
 // name (Drizzle has no separate ORM-level model name the way
 // Sequelize/Prisma/TypeORM do), so `Entity.tableName`/`Field.columnName`
-// would always equal `name` here and stay unset — nothing to plumb through.
+// would always equal `name` here and stay unset: nothing to plumb through.
 function buildEntity(
   name: string,
   tableConfig: DrizzleTableConfig,
@@ -402,7 +402,7 @@ function buildEntity(
       isPrimaryKey,
       isForeignKey: fkColumnNames.has(columnName),
       // Drizzle doesn't set notNull on primary keys, even though they're
-      // always NOT NULL — same caveat as the Sequelize/TypeORM adapters.
+      // always NOT NULL: same caveat as the Sequelize/TypeORM adapters.
       isNullable: isPrimaryKey ? false : !column.notNull,
       isUnique: uniqueColumnNames.has(columnName),
       defaultValue: resolveDefaultValue(column, isSQL, dialect),
@@ -421,7 +421,7 @@ function buildEntity(
 // A FK column set that's fully covered by a unique constraint (or is itself
 // a single unique/primary column) reads as a declared 1-1; anything else is
 // the "many" side of a 1-n. Drizzle has no separate OneToOne/ManyToOne
-// declaration to trust instead — same fallback the Sequelize adapter uses
+// declaration to trust instead: same fallback the Sequelize adapter uses
 // for an undeclared/ambiguous BelongsTo.
 function isColumnSetUnique(
   tableConfig: DrizzleTableConfig,
@@ -496,7 +496,7 @@ export const drizzleAdapter: ORMAdapter = {
     ] as new (config?: { casing?: string }) => DrizzleDialectInstance;
     if (!TableClass || !DialectClass) {
       throw new Error(
-        `Could not find "${dialectInfo.tableExport}"/"${dialectInfo.dialectExport}" exported from "${dialectInfo.specifier}" — this may be an unsupported drizzle-orm version.`,
+        `Could not find "${dialectInfo.tableExport}"/"${dialectInfo.dialectExport}" exported from "${dialectInfo.specifier}". This may be an unsupported drizzle-orm version.`,
       );
     }
 

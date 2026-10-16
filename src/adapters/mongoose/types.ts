@@ -1,9 +1,9 @@
 // Local shapes for the Mongoose runtime metadata we read. Not imported from
 // `mongoose` itself, to avoid a dual-package hazard if the target project
-// has its own separate install — same reasoning as the Sequelize adapter.
+// has its own separate install: same reasoning as the Sequelize adapter.
 // Trimmed from mongoose's own `mongoose/types/*.d.ts`; check those on a real
 // mismatch. `caster` is the one exception below: it's real, present in
-// every version probed (6.x-8.x), but undocumented — it doesn't appear in
+// every version probed (6.x-8.x), but undocumented. It doesn't appear in
 // the .d.ts files at all, only `embeddedSchemaType` does.
 
 // Mirrors `SchemaTypeOptions` in `mongoose/types/schematypes.d.ts` (class,
@@ -18,7 +18,7 @@ export interface MongooseSchemaTypeOptions {
 // Mirrors `SchemaType` in `mongoose/types/schematypes.d.ts` (class, ~line
 // 290) for `instance`/`isRequired`/`options`. `embeddedSchemaType` mirrors
 // the same file's `SchemaArray`/`DocumentArray` subclasses (~lines 417,
-// 520) — the array element type, renamed from `caster` in mongoose 9.x.
+// 520): the array element type, renamed from `caster` in mongoose 9.x.
 export interface MongooseSchemaType {
   instance: string;
   isRequired?: boolean;
@@ -27,7 +27,7 @@ export interface MongooseSchemaType {
   embeddedSchemaType?: MongooseSchemaType;
 }
 
-// Mirrors `Schema#indexes()` in `mongoose/types/index.d.ts` — returns each
+// Mirrors `Schema#indexes()` in `mongoose/types/index.d.ts`: returns each
 // declared index as `[fields, options]`, where `fields` maps field paths to
 // a sort direction. Compound `unique` indexes are the only way Mongoose
 // expresses a multi-column unique (single-field `unique: true` lives on the
@@ -41,7 +41,7 @@ export type MongooseIndex = [
 // `mongoose/types/models.d.ts` (~lines 625, 1218).
 export interface MongooseModel {
   modelName: string;
-  // The physical collection name — pluralised+lowercased from `modelName` by
+  // The physical collection name: pluralised+lowercased from `modelName` by
   // default, or the exact string when set explicitly (schema `collection`
   // option, or mongoose.model()'s third argument).
   collection: { name: string };

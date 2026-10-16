@@ -1,11 +1,11 @@
 // Local shapes for the @mikro-orm/core runtime metadata this adapter reads.
-// Not imported from `@mikro-orm/core` itself for TYPES — every value at
+// Not imported from `@mikro-orm/core` itself for TYPES: every value at
 // runtime is obtained via the TARGET project's own installed copy (see
 // `createRequire` usage in index.ts), same "use the target's own install"
 // principle as the Drizzle/TypeORM adapters. Trimmed to the v6 shape this
 // adapter actually reads (verified against a real `@mikro-orm/core@6.6.16`
 // install, not assumed from the package's own .d.ts, which in a couple of
-// places doesn't match its own runtime — see the comments on
+// places doesn't match its own runtime, see the comments on
 // `MikroOrmMetadataStorage.getAll` and `EntityProperty.type` below).
 
 export type MikroOrmReferenceKind =
@@ -20,7 +20,7 @@ export interface MikroOrmEntityProperty {
   name: string;
   kind: MikroOrmReferenceKind;
   // Empirically NOT always the short registry key (`types` in
-  // `@mikro-orm/core/types`) the `.d.ts` implies — e.g. `types.decimal`
+  // `@mikro-orm/core/types`) the `.d.ts` implies: e.g. `types.decimal`
   // round-trips as `"DecimalType"`, not `"decimal"`. Normalize with a
   // trailing "Type" strip before matching against a canonical-type table;
   // `columnTypes`/`runtimeType` are the reliable fallback tiers.
@@ -37,14 +37,14 @@ export interface MikroOrmEntityProperty {
   comment?: string;
   fieldNames?: string[];
   // `kind: "embedded"` only, and only when declared `@Embedded(..., {
-  // object: true })` — the wrapper property IS the physical column (stored
+  // object: true })`. The wrapper property IS the physical column (stored
   // as one JSON value) rather than the usual case where an "embedded" kind
   // property is just a non-physical grouping node over already-flattened
   // scalar properties. See the comment on `buildEntity`'s `scalarFields`.
   object?: boolean;
   // False only for MikroORM's own synthesized per-field mirrors of an
-  // `object: true` embedded property's contents (name suffixed `~field`) —
-  // virtual, used for JSON-path querying, not a real column. Undefined
+  // `object: true` embedded property's contents (name suffixed `~field`).
+  // Virtual, used for JSON-path querying, not a real column. Undefined
   // everywhere else, where it's equivalent to true.
   persist?: boolean;
   owner?: boolean;
@@ -66,13 +66,13 @@ export interface MikroOrmEntityMetadata {
   props: MikroOrmEntityProperty[];
   indexes: MikroOrmIndexOrUnique[];
   uniques: MikroOrmIndexOrUnique[];
-  // Set on MikroORM's own synthesized implicit m:n pivot-table metadata —
-  // never a real user-declared entity, so filtered out the same way the
+  // Set on MikroORM's own synthesized implicit m:n pivot-table metadata.
+  // Never a real user-declared entity, so filtered out the same way the
   // TypeORM adapter filters TypeORM's own synthetic junction tables.
   pivotTable?: boolean;
 }
 
-// `getAll()`'s real runtime return type differs by major version — a plain
+// `getAll()`'s real runtime return type differs by major version: a plain
 // `Dictionary<EntityMetadata>` keyed by entity name in v6, but a real
 // `Map<string, EntityMetadata>` in v7. Confirmed by reading the compiled
 // `MetadataStorage.js` in both a real v6.6.16 and v7.1.9 install (not
@@ -104,7 +104,7 @@ export interface MikroOrmCoreModule {
     init(options: MikroOrmOptions): Promise<MikroOrmInstance>;
   };
   // The dynamic-import hook MikroORM's own folder-based entity discovery
-  // calls per matched file — a static property on the target's own `Utils`
+  // calls per matched file: a static property on the target's own `Utils`
   // class (v7 moved this to `globalThis.dynamicImportProvider` instead; v6
   // keeps it here). Overriding it routes discovery through orm2erd's
   // existing tsx-based loader instead of a plain `import()`.

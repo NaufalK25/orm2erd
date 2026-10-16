@@ -73,7 +73,7 @@ describe("mongooseAdapter.resolveEntry", () => {
   });
 });
 
-describe("mongooseAdapter.extract — target mongoose module resolution", () => {
+describe("mongooseAdapter.extract: target mongoose module resolution", () => {
   const dirs: string[] = [];
 
   function makeTmpDir(): string {
@@ -90,7 +90,7 @@ describe("mongooseAdapter.extract — target mongoose module resolution", () => 
 
   it("throws a clear error when \"mongoose\" can't be resolved from the entry file's location", async () => {
     // A bare temp dir with no node_modules chain leading to a "mongoose"
-    // package — createRequire(...).resolve("mongoose") must fail here.
+    // package: createRequire(...).resolve("mongoose") must fail here.
     const dir = makeTmpDir();
     const entryFile = join(dir, "entry.ts");
     writeFileSync(entryFile, "export {};\n");
@@ -129,9 +129,9 @@ describe("mongooseAdapter.extract — target mongoose module resolution", () => 
 // clearing mongoose's global model registry first. Re-importing the same
 // fixture file a second time is a no-op (ESM module cache means its
 // top-level mongoose.model() calls won't run again), and the registry is a
-// process-wide singleton shared across every fixture — so tests within a
+// process-wide singleton shared across every fixture, so tests within a
 // describe read a shared result instead of each re-extracting.
-describe("mongooseAdapter.extract — field mapping", () => {
+describe("mongooseAdapter.extract: field mapping", () => {
   let model: ERDModel;
 
   beforeAll(async () => {
@@ -219,7 +219,7 @@ describe("mongooseAdapter.extract — field mapping", () => {
   });
 });
 
-describe("mongooseAdapter.extract — relations", () => {
+describe("mongooseAdapter.extract: relations", () => {
   let model: ERDModel;
 
   beforeAll(async () => {
@@ -267,7 +267,7 @@ describe("mongooseAdapter.extract — relations", () => {
       (r) => r.type === "1-1" && r.from === "User" && r.to === "Profile",
     )!;
 
-    // `User.profile`, not `Profile.user` — the label reads left-to-right
+    // `User.profile`, not `Profile.user`: the label reads left-to-right
     // along the edge, and `from` is User.
     expect(rel.fieldName).toBe("profile");
     expect(rel.toColumn).toBe("user");
@@ -334,7 +334,7 @@ describe("mongooseAdapter.extract — relations", () => {
   });
 });
 
-describe("mongooseAdapter.extract — physical collection names (#3a)", () => {
+describe("mongooseAdapter.extract: physical collection names (#3a)", () => {
   it("sets entity.tableName from an explicit `collection` schema option", async () => {
     mongoose.deleteModel(/.*/);
     const model = await extractFixture("names.ts");
@@ -357,7 +357,7 @@ describe("mongooseAdapter.extract — physical collection names (#3a)", () => {
   });
 });
 
-describe("mongooseAdapter.extract — directory import", () => {
+describe("mongooseAdapter.extract: directory import", () => {
   let model: ERDModel;
   let consoleLogSpy: MockInstance<typeof console.log>;
 
@@ -381,7 +381,7 @@ describe("mongooseAdapter.extract — directory import", () => {
   });
 
   it("never imports a file with no mongoose signature, even if it's valid source in the directory", () => {
-    // server.ts has no mongoose import/Schema/model call — it simulates an
+    // server.ts has no mongoose import/Schema/model call: it simulates an
     // unrelated app entry point. If the adapter imported it anyway (as it
     // once did, before content-filtering directory entries), its
     // console.log side effect would have fired.
@@ -394,11 +394,11 @@ describe("mongooseAdapter.extract — directory import", () => {
   });
 });
 
-describe("mongooseAdapter.extract — directory scan exclusions & error tolerance", () => {
+describe("mongooseAdapter.extract: directory scan exclusions & error tolerance", () => {
   const dirs: string[] = [];
 
   function makeTmpDir(): string {
-    // Under fixturesDir (inside the project tree), not the OS tmpdir — the
+    // Under fixturesDir (inside the project tree), not the OS tmpdir: the
     // adapter needs to resolve a real "mongoose" package from here via
     // node's normal upward node_modules search, same as any real project.
     const dir = mkdtempSync(join(fixturesDir, ".scan-test-"));
@@ -423,7 +423,7 @@ describe("mongooseAdapter.extract — directory scan exclusions & error toleranc
       "",
     ].join("\n");
     // Every "trap" file below has a real mongoose signature and would
-    // register its own model if the exclusion it's testing didn't hold —
+    // register its own model if the exclusion it's testing didn't hold,
     // so a leaked import shows up as an extra entity, not silently.
     const trapContent = [
       'import mongoose from "mongoose";',
@@ -455,7 +455,7 @@ describe("mongooseAdapter.extract — directory scan exclusions & error toleranc
     writeFileSync(secretFile, trapContent);
     chmodSync(secretFile, 0o000);
 
-    // A symlink is neither isDirectory() nor isFile() (lstat semantics) —
+    // A symlink is neither isDirectory() nor isFile() (lstat semantics):
     // must be skipped outright, not followed. Points nowhere, so there's no
     // real target file that would independently register its own model.
     symlinkSync(join(dir, "does-not-exist.ts"), join(dir, "link.ts"));
@@ -472,7 +472,7 @@ describe("mongooseAdapter.extract — directory scan exclusions & error toleranc
   });
 });
 
-describe("mongooseAdapter.extract — no models found", () => {
+describe("mongooseAdapter.extract: no models found", () => {
   it("throws a clear error when a file registers no models", async () => {
     mongoose.deleteModel(/.*/);
     await expect(extractFixture("empty.ts")).rejects.toThrow(
@@ -489,13 +489,13 @@ describe("mongooseAdapter.extract — no models found", () => {
   });
 });
 
-describe("mongooseAdapter.extract — composite unique", () => {
+describe("mongooseAdapter.extract: composite unique", () => {
   it("carries a compound unique index, ignoring single-field and non-unique indexes", async () => {
     const model = await extractFixture("composite-unique.ts");
     const postTag = model.entities.find((e) => e.name === "PostTag")!;
 
     expect(postTag.uniques).toEqual([["tagId", "addedBy"]]);
-    // Mongoose has no composite primary key — _id is always the single PK.
+    // Mongoose has no composite primary key: _id is always the single PK.
     expect(postTag.primaryKey).toBeUndefined();
     // The single-field `slug` unique stays on the field, not the group.
     expect(postTag.fields.find((f) => f.name === "slug")?.isUnique).toBe(true);

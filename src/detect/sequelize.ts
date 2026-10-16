@@ -36,13 +36,13 @@ export const sequelizeDetector: Detector = {
         const rc = require(rcPath);
         const modelsPath = rc?.["models-path"];
         // resolve() is a no-op on an already-absolute path, which is the
-        // common case — .sequelizerc usually builds this with its own
+        // common case: .sequelizerc usually builds this with its own
         // path.resolve() call.
         if (typeof modelsPath === "string") {
           candidates.push(relative(cwd, resolve(cwd, modelsPath)));
         }
       } catch {
-        // A broken .sequelizerc shouldn't fail detection outright — the
+        // A broken .sequelizerc shouldn't fail detection outright: the
         // dependency check already confirmed this is a Sequelize project,
         // so just fall through to the directory conventions below.
       }

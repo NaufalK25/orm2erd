@@ -2,13 +2,13 @@ function dataType(name, values) {
   return { constructor: { name }, values };
 }
 
-// Two BelongsToMany pairs declared through the SAME junction — Post↔Tag and
+// Two BelongsToMany pairs declared through the SAME junction. Post↔Tag and
 // Post↔User both `through: PostTag`. belongs-to-many.js writes
 // `unique: '<tableName>_<foreignKey>_<otherKey>_unique'` onto both FK
 // attributes of each pair, and the second pair's `Object.assign` overwrites
 // the first's on the shared `postId`. Real Sequelize 6 leaves exactly the
 // `uniqueKeys`/`unique` shape reproduced below: the surviving group keeps two
-// fields, while the clobbered group is left with one — `userId` stranded as
+// fields, while the clobbered group is left with one. `userId` stranded as
 // the lone member of a group whose name still says `userId_postId`.
 //
 // `slug` is the control: a genuine single-column unique, named

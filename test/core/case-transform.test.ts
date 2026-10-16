@@ -71,7 +71,7 @@ describe("toCase", () => {
     { source: "UserAccountStatus", label: "PascalCase" },
     { source: "user-account-status", label: "kebab-case" },
     { source: "USER_ACCOUNT_STATUS", label: "SCREAMING_SNAKE" },
-  ])("more than two words — from $label ($source)", ({ source }) => {
+  ])("more than two words, from $label ($source)", ({ source }) => {
     it("converts to snake", () => {
       expect(toCase(source, "snake")).toBe("user_account_status");
     });

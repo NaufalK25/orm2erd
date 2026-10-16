@@ -135,7 +135,7 @@ describe("structurizrEmitter", () => {
     expect(output).toContain('"primaryKey" "orderId, productId"');
     expect(output).toContain('"unique.1" "orderId, productId"');
     expect(output).toContain('"index.idx_order_items_order" "orderId"');
-    // Single-column PK entity gets no redundant `primaryKey` property —
+    // Single-column PK entity gets no redundant `primaryKey` property:
     // the field-level "PK" in its column value already says so.
     expect(output).not.toMatch(/"primaryKey" "id"/);
   });
@@ -291,11 +291,11 @@ describe("structurizrEmitter", () => {
       expect(output).toContain('"column.tag_id"');
       // Enum member values and the enum's native type are never transformed.
       expect(output).toContain("enum(Active, Archived)");
-      // Index names aren't entity/field/enum-type identifiers — left as-is,
+      // Index names aren't entity/field/enum-type identifiers. Left as-is,
       // matching DBML's `name:` handling.
       expect(output).toContain('"index.idx_PostTag_tagId"');
       // The internal `x = element` DSL variable is derived straight from
-      // the raw model name — it's a reference token, never displayed, so
+      // the raw model name: it's a reference token, never displayed, so
       // caseMode doesn't touch it either.
       expect(output).toContain('PostTag = element "post_tag"');
     });

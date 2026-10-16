@@ -51,7 +51,7 @@ describe("findFilesByContent", () => {
     const dir = makeTmpDir();
     const notADir = join(dir, "file.js");
     writeFileSync(notADir, "module.exports = require('sequelize');");
-    // readdirSync(notADir) throws ENOTDIR — must be swallowed, not propagate.
+    // readdirSync(notADir) throws ENOTDIR: must be swallowed, not propagate.
     expect(findFilesByContent(notADir, () => true)).toEqual([]);
   });
 

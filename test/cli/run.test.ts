@@ -153,7 +153,7 @@ describe("runCheck", () => {
     await writeFile(outPath, "old content", "utf-8");
 
     // The on-disk diagram text drifted (e.g. formatting), but the model
-    // itself is unchanged from the snapshot — nothing structural to show.
+    // itself is unchanged from the snapshot: nothing structural to show.
     const m = model([entity("User", [field("id")])]);
     await writeModelSnapshot(modelSnapshotPath(outBase), m);
     const { error } = mockExit();
@@ -196,7 +196,7 @@ describe("runCheck", () => {
 
     const output = error.mock.calls.flat().join("\n");
     expect(output).toContain(
-      `${missingPath} does not exist — run without --check to create it`,
+      `${missingPath} does not exist. Run without --check to create it.`,
     );
     expect(output).toContain('User: +column "email"');
   });

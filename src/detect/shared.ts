@@ -11,7 +11,7 @@ export function confidenceFromCandidates(candidates: string[]): number {
 }
 
 // Conventional model-directory names checked when nothing more specific
-// (e.g. a config file) points at one — shared by the Sequelize and Mongoose
+// (e.g. a config file) points at one: shared by the Sequelize and Mongoose
 // detectors, which both fall back to the same guesses.
 const FALLBACK_MODEL_DIRS = ["models", "src/models", "db/models", "app/models"];
 
@@ -27,7 +27,7 @@ export function findFallbackModelDirs(cwd: string): string[] {
 }
 
 // Directory names skipped when scanning source files for content-based
-// detection — never real user code, just build output/deps/vcs.
+// detection: never real user code, just build output/deps/vcs.
 const EXCLUDED_SCAN_DIR_NAMES = new Set([
   "node_modules",
   "dist",
@@ -43,7 +43,7 @@ const MAX_FILES_SCANNED = 5000;
 const MAX_FILE_SIZE_BYTES = 1_000_000;
 
 // Walks the project tree looking for source files whose content satisfies
-// `isMatch` — the shared fallback of last resort for ORMs with no config
+// `isMatch`: the shared fallback of last resort for ORMs with no config
 // file or folder convention to anchor detection on (e.g. Mongoose, TypeORM
 // 0.3+ `DataSource` files). Returns paths relative to `cwd`.
 export function findFilesByContent(
@@ -65,7 +65,7 @@ export function findFilesByContent(
 
     for (const entry of entries) {
       // Symlinks are neither isDirectory() nor isFile() here (lstat
-      // semantics) — skipped on purpose, to avoid monorepo symlink cycles.
+      // semantics): skipped on purpose, to avoid monorepo symlink cycles.
       if (entry.isDirectory()) {
         // Prune before pushing, not after, so we never descend into node_modules.
         if (

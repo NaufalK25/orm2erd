@@ -25,7 +25,7 @@ import type {
 } from "./types";
 
 // Keyed by the built-in `types` registry's short names (see
-// `@mikro-orm/core/types/index.js`) — `toCanonicalType` normalizes a
+// `@mikro-orm/core/types/index.js`): `toCanonicalType` normalizes a
 // declared `EntityProperty.type` (which can also come back as the `Type`
 // subclass name, e.g. "DecimalType") by stripping a trailing "type" first.
 const MIKRO_TYPE_TO_CANONICAL: Record<string, CanonicalType> = {
@@ -57,7 +57,7 @@ const MIKRO_TYPE_TO_CANONICAL: Record<string, CanonicalType> = {
 // (`EntityProperty.columnTypes[0]`), for when `type` doesn't match a known
 // registry name (e.g. a custom `Type` subclass, or a plain string type like
 // `"uuid"` that only round-trips through `columnTypes` as `"text"` on
-// SQLite) — trimmed of any "(precision,scale)"/"(length)" suffix first.
+// SQLite): trimmed of any "(precision,scale)"/"(length)" suffix first.
 const SQL_TYPE_TO_CANONICAL: Record<string, CanonicalType> = {
   varchar: "string",
   nvarchar: "string",
@@ -98,7 +98,7 @@ const SQL_TYPE_TO_CANONICAL: Record<string, CanonicalType> = {
   varbinary: "bytes",
 };
 
-// Final fallback, keyed by `EntityProperty.runtimeType` — used only when
+// Final fallback, keyed by `EntityProperty.runtimeType`: used only when
 // neither `type` nor `columnTypes` resolved to anything recognizable.
 const RUNTIME_TYPE_TO_CANONICAL: Record<string, CanonicalType> = {
   number: "int",
@@ -136,7 +136,7 @@ function nativeTypeName(prop: MikroOrmEntityProperty): string {
 }
 
 // Already close to the IR's own spelling (unlike TypeORM's uppercase
-// `CASCADE`/`SET NULL` forms) — this is mostly a pass-through, normalizing
+// `CASCADE`/`SET NULL` forms): this is mostly a pass-through, normalizing
 // case and dropping anything unrecognized.
 const MIKRO_ACTION_TO_CANONICAL: Record<string, RelationAction> = {
   cascade: "cascade",
@@ -167,7 +167,7 @@ function resolvePropertyList(
 
 // Column-level `@Property({ unique: true })` already lives on the property
 // itself (`prop.unique`); entity-level `@Unique({ properties: [...] })`
-// declarations instead land in `meta.uniques` — single-column entries there
+// declarations instead land in `meta.uniques`. Single-column entries there
 // mark that field unique too, multi-column ones become `Entity.uniques`.
 function collectSingleColumnUniqueNames(
   meta: MikroOrmEntityMetadata,
@@ -202,8 +202,8 @@ function buildScalarField(
 
 // MikroORM never exposes an owning relation's physical FK column(s) as
 // their own scalar `EntityProperty` the way TypeORM does (there's no
-// synthetic "authorId" property here — `author`/`fieldNames: ['author_id']`
-// IS the relation) — synthesized here instead, so the FK column still shows
+// synthetic "authorId" property here, `author`/`fieldNames: ['author_id']`
+// IS the relation), synthesized here instead, so the FK column still shows
 // up as a real field the way it does for every other adapter. Typed off the
 // referenced entity's own PK field(s), paired positionally with
 // `referencedColumnNames`.
@@ -229,7 +229,7 @@ function buildForeignKeyFields(prop: MikroOrmEntityProperty): Field[] {
   });
 }
 
-// Plain (non-unique) indexes — unique ones are already carried via
+// Plain (non-unique) indexes: unique ones are already carried via
 // `collectSingleColumnUniqueNames`/`Entity.uniques`.
 function extractIndexes(meta: MikroOrmEntityMetadata): Index[] | undefined {
   const indexes = meta.indexes
@@ -253,14 +253,14 @@ function extractMultiColumnUniques(
 // MikroORM flattens `@Embedded()` properties into `meta.props` itself before
 // the adapter ever sees them, but the two embedding modes leave opposite
 // traces: an inline embeddable (the default) has no column of its own
-// (`columnTypes: []`) — only its already-flattened leaf properties
+// (`columnTypes: []`). Only its already-flattened leaf properties
 // (`kind: "scalar"`, real prefixed `fieldNames`) are physical, so the plain
 // `kind === "scalar"` filter already picks those up correctly. An
 // `{ object: true }` embeddable is the reverse: the wrapper prop itself
 // (`kind: "embedded"`, `object: true`) is the one physical JSON column, and
 // MikroORM additionally synthesizes a `persist: false` scalar mirror per
-// embedded field (named `wrapper~field`) purely for JSON-path querying —
-// those must be excluded or they'd show up as bogus extra columns.
+// embedded field (named `wrapper~field`) purely for JSON-path querying.
+// Those must be excluded or they'd show up as bogus extra columns.
 function buildEntity(meta: MikroOrmEntityMetadata): Entity {
   const singleColumnUniqueNames = collectSingleColumnUniqueNames(meta);
   const scalarFields = meta.props
@@ -270,7 +270,7 @@ function buildEntity(meta: MikroOrmEntityMetadata): Entity {
         (p.kind === "scalar" || (p.kind === "embedded" && p.object)),
     )
     .map((p) => buildScalarField(p, singleColumnUniqueNames));
-  // Only m:1/1:1 owning props carry a *physical* FK column — an owning m:n
+  // Only m:1/1:1 owning props carry a *physical* FK column. An owning m:n
   // prop's `fieldNames` is just a bookkeeping echo of its own property name,
   // not a real column on this table (the join lives in the pivot table).
   const fkFields = meta.props
@@ -295,7 +295,7 @@ function buildEntity(meta: MikroOrmEntityMetadata): Entity {
 
 // One `EntityProperty` exists per declared side (e.g. `User.posts` and
 // `Post.author` are two separate properties paired via `mappedBy`/
-// `inversedBy`) — each case below emits from exactly one side to avoid
+// `inversedBy`): each case below emits from exactly one side to avoid
 // double-counting a pair, mirroring the TypeORM adapter's
 // `.inverseRelation`-based dedup (`src/adapters/typeorm/index.ts`).
 function buildRelation(
@@ -306,8 +306,8 @@ function buildRelation(
 
   switch (prop.kind) {
     case "1:m": {
-      // The FK column — and any deleteRule/updateRule, which only live on
-      // the owning m:1 side — belongs to the paired property `mappedBy`
+      // The FK column (and any deleteRule/updateRule, which only live on
+      // the owning m:1 side) belongs to the paired property `mappedBy`
       // names on the target entity, if declared.
       const owningProp = prop.targetMeta?.props.find(
         (p) => p.name === prop.mappedBy,
@@ -326,7 +326,7 @@ function buildRelation(
     }
     case "m:1": {
       // Already covered from the "one" side above when a paired `1:m`
-      // property exists (signaled by `inversedBy`) — only emit standalone
+      // property exists (signaled by `inversedBy`). Only emit standalone
       // otherwise.
       if (prop.inversedBy) return undefined;
       return {
@@ -341,11 +341,11 @@ function buildRelation(
       };
     }
     case "1:1": {
-      // Owning side carries the join column — swapped into `to` so the FK
+      // Owning side carries the join column: swapped into `to` so the FK
       // always lives there, matching the 1-n cases above. `fieldName`
       // follows that swap: it names the alias on `from`, which is the
       // inverse property. Falls back to this side's own name when no
-      // inverse is declared — the only alias that exists then.
+      // inverse is declared: the only alias that exists then.
       if (!prop.owner) return undefined;
       return {
         from: relatedName,
@@ -371,7 +371,7 @@ function buildRelation(
       };
     }
     // "embedded" is the only other kind reaching this switch (`buildModel`
-    // only excludes "scalar") — never a relation. Its physical-column case
+    // only excludes "scalar"): never a relation. Its physical-column case
     // (`object: true`) is handled as a field in `buildEntity` instead; the
     // non-object case has no column of its own at all.
     default:
@@ -379,15 +379,15 @@ function buildRelation(
   }
 }
 
-// MikroORM itself already throws `MetadataError.noEntityDiscovered()` — "No
-// entities were discovered" — during `MikroORM.init()` whenever zero
+// MikroORM itself already throws `MetadataError.noEntityDiscovered()` ("No
+// entities were discovered") during `MikroORM.init()` whenever zero
 // entities are found, so there's no zero-entities case left to guard here:
 // by the time `buildModel` runs, at least one *real* entity necessarily
 // exists (a pivot-table's presence in `allMetadata` already implies its two
 // owning entities are in there too), so filtering out pivot tables can never
 // leave this empty.
 function buildModel(allMetadata: MikroOrmEntityMetadata[]): ERDModel {
-  // MikroORM's own synthesized implicit m:n pivot-table metadata — never a
+  // MikroORM's own synthesized implicit m:n pivot-table metadata. Never a
   // real user-declared entity (see the comment on `pivotTable` in types.ts).
   const entityMetadatas = allMetadata.filter((m) => !m.pivotTable);
 
@@ -429,7 +429,7 @@ function isThenable(value: unknown): value is Promise<unknown> {
   );
 }
 
-// Loads the target's own config file export — either a MikroORM options
+// Loads the target's own config file export: either a MikroORM options
 // object (the standard `mikro-orm.config.ts` convention, usually built with
 // `defineConfig()`) or an already-initialized instance/promise (a bootstrap
 // file that calls `MikroORM.init(...)` itself and exports the result).
@@ -481,7 +481,7 @@ export const mikroormAdapter: ORMAdapter = {
     const core = targetRequire("@mikro-orm/core") as MikroOrmCoreModule;
 
     // Routes MikroORM's own folder-based entity discovery through orm2erd's
-    // tsx-based loader instead of a plain `import()` — needed even before
+    // tsx-based loader instead of a plain `import()`: needed even before
     // we know the config shape, since the entry module itself (or code it
     // eagerly calls) may trigger discovery as a side effect.
     const importer = (id: string) =>
@@ -496,7 +496,7 @@ export const mikroormAdapter: ORMAdapter = {
 
     if (looksLikeMikroOrmInstance(resolved)) {
       // The entry file already called `MikroORM.init(...)` itself and
-      // exported the result — we can't force `connect: false`/`preferTs`
+      // exported the result. We can't force `connect: false`/`preferTs`
       // for this path, so it depends on the target's own call already
       // being safe to run without a reachable database.
       orm = resolved;
@@ -517,7 +517,7 @@ export const mikroormAdapter: ORMAdapter = {
       ].filter((e) => typeof e !== "string");
 
       // v6 has no standalone public "discover these paths for me" helper
-      // (that's a v7 addition) — instead, directory-path strings are passed
+      // (that's a v7 addition): instead, directory-path strings are passed
       // straight into `entities` and MikroORM's own `MikroORM.init()` does
       // the folder scan internally via `Utils.dynamicImport`, which we've
       // already routed through `tsImport` above.
@@ -533,7 +533,7 @@ export const mikroormAdapter: ORMAdapter = {
           try {
             targetRequire("reflect-metadata");
           } catch {
-            // Optional — only needed by decorators relying on implicit
+            // Optional: only needed by decorators relying on implicit
             // (emitDecoratorMetadata-inferred) property types.
           }
           entityPathsOrClasses.push(
@@ -560,12 +560,12 @@ export const mikroormAdapter: ORMAdapter = {
       }
     } else {
       throw new Error(
-        `"${entry.path}" doesn't export a MikroORM config or instance — expected a default export shaped like \`defineConfig({ entities: [...], entitiesTs: [...] })\` (or a plain object with an "entities"/"entitiesTs"/"driver" field), or an already-initialized \`MikroORM.init(...)\` call.`,
+        `"${entry.path}" doesn't export a MikroORM config or instance. Expected a default export shaped like \`defineConfig({ entities: [...], entitiesTs: [...] })\` (or a plain object with an "entities"/"entitiesTs"/"driver" field), or an already-initialized \`MikroORM.init(...)\` call.`,
       );
     }
 
     // v6's `getAll()` returns a plain `Dictionary<EntityMetadata>`; v7's
-    // returns a real `Map<string, EntityMetadata>` — the only runtime
+    // returns a real `Map<string, EntityMetadata>`: the only runtime
     // behavior difference between the two versions this adapter has to
     // account for (confirmed by reading each version's compiled
     // MetadataStorage.js, not assumed from either's .d.ts).

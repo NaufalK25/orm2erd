@@ -45,10 +45,10 @@ const SEQUELIZE_TYPE_TO_CANONICAL: Record<string, CanonicalType> = {
   JSONB: "json",
   BLOB: "bytes",
   ENUM: "enum",
-  // No column-level type at all — a VIRTUAL attribute is computed in JS and
+  // No column-level type at all: a VIRTUAL attribute is computed in JS and
   // never reaches the database, so there's nothing to map it to.
   VIRTUAL: "unknown",
-  // Postgres-specific structured types with no equivalent CanonicalType —
+  // Postgres-specific structured types with no equivalent CanonicalType:
   // treating them as "string" would misrepresent their actual shape.
   RANGE: "unknown",
   GEOMETRY: "unknown",
@@ -68,7 +68,7 @@ function typeKey(type: SequelizeDataType): string {
   return type.key ?? type.constructor.name;
 }
 
-// DataTypes.ARRAY(inner) wraps its element type on `.type` — unwrap once so
+// DataTypes.ARRAY(inner) wraps its element type on `.type`: unwrap once so
 // the canonical-type lookup, nativeType, and enum handling all key off the
 // element (e.g. ARRAY(ENUM) reuses the same enum_<model>_<field> naming
 // path as a bare ENUM) rather than the literal "ARRAY" wrapper.
@@ -94,7 +94,7 @@ function resolveDefaultValue(value: unknown): string | undefined {
       return String((value as { val: unknown }).val);
     }
     // Sentinel DataTypes like DataTypes.UUIDV4/DataTypes.NOW are class
-    // instances with no own properties — JSON.stringify would just give
+    // instances with no own properties: JSON.stringify would just give
     // "{}". Use the constructor name instead, same as column types, with
     // "()" to signal it's generated rather than a literal value.
     if (ctorName && ctorName !== "Object" && Object.keys(value).length === 0) {
@@ -129,7 +129,6 @@ async function loadSequelizeInstance(path: string): Promise<SequelizeInstance> {
   return candidate;
 }
 
-
 function findPrimaryKeyField(model: SequelizeModel): string | undefined {
   return Object.entries(model.rawAttributes).find(
     ([, attr]) => attr.primaryKey,
@@ -137,7 +136,7 @@ function findPrimaryKeyField(model: SequelizeModel): string | undefined {
 }
 
 // rawAttributes doesn't set allowNull on primary keys, even though they're
-// always NOT NULL — same quirk as the field-level isNullable above.
+// always NOT NULL: same quirk as the field-level isNullable above.
 function isFkAttrNullable(attr: SequelizeAttribute | undefined): boolean {
   return !attr?.primaryKey && attr?.allowNull !== false;
 }
@@ -157,7 +156,7 @@ function toRelationAction(action?: string): RelationAction | undefined {
 }
 
 // The FK attribute's own `.onDelete`/`.onUpdate` (see the SequelizeAttribute
-// comment) — not `association.options`, which HasMany never writes back to.
+// comment), not `association.options`, which HasMany never writes back to.
 function findForeignKeyActions(
   models: Record<string, SequelizeModel>,
   modelName: string,
@@ -182,7 +181,7 @@ function findForeignKeyActions(
 // is (redundantly) declared through both mechanisms.
 // uniqueKeys' `fields` are physical column names (`definition.field`),
 // unlike options.indexes' `fields`, which are whatever the caller wrote
-// (attribute names) — map back so both sources agree with the field
+// (attribute names): map back so both sources agree with the field
 // identifiers used everywhere else in the IR.
 function columnToAttrNameMap(model: SequelizeModel): Map<string, string> {
   return new Map(
@@ -199,15 +198,15 @@ function columnToAttrNameMap(model: SequelizeModel): Map<string, string> {
 // overwrites the first's. That strands one attribute as the lone member of
 // a group whose generated name still names two columns. The attribute
 // keeps a truthy `unique` string, so `isUnique` would render a bare `UK`
-// reading as "globally unique" — false, and the opposite of what a
+// reading as "globally unique": false, and the opposite of what a
 // junction table means.
 //
 // Sequelize generates these as `${tableName}_${foreignKey}_${otherKey}_unique`
 // (belongs-to-many.js), so a one-field group whose name ends in
 // `_<attrA>_<attrB>_unique` for two distinct attributes of this model is the
 // stranded case. A hand-written `unique: 'groupName'` never matches that
-// shape, and a genuine single-column unique is named `${tableName}_${col}_unique`
-// — one attribute, not two.
+// shape, and a genuine single-column unique is named `${tableName}_${col}_unique`.
+// One attribute, not two.
 function strandedUniqueAttributes(model: SequelizeModel): Set<string> {
   const attrNames = Object.keys(model.rawAttributes);
   const columnToAttrName = columnToAttrNameMap(model);
@@ -260,7 +259,7 @@ function extractCompositeKeys(model: SequelizeModel): {
   };
 }
 
-// Plain (non-unique) indexes from `options.indexes` — unique ones are
+// Plain (non-unique) indexes from `options.indexes`: unique ones are
 // already carried via extractCompositeKeys/the per-field isUnique flag.
 function extractIndexes(model: SequelizeModel): Index[] | undefined {
   const indexes = (model.options?.indexes ?? [])
@@ -324,7 +323,7 @@ export const sequelizeAdapter: ORMAdapter = {
 
     // Sequelize v7 stores `.models` as an iterable Set instead of a plain
     // object, silently yielding zero entities via Object.entries() below.
-    // Fail loudly instead — only v6.x's plain-object shape is supported.
+    // Fail loudly instead: only v6.x's plain-object shape is supported.
     if (
       typeof (
         sequelize.models as unknown as Record<typeof Symbol.iterator, unknown>
@@ -359,8 +358,8 @@ export const sequelizeAdapter: ORMAdapter = {
             isPrimaryKey: !!attr.primaryKey,
             // Reading the attribute's own resolved `references` (rather than
             // reconstructing FK-ness from association direction) is accurate
-            // regardless of which side — BelongsTo vs HasMany/HasOne/
-            // BelongsToMany — declared the association; see SequelizeAttribute.
+            // regardless of which side (BelongsTo vs HasMany/HasOne/
+            // BelongsToMany) declared the association; see SequelizeAttribute.
             isForeignKey: attr.references != null,
             // rawAttributes doesn't set allowNull on primary keys, even
             // though they're always NOT NULL.
@@ -398,7 +397,7 @@ export const sequelizeAdapter: ORMAdapter = {
       }
     }
 
-    // Names of the models we emit as entities — used to detect a
+    // Names of the models we emit as entities: used to detect a
     // BelongsToMany whose junction is itself an emitted table.
     const entityNames = new Set(entities.map((e) => e.name));
 
@@ -411,7 +410,7 @@ export const sequelizeAdapter: ORMAdapter = {
           // When the `through` junction is itself an emitted entity, the two
           // 1-n relations to it (from each side's HasMany/BelongsTo) already
           // convey this m-n. Emitting the derived n-n edge on top is
-          // redundant, so drop it — standard ERD practice keeps the junction
+          // redundant, so drop it: standard ERD practice keeps the junction
           // table, not the derived crossing. Only suppress when the junction
           // is actually an entity we render; an implicit string-named join
           // table isn't emitted, so keep the n-n there or the link is lost.
@@ -421,14 +420,14 @@ export const sequelizeAdapter: ORMAdapter = {
           // (`sparepart.racks`), not field-to-field mappings, so there's no
           // column pair to hang them on. The junction's own BelongsTo edges
           // carry the schema fact. Don't reintroduce them as an entity
-          // `description` — that puts ORM API surface in a database diagram.
+          // `description`: that puts ORM API surface in a database diagram.
           if (
             belongsToMany.throughModel &&
             entityNames.has(belongsToMany.throughModel)
           ) {
             return [];
           }
-          // Implicit join table — Sequelize doesn't model its two FK
+          // Implicit join table: Sequelize doesn't model its two FK
           // columns as attributes on either side, so nothing to attach.
           return [
             {
@@ -443,7 +442,7 @@ export const sequelizeAdapter: ORMAdapter = {
         const hasMany = sides.find((s) => s.associationType === "HasMany");
         if (hasMany) {
           // HasMany's foreignKey column lives on the target (`to`), not the
-          // declaring (`from`) model — it references `from`'s primary key.
+          // declaring (`from`) model: it references `from`'s primary key.
           const hasManyFkAttr =
             sequelize.models[hasMany.relatedModel]?.rawAttributes[
               hasMany.foreignKey
@@ -477,7 +476,7 @@ export const sequelizeAdapter: ORMAdapter = {
         // `fieldName` should name the alias on `from`, so HasOne (declared on
         // the parent) wins. Falling back to BelongsTo's alias only happens
         // when no HasOne exists, and then the child's alias is the ONLY alias
-        // in the schema — the choice is showing it or showing nothing. It
+        // in the schema: the choice is showing it or showing nothing. It
         // reads oddly (`spareparts ||--o{ stock_cards : "sparepart"`) but
         // beats dropping the one name the developer wrote.
         const hasOne = sides.find((s) => s.associationType === "HasOne");

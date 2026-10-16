@@ -59,7 +59,7 @@ describe("validateCheckRequiresOut", () => {
     expect(exit).not.toHaveBeenCalled();
   });
 
-  it("does not exit when --check is used without --out interactively — defers to the prompt instead", () => {
+  it("does not exit when --check is used without --out interactively: defers to the prompt instead", () => {
     const { exit } = mockExit();
     expect(() => validateCheckRequiresOut(true, undefined, true)).not.toThrow();
     expect(exit).not.toHaveBeenCalled();
@@ -74,7 +74,7 @@ describe("validateSummaryRequiresCheck", () => {
     );
     expect(exit).toHaveBeenCalledWith(1);
     expect(error.mock.calls.join("\n")).toContain(
-      "--summary requires --check — it's a presentation mode for the diff --check computes.",
+      "--summary requires --check (it's a presentation mode for the diff --check computes).",
     );
   });
 
@@ -100,7 +100,7 @@ describe("--check against a custom/nested --out path", () => {
 
   it("finds and verifies the committed file instead of guessing erd.mmd", async () => {
     outDir = mkdtempSync(join(tmpdir(), "orm2erd-check-"));
-    // A custom, nested --out — the exact shape (non-default name, under a
+    // A custom, nested --out: the exact shape (non-default name, under a
     // subdirectory) that a guessed "erd.mmd" default would miss entirely.
     const outBase = join(outDir, "docs", "generated", "erd");
     const outPath = resolveOutPath(outBase, "mmd", ["mmd"]);
@@ -117,7 +117,7 @@ describe("--check against a custom/nested --out path", () => {
     await mkdir(dirname(outPath), { recursive: true });
     await writeFile(outPath, content, "utf-8");
 
-    // --check against that same explicit path finds it and reports ok —
+    // --check against that same explicit path finds it and reports ok:
     // this is the scenario that silently checked the wrong guessed path
     // ("erd.mmd" at cwd) before --out became mandatory for --check.
     const upToDate = await checkOutput(outPath, content);
@@ -159,7 +159,7 @@ describe("--check --summary", () => {
     await writeModelSnapshot(modelSnapshotPath(outBase), model);
 
     // A structural change since that snapshot: a new field on the first
-    // entity — precise, in-memory control over exactly what changed.
+    // entity. Precise, in-memory control over exactly what changed.
     const mutatedModel = structuredClone(model);
     mutatedModel.entities[0].fields.push({
       name: "newField",

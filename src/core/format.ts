@@ -28,7 +28,7 @@ export type RelationLabelMode = "alias" | "column" | "both";
 
 /**
  * Letter-casing applied to rendered *identifiers* (entity/field/enum-type
- * names) — never to type labels, enum member values, or the `--names both`
+ * names): never to type labels, enum member values, or the `--names both`
  * alias. `"preserve"` (default) keeps whatever casing the source ORM/DB
  * already uses.
  */
@@ -44,7 +44,7 @@ export type CaseMode =
   | "upper";
 
 /**
- * Pluralizes/singularizes rendered *entity/table* identifiers only — never
+ * Pluralizes/singularizes rendered *entity/table* identifiers only: never
  * field names, the `--names both` alias, or relation/FK column references.
  * `"preserve"` (default) keeps whatever number the source ORM/DB already
  * uses.

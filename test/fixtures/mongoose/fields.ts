@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 // A custom SchemaType (e.g. from a third-party plugin like mongoose-long)
-// whose `.instance` isn't in MONGOOSE_TYPE_TO_CANONICAL at all — as opposed
+// whose `.instance` isn't in MONGOOSE_TYPE_TO_CANONICAL at all: as opposed
 // to Mixed/Union above, which ARE in the map (mapped to "unknown" there).
 class CustomType extends mongoose.SchemaType {
   constructor(key: string, options?: mongoose.SchemaTypeOptions<unknown>) {
@@ -27,7 +27,7 @@ const ProductSchema = new mongoose.Schema({
   sku: { type: String, unique: true },
   labels: [String],
   // A plain-object default (as opposed to a primitive or a computed
-  // function default like createdAt above) — must be JSON-stringified.
+  // function default like createdAt above): must be JSON-stringified.
   metadata: { type: mongoose.Schema.Types.Mixed, default: { source: "import" } },
   // A genuinely anonymous function default (JS's name-inference for a
   // direct property-value function expression would otherwise name it

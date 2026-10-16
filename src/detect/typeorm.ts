@@ -8,11 +8,11 @@ import { looksLikeTypeOrmDataSourceSource } from "../adapters/typeorm/data-sourc
 // TypeORM <=0.2.x auto-discovered one of these at the project root via
 // ConnectionOptionsReader; removed in 0.3+ but still seen in older
 // codebases. Priority mirrors ConnectionOptionsReader's own load order
-// ([js, ts, json, yml, yaml, xml] — env forms are connection-string-only,
+// ([js, ts, json, yml, yaml, xml], env forms are connection-string-only,
 // not schema-bearing, so skipped here).
 const LEGACY_ORMCONFIG_EXTENSIONS = ["js", "ts", "json", "yml", "yaml", "xml"];
 
-// Doc convention for the file that exports `new DataSource(...)` in 0.3+ —
+// Doc convention for the file that exports `new DataSource(...)` in 0.3+,
 // not enforced or auto-discovered by TypeORM itself, just the common name
 // in the wild, so it's checked before falling back to a full content scan.
 const DATA_SOURCE_FILE_CANDIDATES = [
@@ -49,8 +49,8 @@ export const typeormDetector: Detector = {
       return { found: false, candidates, confidence: 0 };
     }
 
-    // Legacy ormconfig is the strongest signal — same tier as Sequelize's
-    // .sequelizerc — so it wins outright when present.
+    // Legacy ormconfig is the strongest signal (same tier as Sequelize's
+    // .sequelizerc) so it wins outright when present.
     const legacyOrmconfig = findLegacyOrmconfig(cwd);
     if (legacyOrmconfig) {
       candidates.push(legacyOrmconfig);

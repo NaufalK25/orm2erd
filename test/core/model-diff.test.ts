@@ -39,7 +39,7 @@ function model(entities: Entity[], relations: Relation[] = []): ERDModel {
   return { entities, relations };
 }
 
-describe("diffModel — entities", () => {
+describe("diffModel: entities", () => {
   it("reports an added entity", () => {
     const before = model([entity("User", [field("id")])]);
     const after = model([
@@ -173,7 +173,7 @@ describe("diffModel — entities", () => {
   );
 });
 
-describe("diffModel — relations", () => {
+describe("diffModel: relations", () => {
   it("reports an added relation", () => {
     const before = model([], []);
     const after = model(
@@ -321,7 +321,7 @@ describe("diffModel — relations", () => {
         }),
       ],
     );
-    // Matched via column identity, and fieldName isn't a tracked property —
+    // Matched via column identity, and fieldName isn't a tracked property,
     // so this is not reported as a change at all (not remove+add either).
     expect(diffModel(before, after).relations).toEqual([]);
   });

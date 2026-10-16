@@ -18,14 +18,14 @@ import { icon, orExit } from "./render";
 export const ALL_ORM_NAMES = Object.keys(adapters) as ORMName[];
 
 // --check has no memory of what --out was used on the run that created the
-// committed file, so there's no safe default to guess (e.g. "erd") — make
+// committed file, so there's no safe default to guess (e.g. "erd"): make
 // --out mandatory whenever --check is passed, rather than silently checking
 // the wrong path. Non-interactively (CI, -y, no TTY) this is a hard error:
 // there's no one to ask, and it's checked before any prompting starts so a
 // run doesn't walk through ORM/entry selection only to reject it at the very
 // end for a flag that was missing from the start. Interactively, resolving
 // --out is deferred to resolveOutBase's own check-aware prompt instead (see
-// its `check` param) — that prompt has no pre-fillable default to guess at
+// its `check` param): that prompt has no pre-fillable default to guess at
 // and requires explicit typed input, so it doesn't reintroduce the risky
 // silent-guess this guard exists to rule out.
 export function validateCheckRequiresOut(
@@ -43,7 +43,7 @@ export function validateCheckRequiresOut(
   }
 }
 
-// --summary is a presentation mode for the diff --check already computes —
+// --summary is a presentation mode for the diff --check already computes:
 // there's nothing to summarize on a plain write run.
 export function validateSummaryRequiresCheck(
   check: boolean,
@@ -52,7 +52,7 @@ export function validateSummaryRequiresCheck(
   if (summary && !check) {
     console.error(
       pc.red(
-        `${icon("✖", "x")}--summary requires --check — it's a presentation mode for the diff --check computes.`,
+        `${icon("✖", "x")}--summary requires --check (it's a presentation mode for the diff --check computes).`,
       ),
     );
     process.exit(1);
@@ -85,7 +85,7 @@ export async function resolveORM(
       }
       ormName = orExit(
         await select({
-          message: `${icon("🔍")}Multiple ORMs detected — which one?`,
+          message: `${icon("🔍")}Multiple ORMs detected. Which one?`,
           options: detected.map((d) => ({
             value: d.name,
             label: d.name,
@@ -130,7 +130,7 @@ export async function resolveEntryPath(
     if (interactive) {
       return orExit(
         await select({
-          message: `${icon("📁")}Multiple possible entry points found for ${ormName} — which one?`,
+          message: `${icon("📁")}Multiple possible entry points found for ${ormName}. Which one?`,
           options: entryCandidates.map((c) => ({ value: c, label: c })),
         }),
       );
@@ -325,7 +325,7 @@ export async function resolveOutBase(
   if (interactive) {
     // --check has no committed file to fall back to, so unlike a plain
     // write's prompt (which pre-fills a guessed path that Enter alone
-    // accepts), this one has no initialValue/defaultValue at all — an empty
+    // accepts), this one has no initialValue/defaultValue at all: an empty
     // submit fails validation and re-prompts, so the path always comes from
     // deliberate input, never a blindly-accepted guess.
     if (check) {
@@ -336,7 +336,7 @@ export async function resolveOutBase(
           validate: (value) =>
             value
               ? undefined
-              : "A path is required for --check — there's no safe default to guess.",
+              : "A path is required for --check, since there's no safe default to guess.",
         }),
       );
     }

@@ -30,8 +30,8 @@ const ProductSchema = new mongoose.Schema({
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", unique: true },
 });
 
-// Standalone unique + required singular ref, no reciprocal field on Customer
-// — required: true means isFromOptional should be false, unlike Product's
+// Standalone unique + required singular ref, no reciprocal field on Customer.
+// Required: true means isFromOptional should be false, unlike Product's
 // owner above.
 const TransactionSchema = new mongoose.Schema({
   name: String,
@@ -54,7 +54,7 @@ const CommentSchema = new mongoose.Schema({
   author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 });
 
-// Two distinct refs from Order to Warehouse — ambiguous, must NOT be merged
+// Two distinct refs from Order to Warehouse: ambiguous, must NOT be merged
 // into one relation even though they share the same model pair. `customers`
 // is a standalone array-only ref, no reciprocal field on Customer.
 const WarehouseSchema = new mongoose.Schema({

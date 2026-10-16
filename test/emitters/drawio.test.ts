@@ -235,7 +235,7 @@ describe("drawioEmitter", () => {
 
     expect(output).toMatch(/id="e0_r0_key"[^\n]*fontStyle=1;/);
     expect(output).toMatch(/id="e0_r0_name"[^\n]*fontStyle=5;/);
-    // FK rows get no font emphasis at all — the "FK1" text carries it.
+    // FK rows get no font emphasis at all: the "FK1" text carries it.
     expect(output).not.toMatch(/id="e0_r1_key"[^\n]*fontStyle/);
     expect(output).not.toMatch(/id="e0_r1_name"[^\n]*fontStyle/);
   });

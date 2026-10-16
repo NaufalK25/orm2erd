@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Extracts one version's section from CHANGELOG.md for the GitHub Release body.
 //
-// CHANGELOG.md hard-wraps prose at ~90 cols for readable source diffs — fine
+// CHANGELOG.md hard-wraps prose at ~90 cols for readable source diffs: fine
 // for the file view (CommonMark collapses soft-wrapped lines back into one
 // paragraph), but GitHub's release-body renderer treats every newline as a
 // hard <br>, so the wrap points show up as mid-sentence line breaks. Rejoin
@@ -45,7 +45,7 @@ for (const line of section) {
 
   if (isContinuation) {
     // A wrap right after a bare `/` (e.g. `Entity.description`/ ->
-    // `Field.description`) was never a real space in the source — the
+    // `Field.description`) was never a real space in the source: the
     // slash itself was the break point. Every other wrap replaces an
     // actual space, so rejoin with one.
     const prev = unwrapped[unwrapped.length - 1];

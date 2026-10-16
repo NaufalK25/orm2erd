@@ -285,8 +285,8 @@ describe("quickdbdEmitter", () => {
   });
 
   describe("quoting a multi-word identifier", () => {
-    // QuickDBD tolerates a bare hyphen (kebab) unquoted, unlike Mermaid/DBML
-    // — only a space (title) forces quoting, verified empirically. Also
+    // QuickDBD tolerates a bare hyphen (kebab) unquoted, unlike Mermaid/DBML:
+    // only a space (title) forces quoting, verified empirically. Also
     // exercises the inline `table.column` FK reference, where each side is
     // quoted independently.
     const model: ERDModel = {

@@ -3,7 +3,7 @@ import type { CaseMode } from "./format";
 // Splits on any run of non-alphanumeric characters, plus camelCase/PascalCase
 // humps (including acronym boundaries, e.g. "HTTPServer" -> "HTTP Server"),
 // so the identifier's *source* casing convention (snake_case, camelCase,
-// PascalCase, kebab-case, ...) never needs to be detected up front — every
+// PascalCase, kebab-case, ...) never needs to be detected up front: every
 // convention tokenizes into the same word list, which is then rejoined in
 // whichever case the caller asked for.
 function splitWords(identifier: string): string[] {
@@ -23,7 +23,7 @@ function capitalize(word: string): string {
 export function toCase(identifier: string, mode: CaseMode): string {
   if (mode === "preserve" || !identifier) return identifier;
 
-  // Letter-folding only — no re-tokenizing/re-joining, so existing
+  // Letter-folding only: no re-tokenizing/re-joining, so existing
   // separators/word boundaries (snake_case, camelCase humps, ...) are left
   // exactly where they are; only the letters themselves change case.
   if (mode === "lower") return identifier.toLowerCase();

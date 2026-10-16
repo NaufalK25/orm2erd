@@ -100,7 +100,7 @@ export const prismaAdapter: ORMAdapter = {
       dmmf.datamodel.enums.map((e) => [e.name, e.values.map((v) => v.name)]),
     );
 
-    // `@@index(...)` declarations — Datamodel.indexes aggregates every
+    // `@@index(...)` declarations: Datamodel.indexes aggregates every
     // index-like thing across all models (`@id`/`@unique`/`@@index`
     // /`@@fulltext`), so "normal" is the only type that isn't already
     // covered by primaryKey/uniques above.
@@ -137,7 +137,7 @@ export const prismaAdapter: ORMAdapter = {
 
       return {
         name: model.name,
-        // `@@map("...")` — DMMF's `dbName` is null unless set explicitly.
+        // `@@map("...")`: DMMF's `dbName` is null unless set explicitly.
         tableName:
           model.dbName && model.dbName !== model.name
             ? model.dbName
@@ -150,7 +150,7 @@ export const prismaAdapter: ORMAdapter = {
           .filter((f) => f.kind !== "object")
           .map((f) => ({
             name: f.name,
-            // `@map("...")` — same null-unless-explicit convention as dbName above.
+            // `@map("...")`: same null-unless-explicit convention as dbName above.
             columnName: f.dbName && f.dbName !== f.name ? f.dbName : undefined,
             type: toCanonicalType(f.kind, f.type),
             nativeType: f.nativeType?.[0] ?? f.type,
@@ -196,7 +196,7 @@ export const prismaAdapter: ORMAdapter = {
       if (sides.length < 2) {
         const [only] = sides;
         // A list field never carries relationFromFields, so hasFK is only
-        // ever true here for a singular (1-1) field — in which case `only`
+        // ever true here for a singular (1-1) field: in which case `only`
         // itself holds the FK. Swap it into `to`, matching the "FK always
         // lives on `to`" convention every other relation shape uses.
         if (only.hasFK) {
@@ -222,7 +222,7 @@ export const prismaAdapter: ORMAdapter = {
 
       const [a, b] = sides;
       if (a.isList && b.isList) {
-        // Implicit m2m join table — Prisma doesn't expose its FK columns
+        // Implicit m2m join table: Prisma doesn't expose its FK columns
         // as model fields, so there's no column to attach here.
         return {
           from: a.modelName,
@@ -249,7 +249,7 @@ export const prismaAdapter: ORMAdapter = {
       }
       // 1-1: the side holding the FK column becomes `to`, matching the
       // "FK always lives on `to`" convention every other relation shape
-      // uses — `owner`'s own field's isRequired mirrors its FK column's
+      // uses. `owner`'s own field's isRequired mirrors its FK column's
       // nullability. `fieldName` follows that swap: it names the alias on
       // `from`, so it comes from `referenced`, not `owner`.
       const owner = a.hasFK ? a : b;

@@ -6,10 +6,10 @@
 [![license](https://img.shields.io/npm/l/orm2erd.svg)](./LICENSE)
 [![codecov](https://codecov.io/gh/NaufalK25/orm2erd/graph/badge.svg)](https://codecov.io/gh/NaufalK25/orm2erd)
 
-You already built the app — your ORM models are the schema. `orm2erd` reads them and generates an
+You already built the app: your ORM models are the schema. `orm2erd` reads them and generates an
 ERD (Entity-Relationship Diagram) for you, instead of you drawing and maintaining one by hand.
 
-> **Status:** early development — see the tables below for what's supported today vs. planned.
+> **Status:** early development. See the tables below for what's supported today vs. planned.
 
 ![orm2erd demo](./.github/assets/demo.gif)
 
@@ -30,7 +30,7 @@ ERD (Entity-Relationship Diagram) for you, instead of you drawing and maintainin
 ## What it does
 
 `orm2erd` scans your project, figures out which ORM you're using, and turns your existing
-models/schema into diagram code — Mermaid, DBML, PlantUML, D2, and more. No manual diagramming,
+models/schema into diagram code: Mermaid, DBML, PlantUML, D2, and more. No manual diagramming,
 no drift between your code and your docs.
 
 ```
@@ -75,7 +75,7 @@ Node.js >= 24.
 
 ## Installation
 
-Run without installing (recommended — always gets the latest version):
+Run without installing (recommended, always gets the latest version):
 
 ```bash
 npx orm2erd
@@ -172,7 +172,7 @@ Non-interactive (CI-friendly):
 npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid,dbml --out ./erd
 ```
 
-You can select multiple output formats in a single run — the schema is parsed once and reused
+You can select multiple output formats in a single run: the schema is parsed once and reused
 across every format you pick. `--out` accepts either a bare name (`erd`, gets each format's
 extension appended) or a full filename (`erd.md`, used exactly as given when there's only one
 output format).
@@ -186,9 +186,9 @@ npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --type-
 
 When your ORM maps model/field names to different physical table/column names (e.g. Prisma's
 `@@map`/`@map`, Sequelize's `tableName`/`field`), `--names` controls which names show up in the
-diagram. It defaults to `table` — an ERD describes a database, so it matches what you'd see in
-`psql` — with `model` (the ORM's own names) and `both` (physical name plus the ORM name as an
-alias, where the output format supports one) also available:
+diagram. It defaults to `table`, since an ERD describes a database and should match what you'd
+see in `psql`. `model` (the ORM's own names) and `both` (physical name plus the ORM name as an
+alias, where the output format supports one) are also available:
 
 ```prisma
 model User {
@@ -217,14 +217,14 @@ erDiagram
   %% Relationships
 ```
 
-Relation edge labels have a similar knob, `--relation-label <both|alias|column>` — `both` (the
+Relation edge labels have a similar knob, `--relation-label <both|alias|column>`: `both` (the
 default) shows the association alias and appends the FK column only when it disambiguates two
 relations between the same entity pair (e.g. `posts (authorId)`); `alias`/`column` pin the label to
 just one.
 
 If your source names don't already use the letter-casing you want in the diagram, `--case <mode>`
 rewrites every rendered identifier (entity/field names, relation labels, enum type names) into
-`snake`, `screaming_snake`, `camel`, `pascal`, `kebab`, `title`, `lower`, or `upper` — regardless of
+`snake`, `screaming_snake`, `camel`, `pascal`, `kebab`, `title`, `lower`, or `upper`, regardless of
 whether the source is `snake_case`, `camelCase`, or `PascalCase` to begin with. It never touches
 type labels, enum member values, or the secondary alias shown by `--names both`, since those are
 either fixed vocabulary or meant to show the real ORM identifier unmodified:
@@ -234,7 +234,7 @@ npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --case 
 ```
 
 If your ORM/DB convention doesn't already give entity names the plural/singular form you want,
-`--inflect <plural|singular>` forces one — **entity/table names only**, never field names or the
+`--inflect <plural|singular>` forces one: **entity/table names only**, never field names or the
 `--names both` alias, since pluralizing a field like `email` or `createdAt` doesn't make sense the
 way pluralizing a whole entity does. It runs before `--case`, so `--inflect plural --case kebab` on
 an entity `PostTag` produces `post-tags`, not `post-tag-s`:
@@ -246,7 +246,7 @@ npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --infle
 ### Keeping the ERD in sync (CI)
 
 Commit your generated ERD, then use `--check` to fail CI whenever the committed file no longer
-matches what your current models would produce — so the diagram can never silently drift out of
+matches what your current models would produce, so the diagram can never silently drift out of
 date:
 
 ```bash
@@ -258,19 +258,19 @@ npx orm2erd --orm prisma --entry ./prisma/schema.prisma --format mermaid --out .
 - **missing** → tells you to generate it first and exits `1`
 
 `--check` never touches the filesystem, so it's safe in a pre-commit hook or a pull-request check.
-In CI it's flag-driven and non-interactive (same detection rules as every other run — no TTY, or
-`CI` env var set): pass it the **same** output-affecting flags you generated with (`--format`,
+In CI it's flag-driven and non-interactive (same detection rules as every other run: no TTY, or
+`CI` env var set). Pass it the **same** output-affecting flags you generated with (`--format`,
 `--out`, and `--type-mode`/`--names`/`--relation-label`/`--case`/`--inflect` if you use them), or it
 will report drift against a differently-rendered file.
 
 Run locally from a terminal, `--check` prompts like any other run if something's ambiguous (which
-ORM, which entry point, ...) — including `--out` itself if you don't pass it. That prompt is
+ORM, which entry point, ...), including `--out` itself if you don't pass it. That prompt is
 deliberately different from a plain write's: there's no pre-filled guess to accept by hitting
 Enter, since a wrong guess there means silently checking the wrong file. You have to type the
 actual path of the file that's already committed.
 
 Every generating (non-`--check`) run also writes a small `<out>.orm2erd-model.json` cache file
-alongside the diagram — a snapshot of the underlying model, gitignored by default. Add
+alongside the diagram: a snapshot of the underlying model, gitignored by default. Add
 `--summary` to `--check` to use it: instead of a raw line diff, you get a structural,
 schema-level summary grouped by entity:
 
@@ -284,7 +284,7 @@ posts → tags: cardinality changed (1-n → n-n)
 ```
 
 Since the snapshot is a local cache (not committed), a CI runner or fresh clone with no prior
-local run won't have one yet — `--summary` falls back to the raw line diff with a note in that
+local run won't have one yet: `--summary` falls back to the raw line diff with a note in that
 case, which is expected, not an error.
 
 Drop it into a workflow:
@@ -307,10 +307,10 @@ jobs:
 
 > **Note:** ORMs parsed statically from a schema file (e.g. Prisma) need nothing but that file in
 > CI. ORMs introspected by importing your models require CI to be able to run them (install
-> dependencies, and provide any env vars the models need at import time) — same as generating the
+> dependencies, and provide any env vars the models need at import time), the same as generating the
 > ERD normally. See [docs/adapters.md](./docs/adapters.md) for how each ORM is parsed.
 
-Same flow works for any [supported ORM](#supported-orms) — just swap `--orm` and `--entry`. For
+Same flow works for any [supported ORM](#supported-orms): just swap `--orm` and `--entry`. For
 example, a Sequelize project with associations declared via `hasMany`/`belongsTo`:
 
 ```bash
@@ -318,7 +318,7 @@ npx orm2erd --orm sequelize --entry ./models/index.js --format mermaid --out ./e
 ```
 
 Sequelize pluralizes a model's table name by default (`User` → `users`) unless `tableName` is set
-explicitly — with `--names` defaulting to `table`, that's what shows up in the diagram:
+explicitly. With `--names` defaulting to `table`, that's what shows up in the diagram:
 
 `erd.mmd`:
 
@@ -353,26 +353,26 @@ erDiagram
 
 | Flag | Description |
 | --- | --- |
-| `--orm <name>` | ORM to use — see [Supported ORMs](#supported-orms). Skips detection. |
+| `--orm <name>` | ORM to use (see [Supported ORMs](#supported-orms)). Skips detection. |
 | `--entry <path>` | Path to the ORM's schema/model entry. Skips the entry-point prompt. |
-| `--format <formats>` | Output format(s), comma-separated, or `all` for every supported format — see [Output formats](#output-formats). |
-| `--out <path>` | Output path — bare name gets each format's extension appended; a full filename is used as-is when there's only one format. A directory (trailing slash, or an existing directory) writes `erd.<ext>` inside it. |
+| `--format <formats>` | Output format(s), comma-separated, or `all` for every supported format (see [Output formats](#output-formats)). |
+| `--out <path>` | Output path: bare name gets each format's extension appended; a full filename is used as-is when there's only one format. A directory (trailing slash, or an existing directory) writes `erd.<ext>` inside it. |
 | `--type-mode <mode>` | Type labels to emit: `canonical` (portable, default) or `native` (ORM-specific). |
 | `--names <mode>` | Entity/field identifiers to emit: `table` (physical table/column names, default), `model` (ORM model/field names), or `both` (physical name, with the ORM name as an alias where the format supports one). |
-| `--relation-label <mode>` | Relation edge label: `both` (association alias, plus the FK column when it disambiguates two relations between the same entity pair — default), `alias`, or `column`. |
+| `--relation-label <mode>` | Relation edge label: `both` (default: association alias, plus the FK column when it disambiguates two relations between the same entity pair), `alias`, or `column`. |
 | `--case <mode>` | Letter-casing for rendered identifiers: `preserve` (source casing as-is, default), `snake`, `screaming_snake`, `camel`, `pascal`, `kebab`, `title`, `lower`, or `upper`. |
 | `--inflect <mode>` | Pluralization for entity/table identifiers only: `preserve` (source number as-is, default), `plural`, or `singular`. |
 | `--check` | Verify the committed ERD file(s) are up to date instead of writing. Exits non-zero on drift or if a file is missing; writes nothing. See [Keeping the ERD in sync](#keeping-the-erd-in-sync-ci). |
 | `--summary` | With `--check`, print a structural (schema-level) diff grouped by entity instead of the raw line diff, using the gitignored `<out>.orm2erd-model.json` cache written on the last generating run. Falls back to the raw diff when no cache is available yet or the drift is formatting-only. Requires `--check`. |
-| `--stdout` | Print the diagram to stdout instead of writing a file — requires exactly one `--format`. Status output goes to stderr, so the diagram can be piped cleanly (e.g. `orm2erd ... --stdout > erd.mmd` or into another tool). |
-| `--copy` | Copy the diagram to the clipboard instead of writing a file — requires exactly one `--format`. |
+| `--stdout` | Print the diagram to stdout instead of writing a file. Requires exactly one `--format`. Status output goes to stderr, so the diagram can be piped cleanly (e.g. `orm2erd ... --stdout > erd.mmd` or into another tool). |
+| `--copy` | Copy the diagram to the clipboard instead of writing a file. Requires exactly one `--format`. |
 | `--verbose` | Show log output from the target codebase during extraction (suppressed by default). |
-| `-y, --yes` | Skip interactive prompts; use the default for any flag not explicitly passed — the same resolution CI/non-interactive mode already uses. Useful once you know your flags and don't want to re-answer the picker every run. |
+| `-y, --yes` | Skip interactive prompts; use the default for any flag not explicitly passed (the same resolution CI/non-interactive mode already uses). Useful once you know your flags and don't want to re-answer the picker every run. |
 | `-v, --version` | Output the current version. |
 | `-h, --help` | Show usage and examples. |
 
 In a TTY, any flag you omit falls back to an interactive prompt. In CI (no TTY, or `CI=true`), or
-when `-y`/`--yes` is passed, prompts are skipped — pass `--orm`, `--entry`, and `--format`
+when `-y`/`--yes` is passed, prompts are skipped. Pass `--orm`, `--entry`, and `--format`
 explicitly, or the run exits with an error telling you which one is missing.
 
 For Prisma, if a `prisma.config.*` file is present, its `schema` field is respected as the entry
@@ -382,7 +382,7 @@ point's default candidate,
 ## Why
 
 Diagrams drawn by hand go stale the moment the schema changes. Your ORM already has an accurate,
-structured picture of your data model — `orm2erd` just reads that instead of asking you to
+structured picture of your data model: `orm2erd` just reads that instead of asking you to
 redraw it.
 
 ## Contributing

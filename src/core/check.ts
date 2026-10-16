@@ -17,7 +17,7 @@ export interface CheckResult {
 }
 
 // Normalize line endings + trailing newline so cross-platform checkouts
-// don't report false drift. Deliberately does NOT touch interior whitespace —
+// don't report false drift. Deliberately does NOT touch interior whitespace:
 // real content drift must still surface.
 export function normalize(content: string): string {
   return content.replace(/\r\n/g, "\n").replace(/\n+$/, "");
@@ -194,7 +194,7 @@ export function diffWords(before: string, after: string): WordDiff {
   return { removed, added };
 }
 
-// Compare regenerated content against what's on disk. READ ONLY — never writes.
+// Compare regenerated content against what's on disk. READ ONLY: never writes.
 export async function checkOutput(
   path: string,
   expected: string,

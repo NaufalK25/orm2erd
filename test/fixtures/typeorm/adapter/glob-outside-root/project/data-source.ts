@@ -7,6 +7,6 @@ export const AppDataSource = new DataSource({
   synchronize: false,
   // The class import above is already enough to build metadata for User;
   // this glob exists only to exercise rewriteEntityGlobs' "outside the
-  // project root" branch — it deliberately matches nothing.
+  // project root" branch: it deliberately matches nothing.
   entities: [User, "../outside/**/*.ts"],
 });

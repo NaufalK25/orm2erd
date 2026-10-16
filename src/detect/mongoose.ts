@@ -36,7 +36,7 @@ export const mongooseDetector: Detector = {
 
     candidates.push(...findFallbackModelDirs(cwd));
 
-    // No naming convention hit — fall back to scanning file contents for
+    // No naming convention hit: fall back to scanning file contents for
     // actual mongoose.model()/Schema() calls and use the directories those
     // land in as candidates instead of guessing a folder name.
     if (candidates.length === 0) {

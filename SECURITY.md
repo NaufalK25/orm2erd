@@ -3,7 +3,7 @@
 ## Supported Versions
 
 `orm2erd` is in early development. Only the latest version published on npm receives security
-fixes — please upgrade before reporting an issue to confirm it still reproduces.
+fixes. Please upgrade before reporting an issue to confirm it still reproduces.
 
 ## Reporting a Vulnerability
 
@@ -26,20 +26,20 @@ parsing strategy differs by ORM (see [docs/adapters.md](./docs/adapters.md) for 
 and details per ORM), and falls into two categories:
 
 - **Static, DSL-based schemas** (e.g. Prisma's `schema.prisma`) are parsed via the ORM's own
-  official parser — the schema file is data, never executed as code.
+  official parser: the schema file is data, never executed as code.
 - **Code-defined models** (most other ORMs) are handled via **runtime introspection**: `orm2erd`
   actually imports the project's compiled/`tsx`-executed model files and reads the ORM's own
   computed metadata. This means **any code in those model files, and any of their transitive
   imports, runs with the same privileges as the `orm2erd` process itself.**
 
 This is inherent to how those ORMs expose schema metadata (there's no static, non-executing
-alternative), so it isn't itself a bug — but it does mean:
+alternative), so it isn't itself a bug. But it does mean:
 
 - Only run `orm2erd` against codebases you trust, the same way you'd only `npm install` or
   `require()` code you trust.
 - Do not run `orm2erd` against untrusted/third-party repositories without reviewing the model
   files first.
-- No network calls or database connections are made by `orm2erd` itself during extraction — it
+- No network calls or database connections are made by `orm2erd` itself during extraction. It
   only reads local files and in-process ORM metadata.
 
 If you find a way for `orm2erd` to execute unintended code, escape its working directory, or leak

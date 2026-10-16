@@ -25,12 +25,12 @@ export function relationLabel(
 
 /**
  * `relationLabel` reads `fieldName`/`toColumn` straight off the raw
- * `Relation` — neither goes through `NameResolver`, so a `caseMode` other
+ * `Relation`: neither goes through `NameResolver`, so a `caseMode` other
  * than "preserve" would otherwise leave edge labels in their original
  * casing while every other identifier in the diagram changed underneath
  * them. `toColumn` is an attribute (model-level) name, resolved the same
  * way `fromColumn`/`primaryKey`/`uniques` members are (`fieldIdByName`);
- * `fieldName` is the relation's own association alias — it doesn't
+ * `fieldName` is the relation's own association alias: it doesn't
  * necessarily match any field on either entity, so it's case-transformed
  * directly rather than looked up.
  */

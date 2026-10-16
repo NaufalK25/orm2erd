@@ -2,19 +2,19 @@
 // `sequelize` itself, to avoid a dual-package hazard if the target project
 // has its own separate install. Only v6.x is supported (see the version
 // check in `extract`, index.ts), so each shape below is trimmed from that
-// version's own `.d.ts` files — check those on a real mismatch, not v7's docs.
+// version's own `.d.ts` files: check those on a real mismatch, not v7's docs.
 
 // Mirrors the instance shape of `sequelize/types/data-types.d.ts`'s
 // `ABSTRACT`/`ENUM`/`ARRAY` classes (e.g. `DataTypes.STRING()`,
 // `DataTypes.ENUM(...)`, `DataTypes.ARRAY(...)`). `.constructor.name` is the
 // DataType's internal class name (e.g. "JSONTYPE" for DataTypes.JSON) and
-// doesn't always match its public type key — `.key` (e.g. "JSON") is the
+// doesn't always match its public type key: `.key` (e.g. "JSON") is the
 // one that does and should be preferred when present.
 export interface SequelizeDataType {
   constructor: { name: string };
   key?: string;
   values?: string[]; // present on DataTypes.ENUM(...) instances
-  type?: SequelizeDataType; // present on DataTypes.ARRAY(...) instances — the element type
+  type?: SequelizeDataType; // present on DataTypes.ARRAY(...) instances: the element type
 }
 
 // Mirrors `ModelAttributeColumnOptions` in `sequelize/types/model.d.ts`.
@@ -25,11 +25,11 @@ export interface SequelizeAttribute {
   unique?: boolean;
   defaultValue?: unknown;
   comment?: string;
-  // The physical column name — defaults to the attribute name (or its
+  // The physical column name: defaults to the attribute name (or its
   // underscored form) when not set explicitly. `Model.uniqueKeys` groups
   // reference this, not the attribute name, so it's needed to map back.
   field?: string;
-  // Only present on a foreign-key attribute — Association#_injectAttributes
+  // Only present on a foreign-key attribute. Association#_injectAttributes
   // (belongs-to.js/has-many.js/belongs-to-many.js) always resolves and
   // writes these onto the FK attribute via addForeignKeyConstraints, once
   // per association unless `constraints: false` was set, defaulting
@@ -37,7 +37,7 @@ export interface SequelizeAttribute {
   onDelete?: string;
   onUpdate?: string;
   // Same addForeignKeyConstraints call that writes onDelete/onUpdate above
-  // also writes this — the authoritative "this column is a FK" marker,
+  // also writes this: the authoritative "this column is a FK" marker,
   // independent of which side (BelongsTo vs HasMany/HasOne/BelongsToMany)
   // declared the association. Shape is `{ model, key }` but only presence
   // is ever checked here.
@@ -51,10 +51,10 @@ export interface SequelizeAttribute {
 export interface SequelizeAssociation {
   associationType: "HasOne" | "BelongsTo" | "HasMany" | "BelongsToMany";
   foreignKey: string;
-  otherKey?: string; // BelongsToMany only — the join column for the *other* model
+  otherKey?: string; // BelongsToMany only: the join column for the *other* model
   target: { name: string };
   as?: string;
-  // BelongsToMany only — the junction. `.model.name` is the through model's
+  // BelongsToMany only: the junction. `.model.name` is the through model's
   // modelName, which matches its key in `sequelize.models` when the join
   // table is an explicit, registered model (vs. an implicit string table).
   through?: { model?: { name: string } };
@@ -70,8 +70,8 @@ export interface SequelizeIndex {
 }
 
 // Mirrors `Model.uniqueKeys`, built internally by `Model.init()` from each
-// attribute's `unique: true | string | { name }` option (lib/model.js) —
-// unlike `options.indexes`, this is the only place the `unique: 'groupName'`
+// attribute's `unique: true | string | { name }` option (lib/model.js).
+// Unlike `options.indexes`, this is the only place the `unique: 'groupName'`
 // shorthand's column grouping ends up, and it's keyed by physical column
 // name (`definition.field`), not attribute name.
 export interface SequelizeUniqueKey {
@@ -85,7 +85,7 @@ export interface SequelizeUniqueKey {
 // flag can't.
 export interface SequelizeModel {
   name: string;
-  // The physical table name — pluralised from `name` by default, or the
+  // The physical table name: pluralised from `name` by default, or the
   // exact string when `tableName` is set explicitly in Model.init options.
   tableName?: string;
   rawAttributes: Record<string, SequelizeAttribute>;
@@ -108,5 +108,5 @@ export interface RelationSide {
   fieldName?: string;
   associationType: SequelizeAssociation["associationType"];
   foreignKey: string;
-  throughModel?: string; // BelongsToMany only — the junction model's name
+  throughModel?: string; // BelongsToMany only: the junction model's name
 }

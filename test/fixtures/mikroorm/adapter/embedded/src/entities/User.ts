@@ -21,7 +21,7 @@ export class User {
   id!: number;
 
   // Inline (default) mode: flattened into its own prefixed columns
-  // (homeAddress_street, homeAddress_city) — no column of its own.
+  // (homeAddress_street, homeAddress_city). No column of its own.
   @Embedded(() => Address)
   homeAddress!: Address;
 

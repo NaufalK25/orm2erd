@@ -7,9 +7,9 @@ import { buildNameResolver, type NameResolver } from "./names";
 // .excalidraw is a GUI editor's save format, not a diagram-as-code DSL: like
 // the .drawio emitter this one places everything itself, but Excalidraw has
 // no table/entity shape at all (its whole vocabulary is rectangle/text/arrow/
-// frame/...), so the entity convention below — one `frame` per entity whose
+// frame/...), so the entity convention below (one `frame` per entity whose
 // `name` floats above it as the header, one `rectangle` per row, two floating
-// `text` elements per row — is orm2erd's own invention, per
+// `text` elements per row) is orm2erd's own invention, per
 // docs/excalidraw-format-reference.md §2. The `cardinality_*` arrowheads are
 // the format's own, verified against Excalidraw's source (§7.1).
 //
@@ -28,7 +28,7 @@ const ORIGIN = 40;
 const MIN_FRAME_W = 200;
 const FONT_SIZE = 14;
 // Hand-drawn Virgil has no metrics available here; §6's estimate is close
-// enough — the app re-measures against real font metrics on load, so being
+// enough: the app re-measures against real font metrics on load, so being
 // off is cosmetic until the file is opened once.
 const CHAR_W = FONT_SIZE * 0.52;
 const TEXT_H = Math.round(FONT_SIZE * 1.25);
@@ -68,7 +68,7 @@ function fieldTextFor(
   if (field.defaultValue) parts.push(`DEFAULT ${field.defaultValue}`);
   const alias = names.fieldAlias(field);
   if (alias) parts.push(`(${alias})`);
-  if (field.description) parts.push(`— ${field.description}`);
+  if (field.description) parts.push(`· ${field.description}`);
   return parts.join(" ");
 }
 
@@ -176,7 +176,7 @@ export const excalidrawEmitter: Emitter = {
       const header = [
         names.entityId(entity.name),
         alias && `(${alias})`,
-        entity.description && `— ${entity.description}`,
+        entity.description && `· ${entity.description}`,
       ]
         .filter((p): p is string => Boolean(p))
         .join(" ");
@@ -197,7 +197,7 @@ export const excalidrawEmitter: Emitter = {
       };
     });
 
-    // Pass 2: naive grid — no auto-layout in this format, and the user can
+    // Pass 2: naive grid. No auto-layout in this format, and the user can
     // drag things around in the app, so nothing here tries to avoid edge
     // crossings; it just guarantees no two frames overlap.
     const columns = Math.max(1, Math.ceil(Math.sqrt(frames.length || 1)));
@@ -227,7 +227,7 @@ export const excalidrawEmitter: Emitter = {
      * element (§7), so an endpoint resolves to the row of its FK/referenced
      * column. `fromColumn`/`toColumn` are model-level attribute names (never
      * physical column names), so they match on `Row.fieldName`. Falls back to
-     * the PK row, then the first row — an entity with no rows at all has no
+     * the PK row, then the first row: an entity with no rows at all has no
      * rectangle to bind to, so the relation is dropped.
      */
     const anchor = (
@@ -254,7 +254,7 @@ export const excalidrawEmitter: Emitter = {
 
     // Pass 3: arrows first, because `boundElements` on each row rectangle is
     // the reciprocal half of an arrow's bindings and the app doesn't rebuild
-    // it from the bindings on load (§5) — the rectangles below read this map.
+    // it from the bindings on load (§5). The rectangles below read this map.
     interface Arrow {
       id: string;
       label: string;
@@ -281,7 +281,7 @@ export const excalidrawEmitter: Emitter = {
       if (!source || !target) return;
       const id = `rel${i}`;
       // The grid puts the child left of, or (once it wraps) above the parent
-      // about as often as not, and nothing auto-routes here — `elbowed: false`
+      // about as often as not, and nothing auto-routes here. `elbowed: false`
       // draws a straight line, and draw.io's entityRelationEdgeStyle has no
       // analog. So both ends leave from whichever edge actually faces the
       // other row, rather than the reference sample's always-right→left pair.
@@ -333,7 +333,7 @@ export const excalidrawEmitter: Emitter = {
     });
 
     // Pass 4: serialize. `elements` is a flat array whose order doesn't encode
-    // nesting (§4) — everything resolves by id. seed/versionNonce are
+    // nesting (§4): everything resolves by id. seed/versionNonce are
     // counter-driven rather than random so reruns are byte-identical.
     let nonce = 1;
     const base = (

@@ -17,7 +17,7 @@ export default function definePost(sequelize, DataTypes) {
       onUpdate: "CASCADE",
     });
     Post.hasMany(models.PostTag, { foreignKey: "postId", as: "tagLinks" });
-    // Convenience many-to-many over the explicit junction model — the two
+    // Convenience many-to-many over the explicit junction model: the two
     // hasMany/belongsTo pairs to PostTag above already convey this m-n, so
     // orm2erd's adapter dedupes the derived n-n edge in favor of those.
     Post.belongsToMany(models.Tag, {

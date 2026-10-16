@@ -33,7 +33,7 @@ describe("mikroormAdapter.resolveEntry", () => {
   });
 });
 
-describe("mikroormAdapter.extract — entities/entitiesTs folder discovery (classic decorators)", () => {
+describe("mikroormAdapter.extract: entities/entitiesTs folder discovery (classic decorators)", () => {
   it("discovers every entity across the entitiesTs directory", async () => {
     const model = await extractFixture("basic", "mikro-orm.config.ts");
     expect(model.entities.map((e) => e.name).toSorted()).toEqual([
@@ -149,13 +149,13 @@ describe("mikroormAdapter.extract — entities/entitiesTs folder discovery (clas
   it("produces exactly one relation per real relationship, not one per declared side", async () => {
     const model = await extractFixture("basic", "mikro-orm.config.ts");
     // User<->Post (1-n via author), Post<->Tag (n-n), and the standalone
-    // Tag.createdBy (1-n, unpaired) — three real relationships from what
+    // Tag.createdBy (1-n, unpaired): three real relationships from what
     // MikroORM records as more EntityProperty sides.
     expect(model.relations).toHaveLength(3);
   });
 });
 
-describe("mikroormAdapter.extract — composite keys", () => {
+describe("mikroormAdapter.extract: composite keys", () => {
   it("carries a composite PK, keeping the per-field isPrimaryKey marker too", async () => {
     const model = await extractFixture("composite", "mikro-orm.config.ts");
     const postTag = model.entities.find((e) => e.name === "PostTag")!;
@@ -178,7 +178,7 @@ describe("mikroormAdapter.extract — composite keys", () => {
   });
 });
 
-describe("mikroormAdapter.extract — @Embedded", () => {
+describe("mikroormAdapter.extract: @Embedded", () => {
   it("flattens an inline embeddable into its own prefixed columns, with no field for the wrapper itself", async () => {
     const model = await extractFixture("embedded", "mikro-orm.config.ts");
     const user = model.entities.find((e) => e.name === "User")!;
@@ -214,15 +214,15 @@ describe("mikroormAdapter.extract — @Embedded", () => {
   });
 });
 
-describe("mikroormAdapter.extract — already-initialized instance export", () => {
+describe("mikroormAdapter.extract: already-initialized instance export", () => {
   it("awaits and reads metadata from a bootstrap file that calls MikroORM.init() itself", async () => {
     // This path never runs its entities through orm2erd's own tsc-compile
-    // step (case 1's fix for decorator support) — it directly imports
+    // step (case 1's fix for decorator support): it directly imports
     // whatever the bootstrap file itself imports, so tsx's own tsconfig
     // auto-detection (which resolves relative to `process.cwd()`, not the
     // entry file's location) has to actually find this fixture's
     // `tsconfig.json`. Real CLI usage is always invoked with `cwd` at or
-    // below the target project root, so this holds in practice — chdir here
+    // below the target project root, so this holds in practice: chdir here
     // to match that instead of orm2erd's own repo root (vitest's cwd).
     const originalCwd = process.cwd();
     process.chdir(join(fixturesDir, "instance-export"));
@@ -239,7 +239,7 @@ describe("mikroormAdapter.extract — already-initialized instance export", () =
 // Extraction resolves "@mikro-orm/core" from the entry file's location
 // before it ever reaches `runTargetTsc` (needed just to set
 // `Utils.dynamicImportProvider`), so the tsconfig/typescript error-case
-// tests below need a fake stub package to get past that — same "fake
+// tests below need a fake stub package to get past that: same "fake
 // node_modules" approach the TypeORM adapter's own tests use for its
 // "missing internals" cases.
 function writeFakeMikroOrmCore(cwd: string) {
@@ -259,7 +259,7 @@ function writeFakeMikroOrmCore(cwd: string) {
   );
 }
 
-describe("mikroormAdapter.extract — error cases", () => {
+describe("mikroormAdapter.extract: error cases", () => {
   it("throws a clear error when the entry doesn't export a config or instance", async () => {
     await expect(
       extractFixture("no-config-export", "mikro-orm.config.ts"),
@@ -267,7 +267,7 @@ describe("mikroormAdapter.extract — error cases", () => {
   });
 
   // MikroORM's own `MetadataError.noEntityDiscovered()` fires here (not a
-  // check of orm2erd's own) — this just verifies it propagates cleanly
+  // check of orm2erd's own): this just verifies it propagates cleanly
   // through the adapter. Spawns a real `tsc` process (an empty `entitiesTs`
   // dir still triggers the compile step); the global testTimeout in
   // vitest.config.ts covers that.
@@ -292,8 +292,8 @@ describe("mikroormAdapter.extract — error cases", () => {
 
   it('throws a clear error when "typescript" can\'t be resolved from the entitiesTs directory', async () => {
     // A tsconfig.json is found (so findNearestTsconfig succeeds), but this
-    // dir lives outside any node_modules chain reaching a real "typescript"
-    // — unlike every other .ts-entry test, which run from inside this
+    // dir lives outside any node_modules chain reaching a real "typescript":
+    // unlike every other .ts-entry test, which run from inside this
     // project's own tree and so always find *our* typescript.
     const cwd = mkdtempSync(join(tmpdir(), "orm2erd-mikroorm-no-typescript-"));
     writeFakeMikroOrmCore(cwd);
@@ -309,16 +309,16 @@ describe("mikroormAdapter.extract — error cases", () => {
   });
 });
 
-describe("mikroormAdapter.extract — compiled entities, no entitiesTs", () => {
+describe("mikroormAdapter.extract: compiled entities, no entitiesTs", () => {
   it("passes already-compiled entities straight through without a tsc build", async () => {
     const model = await extractFixture("compiled-only", "mikro-orm.config.ts");
     expect(model.entities.map((e) => e.name)).toEqual(["User"]);
   });
 });
 
-describe("mikroormAdapter.extract — unrecognized custom type", () => {
+describe("mikroormAdapter.extract: unrecognized custom type", () => {
   it("falls back to the runtimeType tier when neither the declared type nor the driver SQL type is recognized", async () => {
-    // `WeirdType` (see the fixture) only overrides the *storage* SQL type —
+    // `WeirdType` (see the fixture) only overrides the *storage* SQL type.
     // MikroORM still reflects `weird!: string`'s real TS type as the
     // `runtimeType` fallback, so this lands on "string" via that third tier
     // rather than the declared-type/columnTypes tiers above it.

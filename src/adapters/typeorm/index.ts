@@ -79,7 +79,7 @@ function toCanonicalType(columnType: string | Function): CanonicalType {
   if (typeof columnType === "string") {
     return TYPEORM_TYPE_TO_CANONICAL[columnType.toLowerCase()] ?? "unknown";
   }
-  // Implicit types inferred from the property's TS design:type — columns
+  // Implicit types inferred from the property's TS design:type. Columns
   // TypeORM couldn't (or wasn't asked to) normalize into a driver-specific
   // string, e.g. `@Column() flag: boolean` with no explicit `type` option.
   switch (columnType) {
@@ -156,18 +156,18 @@ function mapToCompiledPath(originalPath: string, build: TscBuild): string {
 }
 
 // A DataSource's `entities` array can mix classes with glob-path strings
-// (e.g. "src/entity/**/*.ts") — TypeORM resolves those itself inside
+// (e.g. "src/entity/**/*.ts"): TypeORM resolves those itself inside
 // ConnectionMetadataBuilder via a plain require() per matched file, which
 // can't load raw .ts any more than importing one directly can. Rewriting
 // each glob to point at the tsc-compiled mirror (same relative layout,
 // enforced by --rootDir in runTargetTsc) fixes this without needing to
-// hand-roll glob resolution ourselves — TypeORM still does that part.
+// hand-roll glob resolution ourselves: TypeORM still does that part.
 function rewriteEntityGlobs(entities: unknown[], build: TscBuild): unknown[] {
   return entities.map((entity) => {
     if (typeof entity !== "string") return entity;
     const absoluteGlob = resolve(build.projectRoot, entity);
     const rel = relative(build.projectRoot, absoluteGlob);
-    if (rel.startsWith("..")) return entity; // outside the project root — leave as-is
+    if (rel.startsWith("..")) return entity; // outside the project root: leave as-is
     return join(build.outDir, rel).replace(/\.ts$/, ".js");
   });
 }
@@ -178,7 +178,7 @@ function loadLegacyConnectionOptions(path: string): unknown {
   const ext = extname(path).slice(1).toLowerCase();
   if (ext !== "json") {
     throw new Error(
-      `Legacy "${basename(path)}" isn't supported yet — only JSON ormconfig files are. Convert it to ormconfig.json, or migrate the project to a 0.3+/1.x DataSource file.`,
+      `Legacy "${basename(path)}" isn't supported yet (only JSON ormconfig files are). Convert it to ormconfig.json, or migrate the project to a 0.3+/1.x DataSource file.`,
     );
   }
 
@@ -190,7 +190,7 @@ function loadLegacyConnectionOptions(path: string): unknown {
   return options;
 }
 
-// TypeORM 0.2.x has no DataSource class at all — createConnection() reads
+// TypeORM 0.2.x has no DataSource class at all: createConnection() reads
 // this ormconfig implicitly. Building an instance ourselves from the parsed
 // options, without ever calling .connect()/.initialize(), is what lets
 // metadata building stay DB-connection-free for legacy projects too.
@@ -212,14 +212,14 @@ function createUnconnectedInstance(
 }
 
 // ConnectionMetadataBuilder builds full entity/column/relation metadata
-// purely from decorator args, with no DB connection involved — the same
+// purely from decorator args, with no DB connection involved: the same
 // internal building block TypeORM itself uses inside
 // DataSource#initialize()/Connection#connect() before it ever opens a real
 // connection. It isn't part of the public API, so it's deep-imported by
 // resolved absolute path (bypassing the installed package's "exports" map
 // entirely, since that only governs bare-specifier resolution) rather than
 // via a "typeorm/connection/..." specifier. Same class name and constructor
-// shape across 0.2.x–1.x — verified against the published source for each.
+// shape across 0.2.x–1.x: verified against the published source for each.
 function loadConnectionMetadataBuilderClass(
   fromPath: string,
 ): TypeOrmConnectionMetadataBuilderCtor {
@@ -229,7 +229,7 @@ function loadConnectionMetadataBuilderClass(
     typeormEntryPath = targetRequire.resolve("typeorm");
   } catch (err) {
     throw new Error(
-      `Could not resolve "typeorm" from "${fromPath}" — is it installed in the target project?`,
+      `Could not resolve "typeorm" from "${fromPath}". Is it installed in the target project?`,
       { cause: err },
     );
   }
@@ -293,7 +293,7 @@ function buildField(
     isPrimaryKey: column.isPrimary,
     isForeignKey: fkColumnNames.has(column.propertyName),
     // TypeORM doesn't set isNullable on primary keys, even though they're
-    // always NOT NULL — same caveat as the Sequelize adapter.
+    // always NOT NULL: same caveat as the Sequelize adapter.
     isNullable: column.isPrimary ? false : column.isNullable,
     isUnique: uniqueColumnNames.has(column.propertyName),
     defaultValue: resolveDefaultValue(column.default),
@@ -319,7 +319,7 @@ function extractCompositeKeys(entityMetadata: TypeOrmEntityMetadata): {
   };
 }
 
-// Plain (non-unique) `@Index()` declarations — unique ones are already
+// Plain (non-unique) `@Index()` declarations: unique ones are already
 // carried via extractCompositeKeys/the per-column isUnique flag.
 function extractIndexes(
   entityMetadata: TypeOrmEntityMetadata,
@@ -354,7 +354,7 @@ function buildEntity(entityMetadata: TypeOrmEntityMetadata): Entity {
 
 // One relation object exists per declared side (e.g. User.posts and
 // Post.author are two separate RelationMetadata instances paired via
-// .inverseRelation) — each case below emits from exactly one side to avoid
+// .inverseRelation): each case below emits from exactly one side to avoid
 // double-counting a pair, using .inverseRelation itself as the dedup
 // signal instead of a separate seen-set.
 function buildRelation(
@@ -365,9 +365,9 @@ function buildRelation(
 
   switch (relation.relationType) {
     case "one-to-many": {
-      // The declaring entity is the "one" side; the FK column — and any
+      // The declaring entity is the "one" side; the FK column (and any
       // onDelete/onUpdate, which TypeORM only accepts on the owning
-      // @ManyToOne/@JoinColumn side — physically lives on the paired
+      // @ManyToOne/@JoinColumn side) physically lives on the paired
       // many-to-one (owning) side, if declared.
       const owningSide = relation.inverseRelation;
       return {
@@ -384,7 +384,7 @@ function buildRelation(
     }
     case "many-to-one": {
       // Already covered from the "one" side above when a @OneToMany
-      // back-reference exists — only emit standalone otherwise.
+      // back-reference exists: only emit standalone otherwise.
       if (relation.inverseRelation) return undefined;
       return {
         from: relatedName,
@@ -401,13 +401,13 @@ function buildRelation(
     case "one-to-one": {
       // Owning side carries @JoinColumn. Swapped into `to` here so the FK
       // always lives on `to`, matching the 1-n cases above and the
-      // Sequelize/Drizzle adapters' 1-1 convention — the emitters rely on
+      // Sequelize/Drizzle adapters' 1-1 convention: the emitters rely on
       // this to know which end's cardinality marker is fixed-optional
       // (the FK holder) vs which one varies with FK nullability (the
       // referenced side).
       // `fieldName` follows that swap: it names the alias on `from`, which
       // is the inverse side. Falls back to this side's own property name
-      // when no inverse is declared — the only alias that exists then.
+      // when no inverse is declared: the only alias that exists then.
       if (!relation.isOwning) return undefined;
       return {
         from: relatedName,
@@ -467,7 +467,7 @@ export const typeormAdapter: ORMAdapter = {
 
     let dataSourceLike: TypeOrmDataSourceInstance;
     // Set once a tsc build has been used, whether for the entry file itself
-    // (.ts DataSource files) or only for rewriting glob entities below —
+    // (.ts DataSource files) or only for rewriting glob entities below:
     // cleaned up in the finally block below, which wraps every use of it
     // (not just the last one) so a failure partway through can't leak it.
     let tscBuild: TscBuild | undefined;
@@ -475,8 +475,8 @@ export const typeormAdapter: ORMAdapter = {
 
     try {
       if (isLegacyOrmconfig) {
-        // Validate/parse the config before ever touching module resolution
-        // — argument evaluation order would otherwise let a missing
+        // Validate/parse the config before ever touching module resolution:
+        // argument evaluation order would otherwise let a missing
         // "typeorm" installation mask a clearer "unsupported format" error.
         const legacyOptions = loadLegacyConnectionOptions(entry.path);
         dataSourceLike = createUnconnectedInstance(
@@ -494,7 +494,7 @@ export const typeormAdapter: ORMAdapter = {
 
       const rawEntities = dataSourceLike.options.entities ?? [];
       // `entities` can mix classes (already resolved via the import above)
-      // with glob-path strings TypeORM resolves itself — those need the
+      // with glob-path strings TypeORM resolves itself: those need the
       // same tsc-compiled mirror, built now if the entry-file branch above
       // didn't already need one (e.g. a legacy ormconfig.json, or a plain
       // .js entry that still points at .ts entity globs).
@@ -518,7 +518,7 @@ export const typeormAdapter: ORMAdapter = {
 
     // "junction"/"closure"/"closure-junction" tables are synthesized by
     // TypeORM itself (e.g. an implicit @ManyToMany join table) rather than
-    // user-declared — the Relation built from the owning side already
+    // user-declared: the Relation built from the owning side already
     // implies them, so surfacing them as their own Entity would be
     // redundant. "entity-child" (single-table-inheritance subclasses) stays,
     // since each one is still a real @ChildEntity the user wrote.

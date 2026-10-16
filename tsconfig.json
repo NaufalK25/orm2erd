@@ -13,7 +13,7 @@
   "include": ["src", "test"],
   // These fixtures use TypeORM/MikroORM decorators, which require
   // experimentalDecorators/emitDecoratorMetadata (deliberately not enabled
-  // here — see each fixture's own tsconfig.json instead). They're compiled
+  // here, see each fixture's own tsconfig.json instead). They're compiled
   // separately by each adapter itself (runTargetTsc, src/core/target-tsc.ts), not by this
   // project's own typecheck/build.
   "exclude": [

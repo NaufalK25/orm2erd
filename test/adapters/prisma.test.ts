@@ -18,7 +18,7 @@ describe("prismaAdapter.resolveEntry", () => {
   });
 });
 
-describe("prismaAdapter.resolveEntry — prisma.config.*", () => {
+describe("prismaAdapter.resolveEntry: prisma.config.*", () => {
   const detectFixturesDir = join(fixturesDir, "detect");
 
   it("resolves the schema path from prisma.config.* when the given input doesn't exist", async () => {
@@ -37,7 +37,7 @@ describe("prismaAdapter.resolveEntry — prisma.config.*", () => {
 describe.each([
   ["single-file schema", join(fixturesDir, "single/schema.prisma")],
   ["multi-file schema directory", join(fixturesDir, "multi/schema")],
-])("prismaAdapter.extract — %s", (_label, schemaPath) => {
+])("prismaAdapter.extract: %s", (_label, schemaPath) => {
   it("extracts all entities", async () => {
     const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
     const model = await prismaAdapter.extract(entry);
@@ -94,7 +94,7 @@ describe.each([
   });
 });
 
-describe("prismaAdapter.extract — scalar list fields (#5a reference — DMMF already carries isList independently)", () => {
+describe("prismaAdapter.extract, scalar list fields (#5a reference, DMMF already carries isList independently)", () => {
   it("marks a scalar list field (String[]) as isList with the element's canonical type", async () => {
     const schemaPath = join(fixturesDir, "single/schema.prisma");
     const entry = await prismaAdapter.resolveEntry(schemaPath, fixturesDir);
@@ -115,7 +115,7 @@ describe("prismaAdapter.extract — scalar list fields (#5a reference — DMMF a
   });
 });
 
-describe("prismaAdapter.extract — one-sided relations (@ignore removes the opposite field from DMMF)", () => {
+describe("prismaAdapter.extract: one-sided relations (@ignore removes the opposite field from DMMF)", () => {
   const schemaPath = join(fixturesDir, "one-sided-relation/schema.prisma");
 
   it("still resolves the FK side even when the list side is @ignore'd away", async () => {
@@ -142,7 +142,7 @@ describe("prismaAdapter.extract — one-sided relations (@ignore removes the opp
   });
 });
 
-describe("prismaAdapter.extract — schema load failure", () => {
+describe("prismaAdapter.extract: schema load failure", () => {
   it("wraps a load failure in a friendlier error pointing at --entry", async () => {
     await expect(
       prismaAdapter.extract({
@@ -154,7 +154,7 @@ describe("prismaAdapter.extract — schema load failure", () => {
   });
 });
 
-describe("prismaAdapter.extract — composite keys", () => {
+describe("prismaAdapter.extract: composite keys", () => {
   const schemaPath = join(fixturesDir, "composite/schema.prisma");
 
   it("carries composite PK and multi-column unique as IR arrays", async () => {
@@ -194,7 +194,7 @@ describe("prismaAdapter.extract — composite keys", () => {
   });
 });
 
-describe("prismaAdapter.extract — relation actions", () => {
+describe("prismaAdapter.extract: relation actions", () => {
   it("carries `onDelete`/`onUpdate` from the FK-holding side's `@relation` attribute", async () => {
     const entry = await prismaAdapter.resolveEntry(
       join(fixturesDir, "single/schema.prisma"),
@@ -222,7 +222,7 @@ describe("prismaAdapter.extract — relation actions", () => {
   });
 });
 
-describe("prismaAdapter.extract — descriptions", () => {
+describe("prismaAdapter.extract: descriptions", () => {
   it("carries `///` doc comments as entity and field descriptions", async () => {
     const entry = await prismaAdapter.resolveEntry(
       join(fixturesDir, "single/schema.prisma"),
@@ -252,7 +252,7 @@ describe("prismaAdapter.extract — descriptions", () => {
   });
 });
 
-describe("prismaAdapter.extract — physical table/column names (#3a)", () => {
+describe("prismaAdapter.extract: physical table/column names (#3a)", () => {
   const schemaPath = join(fixturesDir, "names/schema.prisma");
 
   it("sets entity.tableName from @@map when it differs from the model name", async () => {
@@ -287,7 +287,7 @@ describe("prismaAdapter.extract — physical table/column names (#3a)", () => {
   });
 });
 
-describe("prismaAdapter.extract — 1-1 relations, FK on `to` (#1)", () => {
+describe("prismaAdapter.extract: 1-1 relations, FK on `to` (#1)", () => {
   it("puts the FK-holding side on `to` and the referenced side on `from`", async () => {
     const entry = await prismaAdapter.resolveEntry(
       join(fixturesDir, "one-to-one/schema.prisma"),
@@ -313,7 +313,7 @@ describe("prismaAdapter.extract — 1-1 relations, FK on `to` (#1)", () => {
       (r) => r.type === "1-1" && r.to === "Profile",
     )!;
 
-    // `User.profile`, not `Profile.user` — the label reads left-to-right
+    // `User.profile`, not `Profile.user`: the label reads left-to-right
     // along the edge, and `from` is User.
     expect(rel.fieldName).toBe("profile");
   });

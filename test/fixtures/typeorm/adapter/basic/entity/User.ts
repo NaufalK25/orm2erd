@@ -13,13 +13,13 @@ export class User {
   @Column({ nullable: true, comment: "The user's display name." })
   name?: string;
 
-  // No explicit `type` — TypeORM infers it from reflect-metadata's
+  // No explicit `type`. TypeORM infers it from reflect-metadata's
   // design:type (a `Date` constructor here), not a driver-specific string.
   @Column()
   createdAt: Date;
 
   // Same implicit-type inference, but design:type is a plain `Object`
-  // constructor — matches none of the known implicit-type cases.
+  // constructor. Matches none of the known implicit-type cases.
   @Column()
   metadata: object;
 
@@ -28,7 +28,7 @@ export class User {
   @Column({ default: () => "now()" })
   lastSeenAt: string;
 
-  // A plain-object default (neither undefined, a function, nor a Date) —
+  // A plain-object default (neither undefined, a function, nor a Date):
   // must be JSON-stringified.
   @Column({ type: "simple-json", default: { role: "member" } })
   preferences: object;

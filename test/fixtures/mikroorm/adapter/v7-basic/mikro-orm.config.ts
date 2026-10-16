@@ -6,7 +6,7 @@ export default defineConfig({
   entitiesTs: ["./src/entities"],
   dbName: ":memory:",
   // v7's default metadataProvider is no longer reflection-based now that
-  // decorators live in a separate package — a real v7 project relying on
+  // decorators live in a separate package: a real v7 project relying on
   // implicit (emitDecoratorMetadata-inferred) property types, like this
   // fixture's `@PrimaryKey()`/`@Property()` with no explicit `type`, has to
   // opt back into this itself. Unlike everything else in this config, this

@@ -5,7 +5,7 @@ export async function withGuardedExit<T>(fn: () => Promise<T>): Promise<T> {
   const originalExit = process.exit;
   process.exit = ((code?: number) => {
     throw new Error(
-      `The ORM entry file called process.exit(${code ?? 0}) while orm2erd was loading it — likely an import-time side effect (e.g. a database connection attempt). orm2erd only reads schema metadata and never needs a live DB connection; check the entry file for such side effects.`,
+      `The ORM entry file called process.exit(${code ?? 0}) while orm2erd was loading it, likely an import-time side effect (e.g. a database connection attempt). orm2erd only reads schema metadata and never needs a live DB connection; check the entry file for such side effects.`,
     );
   }) as typeof process.exit;
   try {

@@ -5,7 +5,7 @@ import { buildNameResolver } from "./names";
 import type { NameResolver } from "./names";
 import type { TypeMode } from "../core/format";
 
-// Structurizr has no native "table with columns" shape — this maps ERDModel
+// Structurizr has no native "table with columns" shape: this maps ERDModel
 // onto the DSL's generic `element` keyword (custom elements outside the C4
 // model) plus `properties` for structured per-column metadata. See
 // docs/samples/structurizr-erd-reference.dsl for the full worked example
@@ -13,7 +13,7 @@ import type { TypeMode } from "../core/format";
 // https://docs.structurizr.com/dsl/language).
 
 // The `x = element ...` variable on the left of a declaration is a bare DSL
-// token, not a quoted string — unlike every other value this emitter emits
+// token, not a quoted string: unlike every other value this emitter emits
 // (the element's own name/description/tag args, property keys/values),
 // which are quoted strings and tolerate arbitrary characters. Keywords
 // verified against https://docs.structurizr.com/dsl/language.
@@ -54,7 +54,7 @@ const RESERVED_IDENTIFIERS = new Set([
 
 /**
  * DSL identifiers are always derived from `Entity.name` (the ORM model
- * name) — never `nameMode`/`caseMode` — since this is only an internal
+ * name), never `nameMode`/`caseMode`, since this is only an internal
  * reference token used to wire up relationships, not something displayed.
  * Case-insensitive collisions (sanitization collapsing two distinct names,
  * or a clash with a reserved keyword) are deduped with a numeric suffix.
@@ -93,7 +93,7 @@ function fieldTypeLabel(field: Field, typeMode: TypeMode): string {
 }
 
 /**
- * The free-text value of a `"column.<name>"` property — everything Mermaid
+ * The free-text value of a `"column.<name>"` property: everything Mermaid
  * would otherwise split across separate type/constraint/comment cells,
  * folded into one string since Structurizr properties are flat key/value
  * pairs. Native type is only appended when it's not already the primary
@@ -120,16 +120,16 @@ function columnPropertyValue(
   }
   let value = segments.join(", ");
   if (typeMode !== "native") value += ` (native: ${field.nativeType})`;
-  if (fieldAlias) value += ` — alias: ${fieldAlias}`;
-  if (field.description) value += ` — ${field.description}`;
+  if (fieldAlias) value += `, alias: ${fieldAlias}`;
+  if (field.description) value += `, description: ${field.description}`;
   return value;
 }
 
 /**
  * Builds the ordered `"key" "value"` property pairs for one entity: an
- * (aliasing) `model` name, composite PK/uniques/indexes — mirroring what
+ * (aliasing) `model` name, composite PK/uniques/indexes: mirroring what
  * DBML puts in its `indexes` block, single-column PK/unique stay on the
- * per-column line instead — then one `column.<physical name>` entry per
+ * per-column line instead, then one `column.<physical name>` entry per
  * field. Column keys are always the physical column name regardless of
  * `nameMode`, so they stay a stable lookup key independent of display
  * preference; the resolved display name still shows up in the value as
@@ -169,7 +169,7 @@ function entityProperties(
 
   (entity.indexes ?? []).forEach((idx, i) => {
     // idx.name is a physical index name, not an entity/field/enum-type
-    // identifier — caseMode never touches it (see DBML's `name:` handling,
+    // identifier. CaseMode never touches it (see DBML's `name:` handling,
     // which likewise leaves it as-is).
     const key = idx.name ? `index.${idx.name}` : `index.${i + 1}`;
     const cols = idx.fields
@@ -250,8 +250,8 @@ export const structurizrEmitter: Emitter = {
         ].filter((a): a is string => Boolean(a));
         technology = `FK ${names.entityId(rel.to)}.${toColumnId} -> ${names.entityId(rel.from)}.${fromColumnId}${actions.length > 0 ? " · " + actions.join(" · ") : ""}`;
       } else {
-        // Unresolvable FK columns — e.g. an implicit many-to-many join
-        // table isn't a modeled entity — so there's no real column to
+        // Unresolvable FK columns (e.g. an implicit many-to-many join
+        // table isn't a modeled entity) so there's no real column to
         // point at, unlike D2/DBML/GraphvizDOT this relation still renders
         // (Structurizr connects whole elements, not column ports).
         technology =

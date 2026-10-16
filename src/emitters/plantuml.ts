@@ -4,7 +4,7 @@ import { compositeUniqueMates } from "./uniques";
 import { buildNameResolver } from "./names";
 import { hasHyphen, hasSpace } from "./quote";
 
-// Entity names only — never fields, verified empirically (a hyphenated or
+// Entity names only: never fields, verified empirically (a hyphenated or
 // spaced field name renders fine bare). A hyphenated entity name is
 // tolerated bare in its own `entity X {` declaration but breaks when
 // referenced from a relationship line, so it's quoted everywhere it's used
@@ -93,7 +93,7 @@ export const plantumlEmitter: Emitter = {
     for (const rel of model.relations) {
       // Plantuml's crow's-foot notation: ||--o{ = one-to-many, }o--o{ =
       // many-to-many, ||--o| = one-to-one. The `to` end is always
-      // optional (`o`) — nothing in a FK model forces a parent row to
+      // optional (`o`): nothing in a FK model forces a parent row to
       // have a matching row on the FK-holding side. The `from` end's
       // marker varies: `||` (exactly one) unless isFromOptional says the
       // FK column is nullable, in which case it downgrades to `|o`.

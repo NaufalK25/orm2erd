@@ -3,7 +3,7 @@ import type { Relation } from "../core/model";
 import { buildNameResolver } from "./names";
 import { hasSpace } from "./quote";
 
-// QuickDBD tolerates a bare hyphen (kebab) unquoted, unlike Mermaid/DBML —
+// QuickDBD tolerates a bare hyphen (kebab) unquoted, unlike Mermaid/DBML:
 // only a space (title) forces quoting, verified empirically. One quote
 // character covers both entity and field identifiers here.
 function quoteIdent(id: string): string {
@@ -16,7 +16,7 @@ interface InlineFk {
   refColumn: string;
 }
 
-// QuickDBD has no separate relationship section — the FK marker sits
+// QuickDBD has no separate relationship section: the FK marker sits
 // inline on whichever field physically holds the FK column. The FK
 // always lives on `to` (see Relation in core/model.ts). n-n relations
 // never get fromColumn/toColumn resolved, so they're skipped same as
@@ -63,8 +63,8 @@ export const quickdbdEmitter: Emitter = {
         }
         const typeLabel = `${displayType}${field.isList ? "[]" : ""}`;
 
-        // buildInlineFkMap's keys/values are attribute (model-level) names —
-        // the same convention as entity.primaryKey/uniques — so the lookup
+        // buildInlineFkMap's keys/values are attribute (model-level) names
+        // (the same convention as entity.primaryKey/uniques) so the lookup
         // key stays raw while only the displayed reference is resolved.
         const fk = inlineFks.get(`${entity.name}.${field.name}`);
         const refEntity = fk ? entityByName.get(fk.refEntity) : undefined;

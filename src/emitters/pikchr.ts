@@ -5,7 +5,7 @@ import { buildNameResolver } from "./names";
 import type { RelationLabelMode, TypeMode } from "../core/format";
 
 // Pikchr has no "table with rows" primitive, no grouping/namespace construct,
-// a hard 5-text-term-per-object cap, and no auto-layout engine — every
+// a hard 5-text-term-per-object cap, and no auto-layout engine: every
 // object's position is either implicit flow or an explicit coordinate this
 // emitter has to compute itself. See docs/samples/pikchr-erd-reference.pikchr
 // for the hand-written, parser-validated (pikchr.org/home/pikchrshow) sample
@@ -13,7 +13,7 @@ import type { RelationLabelMode, TypeMode } from "../core/format";
 // (object labels need a capital initial, bare `x = ...` variables need a
 // lowercase initial, `at (x,y)` comes right after `to`/`behind` but before
 // `width`/`height` on a `box` line, and a single object can carry at most 5
-// text terms — which is why every entity is a field container + a separate
+// text terms, which is why every entity is a field container + a separate
 // background box, never one box with a field per text term).
 
 // Pikchr's string-literal escaping rules aren't documented clearly enough to
@@ -30,7 +30,7 @@ function fmt(inches: number): string {
 
 /**
  * Both the field container and its background box live in one shared
- * identifier namespace (`Name`/`NameFields`) — object labels require a
+ * identifier namespace (`Name`/`NameFields`): object labels require a
  * capital initial (the grammar reserves lowercase-initial bare tokens for
  * `x = value` variables), so a sanitized/capitalized name is minted once and
  * deduped case-insensitively against every other entity's pair of names.
@@ -73,10 +73,10 @@ function markerFor(field: Field): string {
     .join(",");
 }
 
-// Canonical mode shows the bare word "enum" in the type column — enum
+// Canonical mode shows the bare word "enum" in the type column: enum
 // members are appended as a "[a|b|c]" suffix on the line instead (see
 // restFor below), matching the reference sample rather than structurizr's
-// inline "enum(a, b)" — Pikchr's field line is already the widest column so
+// inline "enum(a, b)": Pikchr's field line is already the widest column so
 // keeping the type cell short helps padding stay sane.
 function typeLabelFor(field: Field, typeMode: TypeMode): string {
   const base =
@@ -100,8 +100,8 @@ function restFor(
   if (field.enumValues && field.enumValues.length > 0) {
     rest += ` [${field.enumValues.map(s).join("|")}]`;
   }
-  if (fieldAlias) rest += ` — alias: ${s(fieldAlias)}`;
-  if (field.description) rest += ` — ${s(field.description)}`;
+  if (fieldAlias) rest += ` · alias: ${s(fieldAlias)}`;
+  if (field.description) rest += ` · ${s(field.description)}`;
   return rest;
 }
 
@@ -113,12 +113,12 @@ interface RenderLine {
 }
 
 // Per-character/per-line size estimates used only for this emitter's own
-// grid-spacing math (never emitted as literal `width`/`height` attributes —
+// grid-spacing math (never emitted as literal `width`/`height` attributes,
 // those stay dynamically computed from the real container, same as the
 // reference sample's `Container.width+0.3in`). Calibrated against the
 // reference's own postmortem: a ~100-char mono/small field line rendered a
-// box topping out ~6.0in wide, i.e. ~0.055in/char including the 0.3in pad —
-// rounded up here since under-estimating overlaps boxes and over-estimating
+// box topping out ~6.0in wide, i.e. ~0.055in/char including the 0.3in pad.
+// Rounded up here since under-estimating overlaps boxes and over-estimating
 // only adds whitespace.
 const CHAR_W: Record<LineKind, number> = {
   header: 0.1,
@@ -134,7 +134,7 @@ const LINE_H: Record<LineKind, number> = {
 };
 const BOX_PAD_IN = 0.3;
 
-// Arrow labels are centered on the arrow itself, not fitted into a lane —
+// Arrow labels are centered on the arrow itself, not fitted into a lane:
 // a short arrow with a long "below" FK-detail string (often 60-90 chars)
 // spills past both connected boxes unless the gap between grid cells is
 // wide enough to hold that label's own estimated width. No live-render
@@ -173,7 +173,7 @@ function cumulativeCenters(sizes: number[], gap: number): number[] {
  * entity pair, from each side's relative grid cell: the exiting side favors
  * the column relationship (leaving east/west toward the target's column),
  * the entering side favors the row relationship (arriving from north/south
- * of the target's row) — matches every straight (non-bent) arrow in the
+ * of the target's row): matches every straight (non-bent) arrow in the
  * reference sample, e.g. `User.e to Profile.w` (same row) and `User.s to
  * Post.n` (same column, Post one row down).
  */
@@ -197,7 +197,7 @@ function pairKey(a: string, b: string): string {
 }
 
 /**
- * The two arrow-label strings for one relation — cardinality+alias
+ * The two arrow-label strings for one relation: cardinality+alias
  * ("above") and FK detail ("below"), same composition structurizr.ts uses
  * for its `description`/`technology` pair. Called once in a pre-pass (to
  * size the grid gap around the longest label) and again during emission;
@@ -237,7 +237,7 @@ function computeLabels(
     belowLabel = `FK ${names.entityId(rel.to)}.${toColumnId} -> ${names.entityId(rel.from)}.${fromColumnId}${actions.length > 0 ? " · " + actions.join(" · ") : ""}`;
   } else {
     // Unresolvable FK columns (e.g. an implicit many-to-many join table
-    // isn't a modeled entity) — dashed below is the visual flag for this,
+    // isn't a modeled entity): dashed below is the visual flag for this,
     // same reasoning as the reference sample's Legend note.
     belowLabel =
       rel.type === "n-n"
@@ -262,7 +262,7 @@ export const pikchrEmitter: Emitter = {
     const names = buildNameResolver(model, nameMode, caseMode, inflectMode);
     const ids = buildPikchrIds(model.entities);
 
-    // Pass 1: render each entity's field-container contents up front — both
+    // Pass 1: render each entity's field-container contents up front. Both
     // the text emitted below and the width/height estimate used for layout
     // are derived from this single list, so the two can never drift apart.
     const renderFor = new Map<string, RenderLine[]>();
@@ -308,7 +308,7 @@ export const pikchrEmitter: Emitter = {
       for (const text of fieldTexts)
         lines.push({ text, style: "mono small", kind: "mono" });
 
-      // Composite PK/uniques/plain-or-unique indexes only — single-column
+      // Composite PK/uniques/plain-or-unique indexes only: single-column
       // PK/unique already show inline via each field's marker column, same
       // split the IR itself makes (Entity.primaryKey/uniques only ever
       // carry what a per-field boolean can't express).
@@ -350,7 +350,7 @@ export const pikchrEmitter: Emitter = {
       renderFor.set(entity.name, lines);
     }
 
-    // Pass 2: deterministic N-column grid by entity insertion order — column
+    // Pass 2: deterministic N-column grid by entity insertion order. Column
     // count is ceil(sqrt(n)) (10 entities -> 4 columns, matching the
     // reference). Column/row extents are each entity's own estimated size,
     // not a single global guess, so the grid scales with actual content
@@ -379,13 +379,13 @@ export const pikchrEmitter: Emitter = {
       rowHeights[row] = Math.max(rowHeights[row], size.height);
     }
     // A relation's label is centered on the arrow itself, not fitted into
-    // whatever gap surrounds it — a same-row/same-column pair with a short
+    // whatever gap surrounds it. A same-row/same-column pair with a short
     // arrow and a long FK-detail label otherwise overlaps both boxes it
     // connects (confirmed against a real rendered SVG: a 72-char label on
     // a 2.23in gap spilled into both neighbors). Sizing the gap from the
     // longest label in the whole model fixes every adjacent-cell relation;
     // it does NOT fix a label on a long diagonal arrow that happens to
-    // cross near an unrelated box in between — same collision-unaware
+    // cross near an unrelated box in between: same collision-unaware
     // limitation the reference sample already discloses for plain lines.
     let maxLabelChars = 0;
     for (const rel of model.relations) {
@@ -466,7 +466,7 @@ export const pikchrEmitter: Emitter = {
 
       let path: string;
       if (rel.from === rel.to) {
-        // A straight line can't express a loop back to the same box —
+        // A straight line can't express a loop back to the same box:
         // always a bent path exiting east and re-entering north, same as
         // the reference's self-referential example. Multiple self-loops on
         // one entity fan out with an increasing "up" distance so they don't
@@ -490,7 +490,7 @@ export const pikchrEmitter: Emitter = {
           path = `from ${fromIds.boxId}.${fromEdge} to ${toIds.boxId}.${toEdge}`;
         } else {
           // A second (or later) relation between the same entity pair would
-          // otherwise fully overlap the first — route it out the
+          // otherwise fully overlap the first: route it out the
           // perpendicular side instead, offset further per occurrence, same
           // idea as the reference's "posts (last edited)" relation.
           const offset = fmt(0.5 * occurrence);
@@ -500,7 +500,7 @@ export const pikchrEmitter: Emitter = {
             // on the box's own horizontal center-line, so a second vertical
             // move at that same x re-enters the source box whenever the
             // target's own top edge is lower than the source's (a shorter
-            // target box, same row) — confirmed against a real render where
+            // target box, same row). Confirmed against a real render where
             // this clipped straight through the top of the source entity.
             // Moving sideways first leaves that center-line before any
             // further vertical travel, so the final drop into the target

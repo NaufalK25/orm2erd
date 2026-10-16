@@ -1,16 +1,16 @@
 # orm2erd
 
-You already built the app — your ORM models are the schema. orm2erd reads them and generates the
+You already built the app: your ORM models are the schema. orm2erd reads them and generates the
 ERD for you, instead of you drawing and maintaining one by hand.
 
 CLI tool that auto-detects which ORM a codebase uses, then generates ERD (Entity-Relationship
-Diagram) code from the ORM's models/schema — output to Mermaid, DBML, PlantUML, D2, etc. Users can
+Diagram) code from the ORM's models/schema: output to Mermaid, DBML, PlantUML, D2, etc. Users can
 select multiple output formats in a single run. See [README.md](./README.md) for the current list
-of supported ORMs and output formats — don't duplicate that list here, it changes independently of
+of supported ORMs and output formats: don't duplicate that list here, it changes independently of
 this file's architecture-level content.
 
 For user-facing docs (flags, CI usage, examples) see [README.md](./README.md). For an exhaustive
-per-ORM deep dive into detection and parsing, see [docs/adapters.md](./docs/adapters.md) — this
+per-ORM deep dive into detection and parsing, see [docs/adapters.md](./docs/adapters.md): this
 file stays at the architecture level and doesn't duplicate that detail.
 
 ## Core pipeline
@@ -25,7 +25,7 @@ detect ORM → resolve entry point(s) → parse/introspect → normalize to IR �
 src/
   cli.ts             # commander flags + main(); wires src/cli/* together, no logic of its own
   cli/
-    render.ts        # icon/orExit/renderDiff — pure terminal-rendering helpers, no I/O
+    render.ts        # icon/orExit/renderDiff: pure terminal-rendering helpers, no I/O
     resolve.ts        # resolveORM/resolveEntryPath/resolveFormats/resolveTypeMode/resolveOutBase
                        # (prompt-or-flag resolution, one function per CLI concern)
     run.ts             # generateAndWrite: phase reporter (spinner/status lines) + the
@@ -51,7 +51,7 @@ src/
   emitters/          # types.ts (Emitter/EmitOptions) + index.ts (registry) + one file per format
                       # (mermaid.ts, dbml.ts, plantuml.ts, d2.ts, etc)
                       # + label.ts/uniques.ts/names.ts (shared rendering helpers)
-                      # + quote.ts (hasSpace/hasHyphen — per-emitter conditional quoting)
+                      # + quote.ts (hasSpace/hasHyphen: per-emitter conditional quoting)
 bin/
   orm2erd.js       # shebang wrapper: #!/usr/bin/env node → import('../dist/cli.js')
 test/              # vitest, mirrors src/ (detect/, adapters/, core/, emitters/) + test/e2e/
@@ -110,7 +110,7 @@ interface Relation {
   to: string;
   type: "1-1" | "1-n" | "n-n";
   fieldName?: string;
-  // The FK-holding side isn't fixed by `type` — `to` is always the FK-holding
+  // The FK-holding side isn't fixed by `type`: `to` is always the FK-holding
   // side, resolved per relation by each adapter (both omitted when unresolvable,
   // e.g. implicit many-to-many join tables).
   fromColumn?: string;
@@ -129,7 +129,7 @@ interface ERDModel {
 Single-column PK/unique stay on the per-field flags; the entity-level `primaryKey`/`uniques`/
 `indexes` arrays only ever carry what a per-field boolean can't express (composite/multi-column
 groupings, or plain lookup indexes). `Relation.to` is always the FK-holding side across every
-adapter and relation type — fixed invariant, don't special-case a `from`-holds-FK path.
+adapter and relation type: fixed invariant, don't special-case a `from`-holds-FK path.
 
 ## Key interfaces
 
@@ -157,16 +157,16 @@ interface ORMAdapter {
 
 interface EmitOptions {
   typeMode: TypeMode; // "canonical" | "native"
-  nameMode?: NameMode; // "model" | "table" | "both" — defaults to "model" when omitted
-  relationLabelMode?: RelationLabelMode; // "alias" | "column" | "both" — defaults to "both" when omitted
-  caseMode?: CaseMode; // letter-casing for rendered identifiers — defaults to "preserve" when omitted
-  inflectMode?: InflectMode; // pluralization for entity/table identifiers only — defaults to "preserve" when omitted
+  nameMode?: NameMode; // "model" | "table" | "both"; defaults to "model" when omitted
+  relationLabelMode?: RelationLabelMode; // "alias" | "column" | "both"; defaults to "both" when omitted
+  caseMode?: CaseMode; // letter-casing for rendered identifiers; defaults to "preserve" when omitted
+  inflectMode?: InflectMode; // pluralization for entity/table identifiers only; defaults to "preserve" when omitted
 }
 
 interface Emitter {
   format: OutputFormat;
   fileExtension: string; // used when deriving an output path from a bare `--out` name
-  emit(model: ERDModel, options: EmitOptions): string; // pure — no filesystem access
+  emit(model: ERDModel, options: EmitOptions): string; // pure, no filesystem access
 }
 ```
 
@@ -174,7 +174,7 @@ interface Emitter {
 
 - Each detector checks `package.json` deps first; a missing dependency short-circuits to
   `found: false` before any filesystem scanning.
-- Detectors return `candidates: string[]`, not a single guess — a config-file-driven ORM
+- Detectors return `candidates: string[]`, not a single guess. A config-file-driven ORM
   (Prisma, Drizzle) usually returns exactly one; others can return several equally-plausible
   paths (e.g. Prisma with both a `prisma.config.*`-resolved schema and a default
   `prisma/schema.prisma` on disk). `confidenceFromCandidates()` (`src/detect/shared.ts`) scores a
@@ -185,24 +185,24 @@ interface Emitter {
 - If the resolved ORM has multiple entry candidates → show a picker (non-interactive: error
   asking for `--entry`).
 - Entry-point conventions per ORM (config file vs. model directory vs. content-scan fallback)
-  are detailed in [docs/adapters.md](./docs/adapters.md) — they differ enough per ORM (Prisma's
+  are detailed in [docs/adapters.md](./docs/adapters.md): they differ enough per ORM (Prisma's
   `prisma.config.*`, Sequelize's `.sequelizerc`, Mongoose/TypeORM's content-scan fallback via
   `findFilesByContent`, Drizzle's `drizzle.config.*`) that duplicating them here would just drift.
 
-## Parsing strategy — no regex for extraction
+## Parsing strategy: no regex for extraction
 
-- **Prisma**: the only adapter that's a static parse, no code execution — `@prisma/internals`'s
-  `getSchemaWithPath()` + `getDMMF()`. `schema.prisma` is a DSL with an official parser already —
+- **Prisma**: the only adapter that's a static parse, no code execution. `@prisma/internals`'s
+  `getSchemaWithPath()` + `getDMMF()`. `schema.prisma` is a DSL with an official parser already:
   use it, don't hand-roll one.
-- **Sequelize / Mongoose / TypeORM / Drizzle**: runtime introspection via `tsx`'s `tsImport()` —
-  actually import the target project's own model/config files and read the ORM's own
+- **Sequelize / Mongoose / TypeORM / Drizzle**: runtime introspection via `tsx`'s `tsImport()`.
+  Actually import the target project's own model/config files and read the ORM's own
   already-computed metadata (`sequelize.models`/`.associations`, `mongoose.models[].schema.paths`,
   TypeORM's internal `ConnectionMetadataBuilder`, `drizzle-orm`'s `getTableConfig()`). This avoids
-  hand-rolling an AST parser per ORM. No DB connection needed — just schema-level metadata; entry
+  hand-rolling an AST parser per ORM. No DB connection needed: just schema-level metadata; entry
   files that call `process.exit()` (e.g. on a failed DB connect) are trapped by
   `withGuardedExit` and turned into a catchable error instead of killing the CLI.
   - TypeORM specifically needs its `.ts` entities compiled with the *target project's own*
-    `typescript` + `tsconfig.json` first (real `tsc`, not esbuild) — its decorators need
+    `typescript` + `tsconfig.json` first (real `tsc`, not esbuild): its decorators need
     `experimentalDecorators`/`emitDecoratorMetadata`, which esbuild's transform doesn't support.
   - Sequelize/Mongoose/TypeORM resolve their duck-typed instance (Sequelize instance, Mongoose
     module, `DataSource`) by searching the imported module's exports up to 3 levels deep, since
@@ -224,7 +224,7 @@ interface Emitter {
 - **Lint/format**: `oxlint` + `prettier`.
 - **Tests**: `vitest`, mirroring `src/` under `test/` (`test/e2e/pipeline.test.ts` runs the full
   pipeline against fixture projects).
-- **Runtime for shipping**: Node.js (via npm publish + `bin` field) — NOT Bun, for maximum
+- **Runtime for shipping**: Node.js (via npm publish + `bin` field). NOT Bun, for maximum
   compatibility since users run via `npx`. Bun is optional only for local dev speed (faster
   installs/iteration), but no Bun-only APIs (`Bun.file`, etc.) should leak into shipped source, or
   the package becomes accidentally Bun-only.
@@ -246,21 +246,21 @@ orm2erd --orm prisma --entry ./schema.prisma --format mermaid,dbml --out ./erd
 | `--orm <name>` | Skip detection, use this ORM directly. |
 | `--entry <path>` | Skip the entry-point prompt/candidate resolution. |
 | `--format <formats>` | Comma-separated output format(s), or `all` for every registered emitter; defaults to `mermaid` non-interactively. |
-| `--out <path>` | Bare name gets each format's extension appended; a full filename is used as-is when there's exactly one format. A directory (trailing slash, or an existing directory) writes `erd.<ext>` inside it — see `src/core/out-path.ts`. |
+| `--out <path>` | Bare name gets each format's extension appended; a full filename is used as-is when there's exactly one format. A directory (trailing slash, or an existing directory) writes `erd.<ext>` inside it: see `src/core/out-path.ts`. |
 | `--type-mode <mode>` | `canonical` (default, portable) or `native` (ORM-specific type names) field-type labels. |
-| `--names <mode>` | `table` (default, physical table/column names), `model` (ORM model/field names), or `both` (physical name + ORM name as an alias where the format supports one) — see `src/emitters/names.ts`. |
-| `--relation-label <mode>` | `both` (default — alias, plus the FK column when it disambiguates two relations between the same entity pair), `alias`, or `column` — see `src/emitters/label.ts`. |
-| `--case <mode>` | Letter-casing for rendered identifiers: `preserve` (default, source casing as-is), `snake`, `screaming_snake`, `camel`, `pascal`, `kebab`, `title`, `lower`, or `upper`. Only touches identifiers (entity/field/enum-type names) — never type labels, enum member values, or the `--names both` alias — see `src/core/case-transform.ts`. Some emitters conditionally quote an identifier that becomes syntactically unsafe after casing (a bare hyphen/space) — see `src/emitters/quote.ts`. |
-| `--inflect <mode>` | Pluralization for **entity/table identifiers only** (never fields, never the `--names both` alias): `preserve` (default, source number as-is), `plural`, or `singular` — via the `inflection` package, applied before `--case` (`--inflect plural --case kebab` on `PostTag` → `post-tags`) — see `src/core/inflect.ts`. |
-| `--check` | Regenerate in-memory and diff against the file(s) already on disk; writes nothing, exits non-zero on drift/missing — see `src/core/check.ts`. Does NOT force non-interactive by itself — run from a TTY, ORM/entry/`--out`/etc. ambiguity all still prompt normally. `--out` is still always required, but never via a silently-accepted guess: non-interactively it's a hard error checked before any prompting starts (`validateCheckRequiresOut`), interactively it's a dedicated prompt with no pre-fillable default (`resolveOutBase`'s `check` param) — see `src/cli/resolve.ts`. |
-| `--summary` | With `--check`, print a structural (schema-level) diff grouped by entity (e.g. `users: +column "last_login_at"`) instead of the raw line diff, by comparing the freshly-extracted `ERDModel` against a gitignored `<out>.orm2erd-model.json` snapshot written alongside the diagram on the last non-`--check` run — see `src/core/model-diff.ts`. Falls back to the raw line diff (with an explanatory note) when no snapshot exists yet (e.g. first run, or a CI checkout with no prior local run — the snapshot is a local cache, not committed) or when the drift is formatting/ordering-only (no structural difference to show). Requires `--check`. |
+| `--names <mode>` | `table` (default, physical table/column names), `model` (ORM model/field names), or `both` (physical name + ORM name as an alias where the format supports one): see `src/emitters/names.ts`. |
+| `--relation-label <mode>` | `both` (default, alias, plus the FK column when it disambiguates two relations between the same entity pair), `alias`, or `column`, see `src/emitters/label.ts`. |
+| `--case <mode>` | Letter-casing for rendered identifiers: `preserve` (default, source casing as-is), `snake`, `screaming_snake`, `camel`, `pascal`, `kebab`, `title`, `lower`, or `upper`. Only touches identifiers (entity/field/enum-type names) (never type labels, enum member values, or the `--names both` alias) see `src/core/case-transform.ts`. Some emitters conditionally quote an identifier that becomes syntactically unsafe after casing (a bare hyphen/space): see `src/emitters/quote.ts`. |
+| `--inflect <mode>` | Pluralization for **entity/table identifiers only** (never fields, never the `--names both` alias): `preserve` (default, source number as-is), `plural`, or `singular`, via the `inflection` package, applied before `--case` (`--inflect plural --case kebab` on `PostTag` → `post-tags`), see `src/core/inflect.ts`. |
+| `--check` | Regenerate in-memory and diff against the file(s) already on disk; writes nothing, exits non-zero on drift/missing: see `src/core/check.ts`. Does NOT force non-interactive by itself: run from a TTY, ORM/entry/`--out`/etc. ambiguity all still prompt normally. `--out` is still always required, but never via a silently-accepted guess: non-interactively it's a hard error checked before any prompting starts (`validateCheckRequiresOut`), interactively it's a dedicated prompt with no pre-fillable default (`resolveOutBase`'s `check` param). See `src/cli/resolve.ts`. |
+| `--summary` | With `--check`, print a structural (schema-level) diff grouped by entity (e.g. `users: +column "last_login_at"`) instead of the raw line diff, by comparing the freshly-extracted `ERDModel` against a gitignored `<out>.orm2erd-model.json` snapshot written alongside the diagram on the last non-`--check` run. See `src/core/model-diff.ts`. Falls back to the raw line diff (with an explanatory note) when no snapshot exists yet (e.g. first run, or a CI checkout with no prior local run, the snapshot is a local cache, not committed) or when the drift is formatting/ordering-only (no structural difference to show). Requires `--check`. |
 | `--stdout` | Print the diagram to stdout instead of writing a file; requires exactly one `--format`. Forces non-interactive so prompt chrome never lands on the stdout stream; status/log lines are routed to stderr so the stream stays clean for piping. |
 | `--copy` | Copy the diagram to the clipboard instead of writing a file; requires exactly one `--format`. Uses `clipboardy`; stays interactive (spinner/intro/outro) since it never touches stdout. |
 | `--verbose` | Don't suppress the target codebase's own console/stdout output during `extract()`. |
-| `-y, --yes` | Forces `interactive = false` in `src/cli.ts` (same as `--stdout`/CI), so every omitted flag falls back to its non-interactive default instead of prompting. Reuses the existing default-value branch in each `resolve*` function in `src/cli/resolve.ts` — no separate default-value plumbing. |
+| `-y, --yes` | Forces `interactive = false` in `src/cli.ts` (same as `--stdout`/CI), so every omitted flag falls back to its non-interactive default instead of prompting. Reuses the existing default-value branch in each `resolve*` function in `src/cli/resolve.ts`: no separate default-value plumbing. |
 
 In a TTY (and not CI, not `--stdout`, not `-y`/`--yes`), any omitted flag falls back to an
-interactive `@clack/prompts` flow instead of a hard default — including `--out` on a `--check` run,
+interactive `@clack/prompts` flow instead of a hard default, including `--out` on a `--check` run,
 whose prompt (unlike a plain write's) has no pre-fillable default, so it can't be satisfied by
 blindly hitting Enter. See [README.md](./README.md#flags) for the full flag reference and CI
 examples.
@@ -273,12 +273,12 @@ examples.
   the pre-2.0 default was legitimate, and `--out` resolving inside an existing directory moves
   *where the file lands*, which regenerating can't repair. Shipping an escape hatch is an admission
   the old behavior was defensible.
-- **No → `### 💊 Fixed`, PATCH.** Corrections of wrong output aren't contract changes — no format,
+- **No → `### 💊 Fixed`, PATCH.** Corrections of wrong output aren't contract changes: no format,
   filename, flag, or default moves. Precedent: `fba2390` flipped relation direction and cardinality
   in 1.7.0, `a63af11` changed identifier quoting in 2.1.0, and even 2.0.0 filed `7857da1`'s DBML
   operator flip under Fixed rather than Breaking.
 
-`--check` drift happens in **both** cases, so drift alone doesn't decide it — but it always earns an
+`--check` drift happens in **both** cases, so drift alone doesn't decide it, but it always earns an
 explicit call-out in the CHANGELOG entry, since CI fails until the committed diagram is regenerated.
 
 New user-facing flags/features are MINOR, never PATCH.

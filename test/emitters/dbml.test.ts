@@ -323,7 +323,7 @@ describe("dbmlEmitter", () => {
     expect(output).toContain(`(postId, addedBy) [name: "post_addedby_idx"]`);
   });
 
-  it("tags an index carrying isUnique with [unique] (defensive — adapters normally route unique constraints through entity.uniques instead)", () => {
+  it("tags an index carrying isUnique with [unique] (defensive, adapters normally route unique constraints through entity.uniques instead)", () => {
     const model: ERDModel = {
       entities: [
         {
@@ -594,7 +594,7 @@ describe("dbmlEmitter", () => {
   });
 
   describe("quoting a multi-word identifier", () => {
-    // DBML needs quoting for a bare hyphen too, unlike Mermaid — verified
+    // DBML needs quoting for a bare hyphen too, unlike Mermaid: verified
     // empirically against a real DBML parser.
     const model: ERDModel = {
       entities: [

@@ -14,7 +14,7 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 
-// No built-in dataType maps to this — canonical type falls back to "unknown".
+// No built-in dataType maps to this: canonical type falls back to "unknown".
 const vector = customType<{ data: number[] }>({
   dataType() {
     return "vector(3)";
@@ -41,7 +41,7 @@ export const users = pgTable(
     profile: jsonb("profile").default({ theme: "dark" }),
   },
   (table) => [
-    // Table-level single-column unique — distinct from a column-level
+    // Table-level single-column unique: distinct from a column-level
     // `.unique()` call, but must still land as a per-field isUnique flag.
     unique("users_email_unique").on(table.email),
   ],

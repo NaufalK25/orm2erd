@@ -38,7 +38,7 @@ export interface PhaseReporter {
 
 // Wraps the spinner (interactive) / plain log lines (non-interactive) used
 // to narrate each pipeline phase, plus the terminal outputs for --stdout and
-// the final success/failure lines — all of it shares the same "are we
+// the final success/failure lines: all of it shares the same "are we
 // interactive" branching, so it lives behind one small interface.
 export function createPhaseReporter(
   interactive: boolean,
@@ -56,13 +56,13 @@ export function createPhaseReporter(
     },
   } as unknown as Writable;
 
-  // No indicator: "timer" — its digits can't tick during the synchronous
+  // No indicator: "timer". Its digits can't tick during the synchronous
   // block a phase can wrap and freeze on a number, which reads as broken; a
   // static glyph doesn't carry that expectation.
   const s = interactive ? spinner({ output: spinnerOutput }) : undefined;
   let started = false;
   // --stdout writes the diagram itself to stdout, so status/log lines are
-  // routed to stderr instead — keeps `orm2erd --stdout | some-tool` clean.
+  // routed to stderr instead: keeps `orm2erd --stdout | some-tool` clean.
   const statusLog = stdout ? console.error : console.log;
 
   return {
@@ -144,12 +144,12 @@ export async function runCheck(
     const snapshotPath = modelSnapshotPath(ctx.outBase);
     const previous = await readModelSnapshot(snapshotPath);
     if (!previous) {
-      structuralNote = `No structural snapshot found (${snapshotPath}) — showing the text diff instead; a snapshot will be written next time you run without --check.`;
+      structuralNote = `No structural snapshot found (${snapshotPath}), so showing the text diff instead. A snapshot will be written next time you run without --check.`;
     } else {
       const diff = diffModel(previous, ctx.model);
       if (isModelDiffEmpty(diff)) {
         structuralNote =
-          "No structural (schema-level) differences found — the on-disk content differs only in formatting/ordering. Showing the text diff instead.";
+          "No structural (schema-level) differences found: the on-disk content differs only in formatting/ordering. Showing the text diff instead.";
       } else {
         structuralLines = formatModelDiff(diff);
       }
@@ -160,7 +160,7 @@ export async function runCheck(
     if (r.status === "missing") {
       console.error(
         pc.red(
-          `${icon("✖", "x")}${r.path} does not exist — run without --check to create it`,
+          `${icon("✖", "x")}${r.path} does not exist. Run without --check to create it.`,
         ),
       );
       continue;

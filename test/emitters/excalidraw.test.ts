@@ -122,7 +122,7 @@ describe("excalidrawEmitter", () => {
     );
 
     expect(rows).toHaveLength(2);
-    // Absolute coordinates, never parent-relative — frame offset included.
+    // Absolute coordinates, never parent-relative: frame offset included.
     expect(rows[0].y).toBe(post.y);
     expect(rows[1].y).toBe(post.y + 30);
     expect(rows.every((r) => r.x === post.x)).toBe(true);
@@ -158,7 +158,7 @@ describe("excalidrawEmitter", () => {
 
     expect(arrows).toHaveLength(2);
     // boundElements is the reciprocal half of start/endBinding and is not
-    // reconstructed on load — an arrow whose target forgot it silently
+    // reconstructed on load: an arrow whose target forgot it silently
     // detaches the moment the shape is dragged in the app.
     for (const arrow of arrows) {
       for (const endpoint of [arrow.startBinding!, arrow.endBinding!]) {

@@ -44,7 +44,7 @@ export const tags = pgTable("tags", {
   name: varchar("name", { length: 100 }).notNull().unique(),
 });
 
-// Implicit many-to-many junction table — Drizzle has no declarative n-n API,
+// Implicit many-to-many junction table: Drizzle has no declarative n-n API,
 // so this is the only way to model it (two ordinary FKs + a composite PK).
 export const postTags = pgTable(
   "post_tags",

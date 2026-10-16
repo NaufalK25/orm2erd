@@ -40,7 +40,7 @@ export const posts = pgTable("posts", {
     onUpdate: "cascade",
   }),
   labels: text("labels").array(),
-  // A named pgEnum wrapped in .array() — enumValues/columnType only live on
+  // A named pgEnum wrapped in .array(): enumValues/columnType only live on
   // the wrapper's `.baseColumn`, not the PgArray itself.
   roleTags: roleEnum("role_tags").array(),
 });
@@ -50,7 +50,7 @@ export const tags = pgTable("tags", {
   name: varchar("name", { length: 100 }).notNull().unique(),
 });
 
-// Implicit many-to-many junction table — Drizzle has no declarative n-n API,
+// Implicit many-to-many junction table: Drizzle has no declarative n-n API,
 // so this is the only way to model it (two ordinary FKs + a composite PK).
 export const postTags = pgTable(
   "post_tags",

@@ -34,7 +34,7 @@ describe("typeormAdapter.resolveEntry", () => {
   });
 });
 
-describe("typeormAdapter.extract — raw .ts DataSource (compiled via the target's own tsc)", () => {
+describe("typeormAdapter.extract: raw .ts DataSource (compiled via the target's own tsc)", () => {
   it("extracts every declared entity, excluding the synthesized many-to-many junction table", async () => {
     const model = await extractFixture("basic", "data-source.ts");
     expect(model.entities.map((e) => e.name).toSorted()).toEqual([
@@ -132,7 +132,7 @@ describe("typeormAdapter.extract — raw .ts DataSource (compiled via the target
     );
     expect(profileToUser).toHaveLength(1);
     // TypeORM defaults relation columns to nullable unless `nullable: false`
-    // is set explicitly — the fixture's @JoinColumn() doesn't set it.
+    // is set explicitly. The fixture's @JoinColumn() doesn't set it.
     expect(profileToUser[0].isFromOptional).toBe(true);
   });
 
@@ -183,7 +183,7 @@ describe("typeormAdapter.extract — raw .ts DataSource (compiled via the target
 
   it("produces exactly one relation per real relationship, not one per declared side", async () => {
     // User<->Post (1-n), User<->Profile (1-1), Post<->Tag (n-n), and
-    // Post<->Comment (the standalone lone-@ManyToOne 1-n) — four real
+    // Post<->Comment (the standalone lone-@ManyToOne 1-n): four real
     // relationships from what TypeORM records as more RelationMetadata sides.
     const model = await extractFixture("basic", "data-source.ts");
     expect(model.relations).toHaveLength(4);
@@ -208,7 +208,7 @@ describe("typeormAdapter.extract — raw .ts DataSource (compiled via the target
   });
 });
 
-describe("typeormAdapter.extract — plain .js entry (no tsc compile needed)", () => {
+describe("typeormAdapter.extract: plain .js entry (no tsc compile needed)", () => {
   it("passes an EntitySchema-defined entity straight through", async () => {
     const model = await extractFixture("entity-schema", "data-source.js");
     expect(model.entities).toHaveLength(1);
@@ -223,7 +223,7 @@ describe("typeormAdapter.extract — plain .js entry (no tsc compile needed)", (
   });
 });
 
-describe("typeormAdapter.extract — legacy ormconfig.json", () => {
+describe("typeormAdapter.extract: legacy ormconfig.json", () => {
   it("parses JSON connection options and resolves .ts glob entities via the same tsc-compiled mirror", async () => {
     const model = await extractFixture("legacy-ormconfig", "ormconfig.json");
     expect(model.entities).toHaveLength(1);
@@ -251,7 +251,7 @@ describe("typeormAdapter.extract — legacy ormconfig.json", () => {
   });
 
   it('throws a clear error when the installed "typeorm" exports neither DataSource nor Connection', async () => {
-    // entities: [] so no tsc build is ever needed — isolates this to just
+    // entities: [] so no tsc build is ever needed. Isolates this to just
     // createUnconnectedInstance's own constructor lookup.
     const cwd = mkdtempSync(join(tmpdir(), "orm2erd-typeorm-no-ctor-"));
     writeFileSync(
@@ -274,7 +274,7 @@ describe("typeormAdapter.extract — legacy ormconfig.json", () => {
   it('throws a clear error when the installed "typeorm" is missing its internal ConnectionMetadataBuilder', async () => {
     // A fake "typeorm" whose DataSource instances satisfy
     // looksLikeTypeOrmDataSource (an `options` object + a `driver`), so
-    // findDataSourceInstance succeeds — but with no
+    // findDataSourceInstance succeeds, but with no
     // connection/ConnectionMetadataBuilder.js file at all, as if targeting
     // an incompatible typeorm version.
     const cwd = mkdtempSync(join(tmpdir(), "orm2erd-typeorm-no-builder-"));
@@ -313,7 +313,7 @@ describe("typeormAdapter.extract — legacy ormconfig.json", () => {
   });
 });
 
-describe("typeormAdapter.extract — error cases", () => {
+describe("typeormAdapter.extract: error cases", () => {
   it("throws a clear error when no tsconfig.json can be found for a .ts entry", async () => {
     const cwd = mkdtempSync(join(tmpdir(), "orm2erd-typeorm-no-tsconfig-"));
     writeFileSync(
@@ -327,8 +327,8 @@ describe("typeormAdapter.extract — error cases", () => {
 
   it("throws a clear error when \"typescript\" can't be resolved from the entry file's location", async () => {
     // A tsconfig.json is found (so findNearestTsconfig succeeds), but this
-    // dir lives outside any node_modules chain reaching a real "typescript"
-    // — unlike every other .ts-entry test, which run from inside this
+    // dir lives outside any node_modules chain reaching a real "typescript":
+    // unlike every other .ts-entry test, which run from inside this
     // project's own tree and so always find *our* typescript.
     const cwd = mkdtempSync(join(tmpdir(), "orm2erd-typeorm-no-typescript-"));
     writeFileSync(join(cwd, "tsconfig.json"), "{}");
@@ -351,7 +351,7 @@ describe("typeormAdapter.extract — error cases", () => {
   });
 });
 
-describe("typeormAdapter.extract — physical table/column names (#3a)", () => {
+describe("typeormAdapter.extract: physical table/column names (#3a)", () => {
   it('sets entity.tableName from @Entity("...") when it differs from the class name', async () => {
     const model = await extractFixture("names", "data-source.ts");
     const archive = model.entities.find((e) => e.name === "CustomerArchive")!;
@@ -381,7 +381,7 @@ describe("typeormAdapter.extract — physical table/column names (#3a)", () => {
   });
 });
 
-describe("typeormAdapter.extract — composite keys", () => {
+describe("typeormAdapter.extract: composite keys", () => {
   it("carries composite PK and multi-column unique, keeping single-column unique on the field", async () => {
     const model = await extractFixture("composite", "data-source.ts");
     const postTag = model.entities.find((e) => e.name === "PostTag")!;
@@ -407,10 +407,10 @@ describe("typeormAdapter.extract — composite keys", () => {
   });
 });
 
-describe("typeormAdapter.extract — entity glob outside the project root", () => {
+describe("typeormAdapter.extract: entity glob outside the project root", () => {
   it("leaves an out-of-root glob entry unrewritten instead of pointing it at the compiled mirror", async () => {
     // The DataSource's own class-reference entity (User) is what actually
-    // proves extraction still succeeds — the sibling glob resolves outside
+    // proves extraction still succeeds: the sibling glob resolves outside
     // tsconfig's directory and matches nothing, but must not crash the rest.
     const model = await extractFixture(
       "glob-outside-root/project",

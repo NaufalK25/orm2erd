@@ -365,8 +365,8 @@ describe("mermaidEmitter", () => {
       expect(output).toContain("USERS {");
       expect(output).toContain("string FULL_NAME");
       // toColumn ("authorId") doesn't match any field on Post (empty fields
-      // here), so fieldIdByName falls back to case-transforming it directly
-      // — still consistent casing, just not a real column resolution.
+      // here), so fieldIdByName falls back to case-transforming it directly:
+      // still consistent casing, just not a real column resolution.
       expect(output).toContain('USERS ||--o{ POSTS : "POSTS (AUTHOR_ID)"');
     });
 
@@ -392,7 +392,7 @@ describe("mermaidEmitter", () => {
 
   describe("quoting a multi-word identifier", () => {
     // Mermaid's erDiagram tolerates a bare hyphen (kebab) unquoted in both
-    // entity and field position — only a space (title) forces quoting, and
+    // entity and field position: only a space (title) forces quoting, and
     // entities/fields each use a different quote character.
     const model: ERDModel = {
       entities: [

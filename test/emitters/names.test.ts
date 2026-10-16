@@ -27,7 +27,7 @@ const model: ERDModel = {
       ],
     },
     {
-      // No tableName override — physical name equals model name.
+      // No tableName override: physical name equals model name.
       name: "Tag",
       fields: [{ name: "name", type: "string", nativeType: "STRING" }],
     },

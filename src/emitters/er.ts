@@ -4,9 +4,9 @@ import { buildNameResolver } from "./names";
 import { resolveRelationLabel } from "./label";
 
 // erd (BurntSushi)'s grammar requires unquoted entity/attribute names to
-// match [A-Za-z_][A-Za-z0-9_]* — a whitelist, not a blacklist of specific
+// match [A-Za-z_][A-Za-z0-9_]*, a whitelist, not a blacklist of specific
 // unsafe characters the way hasSpace/hasHyphen (quote.ts) work for other
-// emitters — so this format gets its own regex-based check instead of
+// emitters, so this format gets its own regex-based check instead of
 // composing from those primitives. Backtick is used since it's never itself
 // produced by any --case mode and is one of three equivalent quote
 // characters the grammar accepts (see docs/erd-format-reference.md §2.1).
@@ -19,7 +19,7 @@ function escapeLabel(label: string): string {
 }
 
 // Cardinality tokens per docs/erd-format-reference.md §7.2: the child (`to`)
-// end is always optional ("?" for 1-1, "*" for 1-n/n-n — nothing in a FK
+// end is always optional ("?" for 1-1, "*" for 1-n/n-n, nothing in a FK
 // model forces a parent row to have a matching child row); the parent
 // (`from`) end is "1" unless isFromOptional says the FK on `to` is
 // nullable, in which case it drops to "?". n-n never sets isFromOptional,

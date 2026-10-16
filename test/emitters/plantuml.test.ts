@@ -347,8 +347,8 @@ describe("plantumlEmitter", () => {
 
   describe("quoting a multi-word entity name", () => {
     // PlantUML tolerates a bare hyphen/space on a *field* name, and even
-    // tolerates a bare hyphen on the entity's own `entity X {` declaration
-    // — but not when that same entity name is referenced from a
+    // tolerates a bare hyphen on the entity's own `entity X {` declaration,
+    // but not when that same entity name is referenced from a
     // relationship line, and never a bare space anywhere. Quote the entity
     // name consistently everywhere it appears rather than relying on that
     // inconsistent per-position leniency.

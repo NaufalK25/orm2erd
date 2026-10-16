@@ -8,7 +8,7 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 
-// Tenant-scoped composite PK — a single "id" alone isn't unique across tenants.
+// Tenant-scoped composite PK: a single "id" alone isn't unique across tenants.
 export const users = pgTable(
   "users",
   {
@@ -20,7 +20,7 @@ export const users = pgTable(
 );
 
 // A composite FK (table-level foreignKey(), not the single-column
-// `.references()` chain) that's also covered by a composite unique — the
+// `.references()` chain) that's also covered by a composite unique: the
 // declared-1-1 signal isColumnSetUnique looks for beyond a single
 // unique/primary column.
 export const posts = pgTable(

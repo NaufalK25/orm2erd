@@ -13,7 +13,7 @@ export function modelSnapshotPath(outBase: string): string {
 }
 
 // Any failure (missing file, bad JSON, version mismatch) collapses to null so
-// the caller falls back to the text diff — a soft-degrade case, not
+// the caller falls back to the text diff: a soft-degrade case, not
 // correctness-critical the way checkOutput's ENOENT-only/rethrow-others
 // handling is for the diagram files themselves.
 export async function readModelSnapshot(
@@ -45,7 +45,7 @@ export async function writeModelSnapshot(
 }
 
 // Structural/DDL-relevant field properties only. `description` is
-// deliberately excluded — it's a free-text doc comment (Prisma `///`,
+// deliberately excluded: it's a free-text doc comment (Prisma `///`,
 // Sequelize/TypeORM `comment`), not a schema fact, and including it would
 // reintroduce the "wall of noise for a cosmetic edit" problem --summary
 // exists to fix.
@@ -209,7 +209,7 @@ function diffEntityLists(before: Entity[], after: Entity[]): EntityDiff[] {
 
 // Relations have no stable name field, so they're matched within each
 // (from, to) group via a two-tier identity: FK columns first (the most
-// physically stable signal — survives a fieldName rename), then fieldName,
+// physically stable signal, survives a fieldName rename), then fieldName,
 // then whatever's left pairs positionally as a last resort.
 function relationIdentity(rel: Relation): string | undefined {
   if (rel.fromColumn && rel.toColumn) {
@@ -247,7 +247,7 @@ function matchRelationGroup(
   }
 
   // Positional fallback for whatever's left (typically both sides lacking
-  // any identity signal at all — best-effort, order-dependent).
+  // any identity signal at all, best-effort, order-dependent).
   const positionalCount = Math.min(
     remainingBefore.length,
     remainingAfter.length,

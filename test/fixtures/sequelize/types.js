@@ -13,11 +13,11 @@ export const sequelize = {
       rawAttributes: {
         id: { type: dataType("INTEGER"), primaryKey: true },
         // Verified against installed Sequelize v6: constructor.name
-        // "JSONTYPE", key "JSON" — reading constructor.name directly (the
+        // "JSONTYPE", key "JSON". Reading constructor.name directly (the
         // pre-fix behavior) renders "JSONTYPE" instead of "JSON".
         metadata: { type: dataType("JSONTYPE", { key: "JSON" }) },
         // JSONB's constructor.name and key already agree ("JSONB"), unlike
-        // JSON's — kept alongside it as a contrast case.
+        // JSON's: kept alongside it as a contrast case.
         settings: { type: dataType("JSONB") },
         externalRef: { type: dataType("UUID") },
         tags: { type: dataType("ARRAY", { type: dataType("STRING") }) },

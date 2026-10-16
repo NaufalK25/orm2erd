@@ -11,7 +11,7 @@ export class Tag {
   name!: string;
 
   // Standalone @ManyToOne with no matching @OneToMany back-reference on
-  // User — must still emit its own 1-n relation from buildRelation's "m:1"
+  // User. Must still emit its own 1-n relation from buildRelation's "m:1"
   // case, not just when paired from the "one" side.
   @ManyToOne(() => User)
   createdBy!: User;

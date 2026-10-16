@@ -9,7 +9,7 @@ import type {
 import type { GridMultiSelectOptions } from "../../src/core/grid-multiselect";
 
 // @clack/core's CANCEL_SYMBOL isn't exported, so cancellation is driven via
-// a sentinel value fed through a mocked isCancel — same approach as
+// a sentinel value fed through a mocked isCancel: same approach as
 // render.test.ts. select/text/log are mocked outright since what's under
 // test is resolve.ts's own branching (which prompt, with what options, what
 // happens to the result), not @clack/prompts' rendering.
@@ -261,7 +261,7 @@ describe("resolveOutBase (interactive)", () => {
   });
 });
 
-describe("resolveOutBase (interactive) — check mode", () => {
+describe("resolveOutBase (interactive): check mode", () => {
   it("prompts without a pre-fillable default, unlike the plain-write prompt", async () => {
     mockText.mockResolvedValueOnce("./docs/erd");
 
@@ -283,7 +283,7 @@ describe("resolveOutBase (interactive) — check mode", () => {
     const opts = mockText.mock.calls[0][0];
     const validate = opts.validate as (value: string) => string | Error | void;
     expect(validate("")).toBe(
-      "A path is required for --check — there's no safe default to guess.",
+      "A path is required for --check, since there's no safe default to guess.",
     );
     expect(validate("./docs/erd")).toBeUndefined();
   });

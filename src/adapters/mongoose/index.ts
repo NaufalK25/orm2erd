@@ -31,7 +31,7 @@ const MONGOOSE_TYPE_TO_CANONICAL: Record<string, CanonicalType> = {
   Boolean: "boolean",
   Date: "datetime",
   // Casing changed between majors: "ObjectID" through mongoose 6.x,
-  // "ObjectId" from 7.x on — support both rather than pinning to one.
+  // "ObjectId" from 7.x on. Support both rather than pinning to one.
   ObjectID: "string",
   ObjectId: "string",
   Decimal128: "decimal",
@@ -55,7 +55,7 @@ function elementType(path: MongooseSchemaType): MongooseSchemaType {
     : path;
 }
 
-// Map's value-type placeholder ("someMap.$*") isn't a real document field —
+// Map's value-type placeholder ("someMap.$*") isn't a real document field:
 // it describes what's stored inside the Map, not a path of its own.
 function isSyntheticPath(fieldName: string): boolean {
   return fieldName.endsWith(".$*");
@@ -71,7 +71,7 @@ function resolveEnumValues(
 function resolveDefaultValue(value: unknown): string | undefined {
   if (value === undefined) return undefined;
   // "()" signals a computed default (e.g. Date.now) rather than a literal
-  // value — same convention as the Sequelize adapter's sentinel DataTypes.
+  // value: same convention as the Sequelize adapter's sentinel DataTypes.
   if (typeof value === "function") return `${value.name || "(function)"}()`;
   if (typeof value === "object" && value !== null) return JSON.stringify(value);
   return String(value);
@@ -93,14 +93,14 @@ async function loadTargetMongoose(fromPath: string): Promise<MongooseModule> {
     resolvedPath = targetRequire.resolve("mongoose");
   } catch (err) {
     throw new Error(
-      `Could not resolve "mongoose" from "${fromPath}" — is it installed in the target project?`,
+      `Could not resolve "mongoose" from "${fromPath}". Is it installed in the target project?`,
       { cause: err },
     );
   }
 
   // Importing this exact resolved path (rather than a bare "mongoose"
   // specifier from orm2erd's own resolution context) is what makes this the
-  // same module instance the target's schema files import — so its global
+  // same module instance the target's schema files import, so its global
   // `.models` registry reflects their side effects once we import those too.
   const mod = await tsImport(pathToFileURL(resolvedPath).href, import.meta.url);
   const candidate = (mod as { default?: unknown }).default ?? mod;
@@ -123,13 +123,13 @@ const SOURCE_FILE_PATTERN = /\.(m|c)?[jt]s$/;
 const TEST_FILE_PATTERN = /\.(test|spec)\.[jt]s$/;
 // Safety valve for pathological directories.
 const MAX_FILES_TO_IMPORT = 2000;
-// Mirrors the detector's own guard — a directory entry can be much broader
+// Mirrors the detector's own guard: a directory entry can be much broader
 // than "just models" (e.g. a whole src/), so files get content-checked
 // before reading, same reasoning as findMongooseSchemaDirs.
 const MAX_FILE_SIZE_BYTES = 1_000_000;
 
 // A directory entry can contain arbitrary application code, not just
-// schema files (e.g. an entry point that calls app.listen()) — importing
+// schema files (e.g. an entry point that calls app.listen()): importing
 // one of those for its side effects would actually start a server/open a
 // port, not just read metadata. Content-checking every candidate first,
 // the same signature the detector uses to find this directory in the first
@@ -195,8 +195,8 @@ function buildField(
     isList,
     isPrimaryKey: fieldName === "_id",
     isForeignKey: Boolean(effective.options?.ref),
-    // Mongoose always requires _id unless a schema opts out with `_id: false`
-    // — that opt-out is rare enough to skip supporting for now.
+    // Mongoose always requires _id unless a schema opts out with `_id: false`.
+    // That opt-out is rare enough to skip supporting for now.
     isNullable: fieldName === "_id" ? false : !path.isRequired,
     isUnique: Boolean(path.options?.unique),
     defaultValue: resolveDefaultValue(path.options?.default),
@@ -204,7 +204,7 @@ function buildField(
   };
 }
 
-// Compound `unique` indexes — the only multi-column grouping Mongoose
+// Compound `unique` indexes: the only multi-column grouping Mongoose
 // expresses (single-field `unique` stays on the path). No composite PK
 // concept exists: `_id` is always the single primary key.
 function extractCompositeUniques(
@@ -218,7 +218,7 @@ function extractCompositeUniques(
   return uniques.length > 0 ? uniques : undefined;
 }
 
-// Plain (non-unique) indexes, single or multi-column — unique ones are
+// Plain (non-unique) indexes, single or multi-column: unique ones are
 // already carried via extractCompositeUniques/the path's own isUnique flag.
 // Covers both explicit `schema.index(...)` calls and a path-level
 // `{ index: true }` option, since both show up in `schema.indexes()`.
@@ -241,7 +241,7 @@ function buildEntity(name: string, model: MongooseModel): Entity {
     uniques: extractCompositeUniques(model.schema),
     indexes: extractIndexes(model.schema),
     fields: Object.entries(model.schema.paths)
-      // __v is Mongoose's own bookkeeping column, not modeled data — every
+      // __v is Mongoose's own bookkeeping column, not modeled data: every
       // document gets one, so surfacing it would just add noise to every entity.
       .filter(
         ([fieldName]) => fieldName !== "__v" && !isSyntheticPath(fieldName),
@@ -281,7 +281,7 @@ function buildPairedRelation(a: RefSide, b: RefSide): Relation {
   if (a.isList !== b.isList) {
     const listSide = a.isList ? a : b;
     const singularSide = a.isList ? b : a;
-    // The physical FK column is the singular side's own field — the array
+    // The physical FK column is the singular side's own field: the array
     // is a denormalized convenience, not a real join column.
     return {
       from: listSide.modelName,
@@ -294,12 +294,12 @@ function buildPairedRelation(a: RefSide, b: RefSide): Relation {
     };
   }
 
-  // Deterministic, arbitrary tie-break for which side is "from" — both
+  // Deterministic, arbitrary tie-break for which side is "from": both
   // physically store a pointer, so there's no inherent owner to prefer.
   const [from, to] = a.modelName < b.modelName ? [a, b] : [b, a];
 
   if (a.isList && b.isList) {
-    // Denormalized many-to-many via ref arrays on both sides — no single
+    // Denormalized many-to-many via ref arrays on both sides: no single
     // join column to point at, same as an implicit relational join table.
     return {
       from: from.modelName,
@@ -312,7 +312,7 @@ function buildPairedRelation(a: RefSide, b: RefSide): Relation {
   // Swapped so the FK-like ref field lands on `to`, matching the "FK
   // always lives on `to`" convention every other relation shape uses
   // (both sides here physically store a pointer, so `from`/`to` is an
-  // arbitrary tie-break either way — swapping costs nothing). `fieldName`
+  // arbitrary tie-break either way, swapping costs nothing). `fieldName`
   // follows the swap: it names the alias on the relation's `from` side,
   // which after swapping is the side held in `to`.
   return {
@@ -329,7 +329,7 @@ function buildPairedRelation(a: RefSide, b: RefSide): Relation {
 function buildStandaloneRelation(side: RefSide): Relation {
   if (side.isList) {
     // "Has many" via an array of refs, no reciprocal field on the other
-    // model — nothing to point dbml's Ref at, same as an implicit m2m.
+    // model: nothing to point dbml's Ref at, same as an implicit m2m.
     return {
       from: side.modelName,
       to: side.relatedModel,
@@ -390,7 +390,7 @@ function buildRelations(models: Record<string, MongooseModel>): Relation[] {
     }
 
     // Anything else (a lone side, a self-reference, or multiple distinct
-    // refs between the same two models) is ambiguous to pair — emit each
+    // refs between the same two models) is ambiguous to pair: emit each
     // side standalone rather than guess wrong.
     for (const side of group) {
       relations.push(buildStandaloneRelation(side));
@@ -433,7 +433,7 @@ export const mongooseAdapter: ORMAdapter = {
     }
 
     const mongoose = await loadTargetMongoose(filesToImport[0]);
-    // Directory-wide import is best-effort — a colliding model name (e.g.
+    // Directory-wide import is best-effort: a colliding model name (e.g.
     // from a test fixture that slipped past collectSourceFiles) shouldn't
     // abort the whole extraction.
     mongoose.set("overwriteModels", true);

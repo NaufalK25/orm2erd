@@ -2,7 +2,7 @@ function dataType(name, values) {
   return { constructor: { name }, values };
 }
 
-// Fixture for #1 (cardinality: optional vs required ends) — pairs of
+// Fixture for #1 (cardinality: optional vs required ends). Pairs of
 // relations that only differ in FK nullability, plus the composite-PK-FK
 // edge case where `allowNull` is never set even though the column is
 // implicitly NOT NULL (same quirk `isNullable` already special-cases).
@@ -124,7 +124,7 @@ export const sequelize = {
       },
     },
     // Explicit junction table with a composite PK over its two FK columns
-    // (same shape as test/fixtures/e2e/sequelize-app's PostTag) — rawAttributes
+    // (same shape as test/fixtures/e2e/sequelize-app's PostTag): rawAttributes
     // never sets allowNull on a primary-key column even though it's
     // implicitly NOT NULL, so isFromOptional must consult `primaryKey`
     // the same way the field-level `isNullable` already does.

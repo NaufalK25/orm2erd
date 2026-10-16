@@ -42,7 +42,7 @@ describe("drizzleAdapter.resolveEntry", () => {
   });
 });
 
-describe("drizzleAdapter.extract — postgres dialect", () => {
+describe("drizzleAdapter.extract: postgres dialect", () => {
   it("extracts every exported table, including the implicit many-to-many junction table", async () => {
     const model = await extractFixture("postgres-basic");
     expect(model.entities.map((e) => e.name).toSorted()).toEqual([
@@ -83,7 +83,7 @@ describe("drizzleAdapter.extract — postgres dialect", () => {
     expect(role.enumValues).toEqual(["admin", "member"]);
   });
 
-  // Postgres's `pgEnum()` backs a real, named, reusable DB type — unlike
+  // Postgres's `pgEnum()` backs a real, named, reusable DB type: unlike
   // MySQL's inline enums (see the mysql dialect describe block below),
   // `getSQLType()` here IS a stable name, so it should be used as-is rather
   // than synthesized.
@@ -117,7 +117,7 @@ describe("drizzleAdapter.extract — postgres dialect", () => {
     expect(roleTags.isList).toBe(true);
     expect(roleTags.type).toBe("enum");
     expect(roleTags.enumValues).toEqual(["admin", "member"]);
-    // The real pgEnum name, not a synthesized enum_<table>_<column> — same
+    // The real pgEnum name, not a synthesized enum_<table>_<column>: same
     // "keep the real name" rule the non-array pgEnum column already gets.
     expect(roleTags.nativeType).toBe("role");
   });
@@ -172,7 +172,7 @@ describe("drizzleAdapter.extract — postgres dialect", () => {
   });
 });
 
-describe("drizzleAdapter.extract — composite keys and plain indexes", () => {
+describe("drizzleAdapter.extract: composite keys and plain indexes", () => {
   it("carries composite PK and multi-column unique, keeping single-column unique on the field", async () => {
     const model = await extractFixture("composite");
     const postTags = model.entities.find((e) => e.name === "post_tags")!;
@@ -196,7 +196,7 @@ describe("drizzleAdapter.extract — composite keys and plain indexes", () => {
   });
 });
 
-describe("drizzleAdapter.extract — canonical type mapping and default values", () => {
+describe("drizzleAdapter.extract: canonical type mapping and default values", () => {
   it("maps json/jsonb, bigint, numeric, and float-family dataTypes to their canonical types", async () => {
     const model = await extractFixture("type-mapping");
     const users = model.entities.find((e) => e.name === "users")!;
@@ -238,14 +238,14 @@ describe("drizzleAdapter.extract — canonical type mapping and default values",
     const model = await extractFixture("type-mapping");
     const users = model.entities.find((e) => e.name === "users")!;
     expect(users.fields.find((f) => f.name === "email")?.isUnique).toBe(true);
-    // Single-column — must not also appear as a composite unique group.
+    // Single-column: must not also appear as a composite unique group.
     expect(users.uniques).toBeUndefined();
   });
 });
 
-describe("drizzleAdapter.extract — physical table/column names (#3a)", () => {
+describe("drizzleAdapter.extract: physical table/column names (#3a)", () => {
   // Drizzle has no separate ORM-level model name the way Sequelize/Prisma/
-  // TypeORM do — `entity.name`/`field.name` are already the physical SQL
+  // TypeORM do: `entity.name`/`field.name` are already the physical SQL
   // table/column name (e.g. "post_tags"/"post_id" above), so tableName/
   // columnName would always equal `name` and stay unset.
   it("leaves tableName/columnName unset since name is already the physical name", async () => {
@@ -258,10 +258,10 @@ describe("drizzleAdapter.extract — physical table/column names (#3a)", () => {
   });
 });
 
-describe("drizzleAdapter.extract — singlestore dialect", () => {
+describe("drizzleAdapter.extract: singlestore dialect", () => {
   // SingleStore (a distributed DB) has no FK constraint concept at all, so
   // `getTableConfig()` omits `foreignKeys` entirely rather than returning an
-  // empty array — every reader has to tolerate that being `undefined`. Found
+  // empty array: every reader has to tolerate that being `undefined`. Found
   // by hand-testing a real SingleStore schema, which crashed with
   // "tableConfig.foreignKeys is not iterable" before this was fixed.
   it("extracts a table with no foreign keys without crashing", async () => {
@@ -273,7 +273,7 @@ describe("drizzleAdapter.extract — singlestore dialect", () => {
   });
 });
 
-describe("drizzleAdapter.extract — sqlite dialect", () => {
+describe("drizzleAdapter.extract: sqlite dialect", () => {
   it("extracts entities and a 1-n relation the same way as postgres", async () => {
     const model = await extractFixture("sqlite-basic");
     expect(model.entities.map((e) => e.name).toSorted()).toEqual([
@@ -294,8 +294,8 @@ describe("drizzleAdapter.extract — sqlite dialect", () => {
   });
 });
 
-describe("drizzleAdapter.extract — turso dialect", () => {
-  // Turso is SQLite-compatible and authored with the same `sqliteTable` —
+describe("drizzleAdapter.extract: turso dialect", () => {
+  // Turso is SQLite-compatible and authored with the same `sqliteTable`:
   // this only exercises that "turso" actually resolves to sqlite-core in
   // DIALECT_MODULES (a config typo/regression there is otherwise
   // untested), not any turso-specific behavior.
@@ -313,7 +313,7 @@ describe("drizzleAdapter.extract — turso dialect", () => {
   });
 });
 
-describe("drizzleAdapter.extract — mysql dialect", () => {
+describe("drizzleAdapter.extract: mysql dialect", () => {
   it("extracts entities and a 1-n relation the same way as postgres", async () => {
     const model = await extractFixture("mysql-basic");
     expect(model.entities.map((e) => e.name).toSorted()).toEqual([
@@ -327,12 +327,12 @@ describe("drizzleAdapter.extract — mysql dialect", () => {
     expect(rel.toColumn).toBe("author_id");
   });
 
-  // MySQL enums are inline/anonymous — `getSQLType()` returns the full
+  // MySQL enums are inline/anonymous: `getSQLType()` returns the full
   // definition (e.g. "enum('admin','member')") rather than a stable name,
   // unlike Postgres's named `pgEnum()` type. Using that raw string as the
   // DBML emitter's Enum-block key would collide every enum column in the
   // schema into one block, so it must be synthesized per table+column
-  // instead — this was an actual bug caught by hand-testing a real MySQL
+  // instead: this was an actual bug caught by hand-testing a real MySQL
   // schema outside the fixture suite before this test existed.
   it("synthesizes a distinct nativeType per enum column instead of the raw inline definition", async () => {
     const model = await extractFixture("mysql-basic");
@@ -349,7 +349,7 @@ describe("drizzleAdapter.extract — mysql dialect", () => {
   });
 });
 
-describe("drizzleAdapter.extract — casing strategy", () => {
+describe("drizzleAdapter.extract: casing strategy", () => {
   it("converts camelCase JS keys to snake_case DB names for un-named columns", async () => {
     const model = await extractFixture("casing");
     const comments = model.entities.find((e) => e.name === "comments")!;
@@ -367,7 +367,7 @@ describe("drizzleAdapter.extract — casing strategy", () => {
   });
 });
 
-describe("drizzleAdapter.extract — multi-file schema glob", () => {
+describe("drizzleAdapter.extract: multi-file schema glob", () => {
   it("merges tables exported across every glob-matched file and resolves cross-file FKs", async () => {
     const model = await extractFixture("multi-file-schema");
     expect(model.entities.map((e) => e.name).toSorted()).toEqual([
@@ -381,7 +381,7 @@ describe("drizzleAdapter.extract — multi-file schema glob", () => {
   });
 });
 
-describe("drizzleAdapter.extract — error cases", () => {
+describe("drizzleAdapter.extract: error cases", () => {
   it("throws a clear error when the config has no schema field", async () => {
     await expect(extractFixture("no-schema-field")).rejects.toThrow(
       /has no "schema" field/,
@@ -395,7 +395,7 @@ describe("drizzleAdapter.extract — error cases", () => {
   });
 
   it("throws a clear error when the config file has no dialect field", async () => {
-    // Needs its own package.json — without one anywhere up the tree, tsx
+    // Needs its own package.json: without one anywhere up the tree, tsx
     // can't tell the file is ESM and double-wraps its default export,
     // which would make this fail for the wrong reason.
     const cwd = mkdtempSync(join(tmpdir(), "orm2erd-drizzle-no-dialect-"));
@@ -430,7 +430,7 @@ describe("drizzleAdapter.extract — error cases", () => {
 
   it("throws a clear error when \"drizzle-orm\" can't be resolved from the config file's location", async () => {
     // The config lives in a bare temp dir with no node_modules chain to a
-    // real drizzle-orm — but its schema field points (by absolute path) at
+    // real drizzle-orm, but its schema field points (by absolute path) at
     // a real committed fixture schema, which imports drizzle-orm/pg-core
     // fine via its OWN location. So schema loading succeeds; it's
     // requireFromTarget's own later resolution (using the config file's
@@ -479,7 +479,7 @@ describe("drizzleAdapter.extract — error cases", () => {
   });
 });
 
-describe("drizzleAdapter.extract — schema resolution", () => {
+describe("drizzleAdapter.extract: schema resolution", () => {
   it("loads a .json drizzle-kit config file", async () => {
     const model = await extractFixture("json-config", "drizzle.config.json");
     expect(model.entities.map((e) => e.name)).toEqual(["users"]);

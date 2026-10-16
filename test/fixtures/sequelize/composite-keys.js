@@ -11,7 +11,7 @@ export const sequelize = {
       primaryKeyAttributes: ["postId", "tagId"],
       options: {
         indexes: [
-          // Field entries come as bare strings or { name } objects — cover both.
+          // Field entries come as bare strings or { name } objects: cover both.
           { unique: true, fields: ["tagId", { name: "addedBy" }] },
           // Single-column unique index: already on the field, must be ignored.
           { unique: true, fields: ["slug"] },
@@ -21,7 +21,7 @@ export const sequelize = {
           // Non-unique single-column index, deliberately left unnamed to
           // test the no-name path. A real `sequelize.define()`/`Model.init()`
           // call would auto-name this (Utils.nameIndex in sequelize's own
-          // lib/utils.js, e.g. "post_tags_addedby") — this hand-mocked
+          // lib/utils.js, e.g. "post_tags_addedby"): this hand-mocked
           // fixture bypasses that normalization, so `name` stays undefined.
           { fields: ["addedBy"] },
         ],
@@ -34,12 +34,12 @@ export const sequelize = {
       },
       associations: {},
     },
-    // The `unique: 'groupName'` shorthand — real Sequelize's Model.init()
+    // The `unique: 'groupName'` shorthand. Real Sequelize's Model.init()
     // groups these into `model.uniqueKeys`, never `options.indexes` (#4b).
     // `uniqueKeys` is keyed by physical column name (`post_ref`/`author_ref`),
     // which differs from the attribute name here to also exercise the
     // column->attribute mapping.
-    // Same composite unique declared redundantly through both mechanisms —
+    // Same composite unique declared redundantly through both mechanisms:
     // must be deduped down to a single entry, not doubled up.
     Tag: {
       name: "Tag",
@@ -67,7 +67,7 @@ export const sequelize = {
       uniqueKeys: {
         grp: { fields: ["post_ref", "author_ref"], name: "grp" },
         // A single-column group (the plain `unique: true` shorthand also
-        // lands here in real Sequelize) — must stay off `entity.uniques`
+        // lands here in real Sequelize). Must stay off `entity.uniques`
         // and only set the field's own `isUnique`.
         comment_permalink_unique: {
           fields: ["permalink"],
