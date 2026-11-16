@@ -2,7 +2,6 @@ import { Prompt, type PromptOptions } from "@clack/core";
 import type { Readable, Writable } from "node:stream";
 import pc from "picocolors";
 import {
-  formatInstructionFooter,
   symbol,
   symbolBar,
   unicode,
@@ -272,7 +271,10 @@ export function gridMultiselect<Value>(
       return [
         header,
         ...rows,
-        ...formatInstructionFooter(INSTRUCTIONS, true),
+        // Inlined instead of @clack/prompts' formatInstructionFooter: its
+        // signature changed in a 1.9.0 minor bump and crashed this prompt.
+        `${pc.cyan(S_BAR)}  ${INSTRUCTIONS.join(" • ")}`,
+        pc.cyan(S_BAR_END),
       ].join("\n");
     },
   }).prompt() as Promise<Value[] | symbol>;
