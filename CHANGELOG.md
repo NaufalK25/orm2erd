@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🏷️ [2.3.1] - 2026-11-16
+
+### 💊 Fixed
+
+- **The interactive format picker no longer crashes with `TypeError: o.join is not a function`.**
+  `@clack/prompts` 1.9.0 changed the signature of `formatInstructionFooter` in a minor release.
+  Fresh `npx`/`bunx` installs resolved that version and crashed right after the entry-point
+  prompt. The picker now renders its footer itself, so it works on any `@clack/prompts` 1.x.
+  ([0daf470](https://github.com/NaufalK25/orm2erd/commit/0daf470))
+
 ## 🏷️ [2.3.0] - 2026-10-16
 
 ### 🚀 Added
